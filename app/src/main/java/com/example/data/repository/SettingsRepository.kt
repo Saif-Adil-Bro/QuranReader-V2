@@ -258,18 +258,18 @@ class SettingsRepository(val context: Context) {
                 }
             }
 
-            // Remove duplicates
+            // Remove duplicates within the same mode
             currentList.removeAll {
-                (it.surahNumber == track.surahNumber && it.ayahNumber == track.ayahNumber && it.mode == track.mode) ||
+                (it.mode == track.mode && it.surahNumber == track.surahNumber && it.ayahNumber == track.ayahNumber) ||
                 (it.mode == track.mode && track.pageNumber != null && it.pageNumber == track.pageNumber) ||
-                (it.title == track.title)
+                (it.mode == track.mode && it.title == track.title)
             }
 
             // Add new track at the beginning
             currentList.add(0, track)
 
-            // Keep max 5 tracks
-            val trimmedList = currentList.take(5)
+            // Keep max 20 tracks overall so different modes maintain their recent read history
+            val trimmedList = currentList.take(20)
 
             preferences[RECENT_READS_KEY] = Gson().toJson(trimmedList)
         }

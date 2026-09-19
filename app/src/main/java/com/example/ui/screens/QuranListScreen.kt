@@ -38,15 +38,17 @@ fun QuranListScreen(
     val recentTracks by homeViewModel.recentReads.collectAsState()
 
     val recentReads = remember(recentTracks) {
-        recentTracks.map { track ->
-            com.example.ui.components.RecentReadItem(
-                title = track.title,
-                surahNumber = track.surahNumber,
-                ayahNumber = track.ayahNumber,
-                pageNumber = track.pageNumber,
-                mode = track.mode
-            )
-        }
+        recentTracks
+            .filter { it.mode == "DETAIL" || it.mode == "LIST" }
+            .map { track ->
+                com.example.ui.components.RecentReadItem(
+                    title = track.title,
+                    surahNumber = track.surahNumber,
+                    ayahNumber = track.ayahNumber,
+                    pageNumber = null,
+                    mode = track.mode
+                )
+            }
     }
 
     Scaffold(

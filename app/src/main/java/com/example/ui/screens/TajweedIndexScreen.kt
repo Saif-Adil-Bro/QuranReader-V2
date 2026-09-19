@@ -28,15 +28,27 @@ fun TajweedIndexScreen(
     val recentTracks by homeViewModel.recentReads.collectAsState()
 
     val recentReads = remember(recentTracks) {
-        recentTracks.map { track ->
-            RecentReadItem(
-                title = track.title,
-                surahNumber = track.surahNumber,
-                ayahNumber = track.ayahNumber,
-                pageNumber = track.pageNumber,
-                mode = track.mode
-            )
-        }
+        recentTracks
+            .filter { it.mode == "TAJWEED" }
+            .map { track ->
+                val chipTitle = if (track.pageNumber != null) {
+                    val sName = com.example.data.QuranData.surahNames.find { it.first == track.surahNumber }?.second?.first
+                    if (!sName.isNullOrEmpty()) {
+                        "পৃষ্ঠা ${toBengaliNumerals(track.pageNumber)} ($sName)"
+                    } else {
+                        "পৃষ্ঠা ${toBengaliNumerals(track.pageNumber)}"
+                    }
+                } else {
+                    track.title
+                }
+                RecentReadItem(
+                    title = chipTitle,
+                    surahNumber = track.surahNumber,
+                    ayahNumber = track.ayahNumber,
+                    pageNumber = track.pageNumber,
+                    mode = track.mode
+                )
+            }
     }
 
     Scaffold(
