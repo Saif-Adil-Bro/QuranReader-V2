@@ -69,7 +69,7 @@ fun PrayerTimesBannerSlide(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 10.dp, vertical = 7.dp),
+                .padding(horizontal = 11.dp, vertical = 9.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             // 1. Header (Date Capsule on Left, Dynamic Status/Countdown in Center, Location Capsule with Dropdown on Right)
@@ -84,20 +84,24 @@ fun PrayerTimesBannerSlide(
                         .clip(RoundedCornerShape(100.dp))
                         .background(Color.White.copy(alpha = 0.12f))
                         .border(0.8.dp, Color.White.copy(alpha = 0.22f), RoundedCornerShape(100.dp))
-                        .padding(horizontal = 5.5.dp, vertical = 3.5.dp)
+                        .padding(horizontal = 7.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
                         Icon(
                             imageVector = Icons.Default.DateRange,
                             contentDescription = null,
                             tint = AccentGold,
-                            modifier = Modifier.size(11.dp)
+                            modifier = Modifier.size(10.5.dp)
                         )
-                        Spacer(modifier = Modifier.width(3.5.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = schedule.dateStrBn,
                             color = TextPrimary,
-                            fontSize = 10.sp,
+                            fontSize = 9.5.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -110,7 +114,8 @@ fun PrayerTimesBannerSlide(
                             .clip(RoundedCornerShape(100.dp))
                             .background(Color(0xFFDC2626).copy(alpha = 0.35f))
                             .border(0.8.dp, Color(0xFFF87171).copy(alpha = 0.6f), RoundedCornerShape(100.dp))
-                            .padding(horizontal = 5.5.dp, vertical = 3.5.dp)
+                            .padding(horizontal = 7.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "⚠️ ${schedule.forbiddenTimeReason ?: "নামাযের নিষিদ্ধ সময়"}",
@@ -134,16 +139,22 @@ fun PrayerTimesBannerSlide(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(100.dp))
-                            .background(Color(0xFF0D3B2E).copy(alpha = 0.70f))
-                            .border(0.8.dp, AccentGold.copy(alpha = 0.40f), RoundedCornerShape(100.dp))
-                            .padding(horizontal = 5.dp, vertical = 3.5.dp)
+                            .background(Color(0xFF0D3B2E).copy(alpha = 0.75f))
+                            .border(0.8.dp, AccentGold.copy(alpha = 0.45f), RoundedCornerShape(100.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
+                            HourglassMinimalIcon(
+                                tint = AccentGold,
+                                modifier = Modifier.size(10.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.5.dp))
                             Text(
-                                text = "⏳ ${nextPrayer.name.nameBn}: ",
+                                text = "${nextPrayer.name.nameBn}: ",
                                 color = AccentGold,
                                 fontSize = 9.5.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -165,14 +176,18 @@ fun PrayerTimesBannerSlide(
                         .background(Color.White.copy(alpha = 0.15f))
                         .border(0.8.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(100.dp))
                         .clickable { onLocationClick() }
-                        .padding(horizontal = 5.5.dp, vertical = 3.5.dp)
+                        .padding(horizontal = 7.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
                         Icon(
                             imageVector = Icons.Default.LocationOn,
                             contentDescription = null,
                             tint = AccentGold,
-                            modifier = Modifier.size(11.dp)
+                            modifier = Modifier.size(10.5.dp)
                         )
                         Spacer(modifier = Modifier.width(2.5.dp))
                         val locationName = if (schedule.district.countryBn == "বাংলাদেশ") {
@@ -183,7 +198,7 @@ fun PrayerTimesBannerSlide(
                         Text(
                             text = "$locationName ▾",
                             color = TextPrimary,
-                            fontSize = 10.sp,
+                            fontSize = 9.5.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -350,8 +365,8 @@ private fun PrayerUnifiedColumnItem(
 
         Box(
             modifier = modifier
-                .padding(horizontal = 1.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .padding(horizontal = 1.5.dp)
+                .clip(RoundedCornerShape(10.dp))
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
@@ -361,7 +376,7 @@ private fun PrayerUnifiedColumnItem(
                     )
                 )
                 .border(
-                    width = 1.2.dp,
+                    width = 1.dp,
                     brush = Brush.linearGradient(
                         colors = listOf(
                             AccentGold.copy(alpha = glowAlpha),
@@ -369,14 +384,14 @@ private fun PrayerUnifiedColumnItem(
                             AccentGold.copy(alpha = glowAlpha)
                         )
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(10.dp)
                 )
-                .padding(horizontal = 2.5.dp, vertical = 2.5.dp),
+                .padding(horizontal = 3.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterVertically)
             ) {
                 // Top Badge: Pulsing Dot + "চলমান"
                 Row(
@@ -385,11 +400,11 @@ private fun PrayerUnifiedColumnItem(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(5.dp)
+                            .size(4.5.dp)
                             .clip(CircleShape)
                             .background(AccentGold.copy(alpha = glowAlpha))
                     )
-                    Spacer(modifier = Modifier.width(2.5.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
                     Text(
                         text = "চলমান",
                         color = AccentGold,
@@ -398,8 +413,6 @@ private fun PrayerUnifiedColumnItem(
                         fontWeight = FontWeight.Bold
                     )
                 }
-
-                Spacer(modifier = Modifier.height(1.dp))
 
                 // Bengali Name
                 Text(
@@ -423,8 +436,8 @@ private fun PrayerUnifiedColumnItem(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 3.dp, vertical = 1.5.dp)
-                        .height(3.dp)
+                        .padding(horizontal = 2.dp, vertical = 1.dp)
+                        .height(2.5.dp)
                         .clip(RoundedCornerShape(2.dp))
                         .background(Color.Black.copy(alpha = 0.30f))
                 ) {
@@ -458,8 +471,8 @@ private fun PrayerUnifiedColumnItem(
         // Next Waqt Accent Capsule Box
         Box(
             modifier = modifier
-                .padding(horizontal = 1.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .padding(horizontal = 1.5.dp)
+                .clip(RoundedCornerShape(10.dp))
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
@@ -468,13 +481,13 @@ private fun PrayerUnifiedColumnItem(
                         )
                     )
                 )
-                .border(0.9.dp, AccentGold.copy(alpha = 0.65f), RoundedCornerShape(12.dp))
-                .padding(horizontal = 2.5.dp, vertical = 2.5.dp),
+                .border(0.9.dp, AccentGold.copy(alpha = 0.70f), RoundedCornerShape(10.dp))
+                .padding(horizontal = 3.dp, vertical = 4.dp),
             contentAlignment = Alignment.Center
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterVertically)
             ) {
                 // Tiny badge
                 Text(
@@ -484,8 +497,6 @@ private fun PrayerUnifiedColumnItem(
                     lineHeight = 9.sp,
                     fontWeight = FontWeight.Bold
                 )
-
-                Spacer(modifier = Modifier.height(1.dp))
 
                 // Bengali Name
                 Text(
@@ -501,7 +512,7 @@ private fun PrayerUnifiedColumnItem(
                     text = prayer.timeDigits,
                     color = TextPrimary,
                     fontSize = 12.sp,
-                    lineHeight = 13.5.sp,
+                    lineHeight = 13.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
 
@@ -509,8 +520,8 @@ private fun PrayerUnifiedColumnItem(
                 Text(
                     text = prayer.amPm,
                     color = AccentGold.copy(alpha = 0.95f),
-                    fontSize = 7.sp,
-                    lineHeight = 8.sp,
+                    fontSize = 7.5.sp,
+                    lineHeight = 8.5.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -518,17 +529,16 @@ private fun PrayerUnifiedColumnItem(
     } else {
         // Standard Elegant Inactive Column
         Column(
-            modifier = modifier.padding(horizontal = 1.dp, vertical = 2.dp),
+            modifier = modifier
+                .padding(horizontal = 1.5.dp, vertical = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterVertically)
         ) {
             // Golden minimal Islamic prayer icon
             GoldenPrayerIcon(
                 prayerName = prayer.name,
-                modifier = Modifier.size(15.dp)
+                modifier = Modifier.size(13.dp)
             )
-
-            Spacer(modifier = Modifier.height(1.5.dp))
 
             // Bengali Name
             Text(
@@ -552,11 +562,36 @@ private fun PrayerUnifiedColumnItem(
             Text(
                 text = prayer.amPm,
                 color = TextSecondary.copy(alpha = 0.8f),
-                fontSize = 7.sp,
-                lineHeight = 8.sp,
+                fontSize = 7.5.sp,
+                lineHeight = 8.5.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }
+    }
+}
+
+@Composable
+private fun HourglassMinimalIcon(
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val path = Path().apply {
+            moveTo(w * 0.15f, h * 0.12f)
+            lineTo(w * 0.85f, h * 0.12f)
+            lineTo(w * 0.53f, h * 0.50f)
+            lineTo(w * 0.85f, h * 0.88f)
+            lineTo(w * 0.15f, h * 0.88f)
+            lineTo(w * 0.47f, h * 0.50f)
+            close()
+        }
+        drawPath(
+            path = path,
+            color = tint,
+            style = Stroke(width = 1.2.dp.toPx(), cap = StrokeCap.Round)
+        )
     }
 }
 
