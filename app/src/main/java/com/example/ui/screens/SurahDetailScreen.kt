@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,10 +25,12 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.ui.text.buildAnnotatedString
@@ -825,11 +828,10 @@ fun HeaderCard(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Icon(
-                                imageVector = if (info2.contains("মাক্কী")) Icons.Outlined.Mosque else Icons.Outlined.Place,
-                                contentDescription = null,
-                                tint = PrimaryGreen,
-                                modifier = Modifier.size(13.dp)
+                            Image(
+                                painter = painterResource(id = if (info2.contains("মাক্কী")) R.drawable.kaaba else R.drawable.annawabu),
+                                contentDescription = info2,
+                                modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(info2, fontSize = 11.sp, color = PrimaryGreen, fontWeight = FontWeight.Bold)

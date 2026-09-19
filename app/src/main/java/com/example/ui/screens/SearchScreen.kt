@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -32,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.QuranData
 import com.example.data.model.SearchMatch
 import com.example.data.model.Surah
@@ -686,12 +689,23 @@ fun SurahSearchResultItem(
                     verticalArrangement = Arrangement.Center
                 ) {
                     val banglaRevelation = if (surah.revelationType.lowercase() == "meccan") "মাক্কী" else "মাদানী"
-                    Text(
-                        text = banglaRevelation,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = PrimaryGreen
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Image(
+                            painter = painterResource(if (surah.revelationType.lowercase() == "meccan") R.drawable.kaaba else R.drawable.annawabu),
+                            contentDescription = banglaRevelation,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = banglaRevelation,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PrimaryGreen
+                        )
+                    }
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "${surah.numberOfAyahs.toBengaliNumerals()} আয়াত",

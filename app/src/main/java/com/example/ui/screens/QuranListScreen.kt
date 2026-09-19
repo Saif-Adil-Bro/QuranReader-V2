@@ -39,13 +39,29 @@ fun QuranListScreen(
     val lastReadAyah by homeViewModel.lastReadAyah.collectAsState()
     val surahName = com.example.data.QuranData.surahNames.find { it.first == lastReadSurah }?.second?.first ?: ""
 
+    val recentReads = remember(lastReadSurah, lastReadAyah, surahName) {
+        if (surahName.isNotEmpty()) {
+            listOf(
+                com.example.ui.components.RecentReadItem(
+                    title = "সূরা $surahName আয়াত ${lastReadAyah.toBengaliNumerals()}",
+                    surahNumber = lastReadSurah,
+                    ayahNumber = lastReadAyah
+                ),
+                com.example.ui.components.RecentReadItem("সূরা মারইয়াম আয়াত ২", 19, 2),
+                com.example.ui.components.RecentReadItem("সূরা ইউসুফ আয়াত ১১", 12, 11)
+            )
+        } else {
+            null
+        }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { 
                     Text(
-                        text = if (mode == "reading") "প্যারাগ্রাফ পঠন" else "সূরা তালিকা",
+                        text = if (mode == "reading") "প্যারাগ্রাফ পঠন" else "সূরা ও পারা সূচী",
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     ) 
@@ -69,33 +85,18 @@ fun QuranListScreen(
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            if (searchQuery.isEmpty()) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable { onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah) },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("সর্বশেষ পঠিত অনুবাদ", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("সূরা $surahName", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text("আয়াত ${lastReadAyah.toBengaliNumerals()}", fontSize = 14.sp, color = PrimaryGreen)
-                    }
-                }
-            }
-            
+        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             QuranIndexComponent(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxSize(),
                 uiState = uiState,
                 searchQuery = searchQuery,
                 onSearchQueryChange = { viewModel.updateSearchQuery(it) },
                 onSurahClick = onSurahClick,
                 onJuzClick = onJuzClick,
+                onNavigateToSurahWithAyah = { surah, ayah ->
+                    onNavigateToSurahWithAyah(surah, "LIST", ayah)
+                },
+                recentReads = recentReads,
                 onRetryClick = { viewModel.loadSurahs() }
             )
         }

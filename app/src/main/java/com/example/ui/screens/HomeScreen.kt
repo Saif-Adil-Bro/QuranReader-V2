@@ -1,6 +1,9 @@
 package com.example.ui.screens
 
+import com.example.R
 import com.example.data.QuranData
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -29,6 +32,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -1740,6 +1745,12 @@ fun SurahCard(
                     Spacer(modifier = Modifier.width(6.dp))
                     Box(modifier = Modifier.size(3.dp).background(GrayText, RoundedCornerShape(50)))
                     Spacer(modifier = Modifier.width(6.dp))
+                    Image(
+                        painter = painterResource(if (revelationType.contains("মাদানী")) R.drawable.annawabu else R.drawable.kaaba),
+                        contentDescription = revelationType,
+                        modifier = Modifier.size(11.dp)
+                    )
+                    Spacer(modifier = Modifier.width(3.dp))
                     Text(revelationType, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                 }
             }
@@ -2009,43 +2020,22 @@ fun ModesGridSection(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             ModeItemCard(
-                title = "হাফেজী মোড",
-                subtitle = "১৫ লাইন পিডিএফ",
-                icon = Icons.Default.PictureAsPdf,
-                containerColor = Color(0xFFECFDF5),
+                title = "হাফেজী কুরআন",
+                subtitle = "১৫ লাইন ইমেজ ভিউ",
+                icon = Icons.Default.MenuBook,
+                containerColor = if (isDark) Color(0xFF064E3B).copy(alpha = 0.5f) else Color(0xFFECFDF5),
                 iconColor = Color(0xFF10B981),
                 onClick = onHafeziPdfClick,
-                badgeText = if (isHafeziDownloaded) "অফলাইন" else "অনলাইন",
-                badgeIcon = if (isHafeziDownloaded) Icons.Default.CloudDone else Icons.Default.CloudDownload,
-                badgeBgColor = if (isHafeziDownloaded) {
-                    if (isDark) Color(0xFF10B981).copy(alpha = 0.15f) else Color(0xFFD1FAE5)
-                } else {
-                    if (isDark) Color(0xFF0EA5E9).copy(alpha = 0.15f) else Color(0xFFE0F2FE)
-                },
-                badgeBorderColor = if (isHafeziDownloaded) {
-                    Color(0xFF10B981).copy(alpha = 0.4f)
-                } else {
-                    Color(0xFF38BDF8).copy(alpha = 0.4f)
-                },
-                badgeContentColor = if (isHafeziDownloaded) {
-                    if (isDark) Color(0xFF34D399) else Color(0xFF047857)
-                } else {
-                    if (isDark) Color(0xFF38BDF8) else Color(0xFF0369A1)
-                },
+                isPdfBadge = false,
                 modifier = Modifier.weight(1f)
             )
             ModeItemCard(
-                title = "তাজবীদ মোড",
+                title = "কালার কুরআন",
                 subtitle = "রঙিন তাজবীদ টেক্সট",
                 icon = Icons.Default.Palette,
-                containerColor = Color(0xFFEFF6FF),
+                containerColor = if (isDark) Color(0xFF1E3A8A).copy(alpha = 0.5f) else Color(0xFFEFF6FF),
                 iconColor = Color(0xFF3B82F6),
                 onClick = onTajweedClick,
-                badgeText = "আংশিক অফলাইন",
-                badgeIcon = Icons.Default.Cloud,
-                badgeBgColor = if (isDark) Color(0xFFF59E0B).copy(alpha = 0.15f) else Color(0xFFFEF3C7),
-                badgeBorderColor = Color(0xFFFBBF24).copy(alpha = 0.4f),
-                badgeContentColor = if (isDark) Color(0xFFFBBF24) else Color(0xFFB45309),
                 modifier = Modifier.weight(1f)
             )
         }
@@ -2060,31 +2050,95 @@ fun ModesGridSection(
                 title = "অনুবাদ ও তাফসীর",
                 subtitle = "গভীর তাফসীর ও অর্থ",
                 icon = Icons.Default.MenuBook,
-                containerColor = Color(0xFFF5F3FF),
+                containerColor = if (isDark) Color(0xFF4C1D95).copy(alpha = 0.5f) else Color(0xFFF5F3FF),
                 iconColor = Color(0xFF8B5CF6),
                 onClick = onTranslationClick,
-                badgeText = "আংশিক অফলাইন",
-                badgeIcon = Icons.Default.Cloud,
-                badgeBgColor = if (isDark) Color(0xFFF59E0B).copy(alpha = 0.15f) else Color(0xFFFEF3C7),
-                badgeBorderColor = Color(0xFFFBBF24).copy(alpha = 0.4f),
-                badgeContentColor = if (isDark) Color(0xFFFBBF24) else Color(0xFFB45309),
                 modifier = Modifier.weight(1f)
             )
             ModeItemCard(
-                title = "তেলাওয়াত প্লেয়ার",
-                subtitle = "ক্বারী সহ তেলাওয়াত",
-                icon = Icons.Default.PlayCircle,
-                containerColor = Color(0xFFFFF7ED),
+                title = "তেলাওয়াত প্লেয়ার",
+                subtitle = "বিভিন্ন ক্বারীদের তেলওয়াত শুনুন",
+                icon = Icons.Default.PlayArrow,
+                containerColor = if (isDark) Color(0xFF7C2D12).copy(alpha = 0.5f) else Color(0xFFFFF7ED),
                 iconColor = Color(0xFFF97316),
                 onClick = onPlayerClick,
-                badgeText = "অনলাইন",
-                badgeIcon = Icons.Default.Cloud,
-                badgeBgColor = if (isDark) Color(0xFF0EA5E9).copy(alpha = 0.15f) else Color(0xFFE0F2FE),
-                badgeBorderColor = Color(0xFF38BDF8).copy(alpha = 0.4f),
-                badgeContentColor = if (isDark) Color(0xFF38BDF8) else Color(0xFF0369A1),
                 modifier = Modifier.weight(1f)
             )
         }
+    }
+}
+
+@Composable
+fun SubtleCardDecorativeWave(
+    waveColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        val width = size.width
+        val height = size.height
+
+        // Layer 1: Broad soft underlying wave sweeping from left to bottom-right
+        val wave1 = Path().apply {
+            moveTo(0f, height)
+            lineTo(0f, height * 0.92f)
+            cubicTo(
+                width * 0.25f, height * 0.98f,
+                width * 0.50f, height * 0.74f,
+                width, height * 0.70f
+            )
+            lineTo(width, height)
+            close()
+        }
+        drawPath(
+            path = wave1,
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    waveColor.copy(alpha = 0.05f),
+                    waveColor.copy(alpha = 0.12f)
+                ),
+                startY = height * 0.65f,
+                endY = height
+            )
+        )
+
+        // Layer 2: Main organic curved wave in the bottom-right corner
+        val wave2 = Path().apply {
+            moveTo(width * 0.20f, height)
+            cubicTo(
+                width * 0.45f, height * 0.94f,
+                width * 0.70f, height * 0.62f,
+                width, height * 0.82f
+            )
+            lineTo(width, height)
+            close()
+        }
+        drawPath(
+            path = wave2,
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    waveColor.copy(alpha = 0.08f),
+                    waveColor.copy(alpha = 0.18f)
+                ),
+                startY = height * 0.60f,
+                endY = height
+            )
+        )
+
+        // Layer 3: Subtle accent ripple at the very bottom right
+        val wave3 = Path().apply {
+            moveTo(width * 0.55f, height)
+            cubicTo(
+                width * 0.70f, height * 0.96f,
+                width * 0.85f, height * 0.78f,
+                width, height * 0.88f
+            )
+            lineTo(width, height)
+            close()
+        }
+        drawPath(
+            path = wave3,
+            color = waveColor.copy(alpha = 0.10f)
+        )
     }
 }
 
@@ -2097,44 +2151,32 @@ fun ModeItemCard(
     iconColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    badgeText: String? = null,
-    badgeIcon: ImageVector? = null,
-    badgeBgColor: Color = Color.Transparent,
-    badgeBorderColor: Color = Color.Transparent,
-    badgeContentColor: Color = Color.Transparent
+    isPdfBadge: Boolean = false
 ) {
     Card(
         modifier = modifier
-            .shadow(4.dp, RoundedCornerShape(16.dp), spotColor = iconColor.copy(alpha = 0.5f))
+            .shadow(3.dp, RoundedCornerShape(18.dp), spotColor = iconColor.copy(alpha = 0.20f))
+            .clip(RoundedCornerShape(18.dp))
             .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            if (badgeIcon != null) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(top = 10.dp, start = 10.dp)
-                        .background(badgeBgColor, CircleShape)
-                        .border(0.5.dp, badgeBorderColor, CircleShape)
-                        .padding(5.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = badgeIcon,
-                        contentDescription = badgeText,
-                        tint = badgeContentColor,
-                        modifier = Modifier.size(11.dp)
-                    )
-                }
-            }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+        ) {
+            // Subtle Decorative Wave at the bottom
+            SubtleCardDecorativeWave(
+                waveColor = iconColor,
+                modifier = Modifier.matchParentSize()
+            )
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 22.dp, bottom = 18.dp, start = 12.dp, end = 12.dp),
+                    .padding(horizontal = 12.dp, vertical = 18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -2144,21 +2186,48 @@ fun ModeItemCard(
                         .background(containerColor, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(24.dp))
+                    if (isPdfBadge) {
+                        Box(
+                            modifier = Modifier
+                                .size(26.dp)
+                                .background(iconColor, RoundedCornerShape(6.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "PDF",
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = iconColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Title
                 Text(
                     text = title,
-                    fontSize = 14.sp,
+                    fontSize = 14.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     textAlign = TextAlign.Center
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+
+                Spacer(modifier = Modifier.height(3.dp))
+
+                // Subtitle
                 Text(
                     text = subtitle,
-                    fontSize = 11.sp,
+                    fontSize = 11.5.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     textAlign = TextAlign.Center
