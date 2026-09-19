@@ -13,6 +13,31 @@ class QuranApplication : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
+        
+        // Safely initialize Firebase to avoid any runtime startup crashes on Appetize/CI/Emulators
+        try {
+            if (com.google.firebase.FirebaseApp.getApps(this).isEmpty()) {
+                val options = try {
+                    com.google.firebase.FirebaseOptions.fromResource(this)
+                } catch (e: Exception) {
+                    null
+                }
+                if (options != null && !options.apiKey.isNullOrBlank()) {
+                    com.google.firebase.FirebaseApp.initializeApp(this, options)
+                } else {
+                    val fallbackOptions = com.google.firebase.FirebaseOptions.Builder()
+                        .setApplicationId("1:1039813595123:android:827244eaf363d1ae0f4c86")
+                        .setApiKey("AIzaSyAFud_Pg8hJ_WjLSsf6HYNA7zzSzibermc")
+                        .setProjectId("quranreader-67b33")
+                        .setStorageBucket("quranreader-67b33.firebasestorage.app")
+                        .build()
+                    com.google.firebase.FirebaseApp.initializeApp(this, fallbackOptions)
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("QuranApplication", "Firebase initialization safe error: ${e.message}")
+        }
+
         container = AppContainer(this)
         com.example.data.DuaData.initialize(this)
         com.example.sync.NetworkSyncManager.initialize(this)

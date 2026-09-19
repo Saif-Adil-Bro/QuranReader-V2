@@ -141,7 +141,7 @@ fun PrayerTimesBannerSlide(
                             .clip(RoundedCornerShape(100.dp))
                             .background(Color(0xFF0D3B2E).copy(alpha = 0.75f))
                             .border(0.8.dp, AccentGold.copy(alpha = 0.45f), RoundedCornerShape(100.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(
