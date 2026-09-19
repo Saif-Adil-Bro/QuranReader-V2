@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1039813595123",
+    "project_id": "quranreader-67b33",
+    "storage_bucket": "quranreader-67b33.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1039813595123:android:827244eaf363d1ae0f4c86",
+        "android_client_info": {
+          "package_name": "com.quranreader.mlibrary"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFud_Pg8hJ_WjLSsf6HYNA7zzSzibermc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
