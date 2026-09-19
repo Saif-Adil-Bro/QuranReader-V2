@@ -1,0 +1,6 @@
+{
+  "name": "Quran Reader",
+  "description": "A Quran Reader Android app with Arabic text and Bengali translation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

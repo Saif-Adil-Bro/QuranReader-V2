@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="cache_root" path="." />
+    <cache-path name="shared_images" path="shared_images/" />
+    <cache-path name="shared_posts" path="shared_posts/" />
+    <cache-path name="shared_prayer_cards" path="shared_prayer_cards/" />
+    <files-path name="files_root" path="." />
+    <external-cache-path name="external_cache_root" path="." />
+    <external-cache-path name="external_shared_posts" path="shared_posts/" />
+    <external-files-path name="external_files_root" path="." />
+    <external-path name="external_root" path="." />
+</paths>

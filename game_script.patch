@@ -1,0 +1,11 @@
+--- app/src/main/java/com/example/ui/viewmodels/SettingsViewModel.kt
++++ app/src/main/java/com/example/ui/viewmodels/SettingsViewModel.kt
+@@ -470,6 +470,8 @@
+         }
+     }
+ 
++    // --- Word Game Feature ---
++
+     // 3. Word Game State
+     val questions = listOf(
+         WordQuestion("আলামীন (العالمين)", listOf("সৃষ্টিজগৎ", "মানুষ", "ফেরেশতা", "নক্ষত্র"), "সৃষ্টিজগৎ"),

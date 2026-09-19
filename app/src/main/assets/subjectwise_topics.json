@@ -1,0 +1,3674 @@
+[
+  {
+    "category_id": 1,
+    "category_name_bn": "ঈমান ও আকীদা",
+    "icon": "ic_iman_aqeedah",
+    "topics": [
+      {
+        "topic_id": 101,
+        "title_bn": "আল্লাহর একত্ববাদ (তাওহীদ)",
+        "verses": [
+          {
+            "surah": 112,
+            "ayah": 1
+          },
+          {
+            "surah": 112,
+            "ayah": 2
+          },
+          {
+            "surah": 112,
+            "ayah": 3
+          },
+          {
+            "surah": 112,
+            "ayah": 4
+          },
+          {
+            "surah": 2,
+            "ayah": 163
+          },
+          {
+            "surah": 2,
+            "ayah": 255
+          },
+          {
+            "surah": 3,
+            "ayah": 18
+          },
+          {
+            "surah": 6,
+            "ayah": 102
+          },
+          {
+            "surah": 16,
+            "ayah": 51
+          },
+          {
+            "surah": 20,
+            "ayah": 8
+          },
+          {
+            "surah": 21,
+            "ayah": 22
+          },
+          {
+            "surah": 21,
+            "ayah": 25
+          },
+          {
+            "surah": 23,
+            "ayah": 91
+          },
+          {
+            "surah": 37,
+            "ayah": 4
+          },
+          {
+            "surah": 47,
+            "ayah": 19
+          },
+          {
+            "surah": 6,
+            "ayah": 19
+          },
+          {
+            "surah": 16,
+            "ayah": 22
+          },
+          {
+            "surah": 39,
+            "ayah": 4
+          }
+        ]
+      },
+      {
+        "topic_id": 102,
+        "title_bn": "আল্লাহর নাম ও গুণাবলী (আসমাউল হুসনা)",
+        "verses": [
+          {
+            "surah": 7,
+            "ayah": 180
+          },
+          {
+            "surah": 17,
+            "ayah": 110
+          },
+          {
+            "surah": 20,
+            "ayah": 8
+          },
+          {
+            "surah": 59,
+            "ayah": 22
+          },
+          {
+            "surah": 59,
+            "ayah": 23
+          },
+          {
+            "surah": 59,
+            "ayah": 24
+          },
+          {
+            "surah": 42,
+            "ayah": 11
+          },
+          {
+            "surah": 112,
+            "ayah": 4
+          }
+        ]
+      },
+      {
+        "topic_id": 103,
+        "title_bn": "ফেরেশতাদের প্রতি ঈমান",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 30
+          },
+          {
+            "surah": 2,
+            "ayah": 285
+          },
+          {
+            "surah": 16,
+            "ayah": 2
+          },
+          {
+            "surah": 21,
+            "ayah": 26
+          },
+          {
+            "surah": 21,
+            "ayah": 27
+          },
+          {
+            "surah": 35,
+            "ayah": 1
+          },
+          {
+            "surah": 66,
+            "ayah": 6
+          },
+          {
+            "surah": 82,
+            "ayah": 10
+          },
+          {
+            "surah": 82,
+            "ayah": 11
+          },
+          {
+            "surah": 97,
+            "ayah": 4
+          },
+          {
+            "surah": 2,
+            "ayah": 97
+          },
+          {
+            "surah": 2,
+            "ayah": 98
+          }
+        ]
+      },
+      {
+        "topic_id": 104,
+        "title_bn": "আসমানী কিতাবসমূহে বিশ্বাস",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 285
+          },
+          {
+            "surah": 3,
+            "ayah": 3
+          },
+          {
+            "surah": 3,
+            "ayah": 4
+          },
+          {
+            "surah": 4,
+            "ayah": 136
+          },
+          {
+            "surah": 5,
+            "ayah": 44
+          },
+          {
+            "surah": 5,
+            "ayah": 46
+          },
+          {
+            "surah": 5,
+            "ayah": 48
+          },
+          {
+            "surah": 15,
+            "ayah": 9
+          },
+          {
+            "surah": 87,
+            "ayah": 18
+          },
+          {
+            "surah": 87,
+            "ayah": 19
+          },
+          {
+            "surah": 42,
+            "ayah": 13
+          },
+          {
+            "surah": 98,
+            "ayah": 3
+          }
+        ]
+      },
+      {
+        "topic_id": 105,
+        "title_bn": "নবী-রাসূলগণের প্রতি ঈমান",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 136
+          },
+          {
+            "surah": 2,
+            "ayah": 285
+          },
+          {
+            "surah": 3,
+            "ayah": 84
+          },
+          {
+            "surah": 4,
+            "ayah": 150
+          },
+          {
+            "surah": 4,
+            "ayah": 151
+          },
+          {
+            "surah": 4,
+            "ayah": 164
+          },
+          {
+            "surah": 33,
+            "ayah": 40
+          },
+          {
+            "surah": 40,
+            "ayah": 78
+          },
+          {
+            "surah": 6,
+            "ayah": 48
+          },
+          {
+            "surah": 18,
+            "ayah": 110
+          }
+        ]
+      },
+      {
+        "topic_id": 106,
+        "title_bn": "তাকদীরে বিশ্বাস",
+        "verses": [
+          {
+            "surah": 3,
+            "ayah": 145
+          },
+          {
+            "surah": 9,
+            "ayah": 51
+          },
+          {
+            "surah": 13,
+            "ayah": 39
+          },
+          {
+            "surah": 54,
+            "ayah": 49
+          },
+          {
+            "surah": 57,
+            "ayah": 22
+          },
+          {
+            "surah": 57,
+            "ayah": 23
+          },
+          {
+            "surah": 64,
+            "ayah": 11
+          }
+        ]
+      },
+      {
+        "topic_id": 107,
+        "title_bn": "শিরক থেকে সতর্কতা",
+        "verses": [
+          {
+            "surah": 4,
+            "ayah": 48
+          },
+          {
+            "surah": 4,
+            "ayah": 116
+          },
+          {
+            "surah": 6,
+            "ayah": 88
+          },
+          {
+            "surah": 12,
+            "ayah": 106
+          },
+          {
+            "surah": 22,
+            "ayah": 31
+          },
+          {
+            "surah": 31,
+            "ayah": 13
+          },
+          {
+            "surah": 39,
+            "ayah": 65
+          },
+          {
+            "surah": 39,
+            "ayah": 66
+          },
+          {
+            "surah": 21,
+            "ayah": 22
+          },
+          {
+            "surah": 34,
+            "ayah": 22
+          }
+        ]
+      },
+      {
+        "topic_id": 108,
+        "title_bn": "প্রকৃত মুমিনের বৈশিষ্ট্য",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 2
+          },
+          {
+            "surah": 2,
+            "ayah": 3
+          },
+          {
+            "surah": 2,
+            "ayah": 4
+          },
+          {
+            "surah": 2,
+            "ayah": 5
+          },
+          {
+            "surah": 8,
+            "ayah": 2
+          },
+          {
+            "surah": 8,
+            "ayah": 3
+          },
+          {
+            "surah": 8,
+            "ayah": 4
+          },
+          {
+            "surah": 23,
+            "ayah": 1
+          },
+          {
+            "surah": 23,
+            "ayah": 2
+          },
+          {
+            "surah": 23,
+            "ayah": 3
+          },
+          {
+            "surah": 23,
+            "ayah": 4
+          },
+          {
+            "surah": 49,
+            "ayah": 15
+          },
+          {
+            "surah": 9,
+            "ayah": 71
+          },
+          {
+            "surah": 24,
+            "ayah": 51
+          },
+          {
+            "surah": 24,
+            "ayah": 52
+          }
+        ]
+      },
+      {
+        "topic_id": 109,
+        "title_bn": "কুফর ও নিফাক (মুনাফিকী)",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 8
+          },
+          {
+            "surah": 2,
+            "ayah": 9
+          },
+          {
+            "surah": 2,
+            "ayah": 10
+          },
+          {
+            "surah": 2,
+            "ayah": 14
+          },
+          {
+            "surah": 4,
+            "ayah": 142
+          },
+          {
+            "surah": 4,
+            "ayah": 143
+          },
+          {
+            "surah": 9,
+            "ayah": 67
+          },
+          {
+            "surah": 63,
+            "ayah": 1
+          }
+        ]
+      },
+      {
+        "topic_id": 110,
+        "title_bn": "জ্বিন জাতির অস্তিত্ব",
+        "verses": [
+          {
+            "surah": 15,
+            "ayah": 27
+          },
+          {
+            "surah": 55,
+            "ayah": 15
+          },
+          {
+            "surah": 72,
+            "ayah": 1
+          },
+          {
+            "surah": 72,
+            "ayah": 2
+          },
+          {
+            "surah": 46,
+            "ayah": 29
+          },
+          {
+            "surah": 46,
+            "ayah": 30
+          }
+        ]
+      },
+      {
+        "topic_id": 111,
+        "title_bn": "আল্লাহর জ্ঞান ও ক্ষমতার ব্যাপকতা",
+        "verses": [
+          {
+            "surah": 6,
+            "ayah": 59
+          },
+          {
+            "surah": 31,
+            "ayah": 34
+          },
+          {
+            "surah": 57,
+            "ayah": 4
+          },
+          {
+            "surah": 58,
+            "ayah": 7
+          }
+        ]
+      },
+      {
+        "topic_id": 112,
+        "title_bn": "ওহী ও রিসালাতের প্রয়োজনীয়তা",
+        "verses": [
+          {
+            "surah": 4,
+            "ayah": 165
+          },
+          {
+            "surah": 16,
+            "ayah": 36
+          },
+          {
+            "surah": 16,
+            "ayah": 43
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category_id": 2,
+    "category_name_bn": "ইবাদত ও আমল",
+    "icon": "ic_ibadah_amal",
+    "topics": [
+      {
+        "topic_id": 201,
+        "title_bn": "সালাত (নামাজ)",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 3
+          },
+          {
+            "surah": 2,
+            "ayah": 43
+          },
+          {
+            "surah": 2,
+            "ayah": 45
+          },
+          {
+            "surah": 2,
+            "ayah": 110
+          },
+          {
+            "surah": 2,
+            "ayah": 153
+          },
+          {
+            "surah": 2,
+            "ayah": 238
+          },
+          {
+            "surah": 4,
+            "ayah": 103
+          },
+          {
+            "surah": 11,
+            "ayah": 114
+          },
+          {
+            "surah": 17,
+            "ayah": 78
+          },
+          {
+            "surah": 20,
+            "ayah": 14
+          },
+          {
+            "surah": 29,
+            "ayah": 45
+          },
+          {
+            "surah": 62,
+            "ayah": 9
+          },
+          {
+            "surah": 23,
+            "ayah": 9
+          },
+          {
+            "surah": 70,
+            "ayah": 22
+          },
+          {
+            "surah": 70,
+            "ayah": 23
+          },
+          {
+            "surah": 107,
+            "ayah": 4
+          },
+          {
+            "surah": 107,
+            "ayah": 5
+          }
+        ]
+      },
+      {
+        "topic_id": 202,
+        "title_bn": "সিয়াম (রোজা)",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 183
+          },
+          {
+            "surah": 2,
+            "ayah": 184
+          },
+          {
+            "surah": 2,
+            "ayah": 185
+          },
+          {
+            "surah": 2,
+            "ayah": 187
+          }
+        ]
+      },
+      {
+        "topic_id": 203,
+        "title_bn": "যাকাত ও দান-সদকা",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 43
+          },
+          {
+            "surah": 2,
+            "ayah": 261
+          },
+          {
+            "surah": 2,
+            "ayah": 262
+          },
+          {
+            "surah": 2,
+            "ayah": 267
+          },
+          {
+            "surah": 2,
+            "ayah": 271
+          },
+          {
+            "surah": 9,
+            "ayah": 60
+          },
+          {
+            "surah": 9,
+            "ayah": 103
+          },
+          {
+            "surah": 51,
+            "ayah": 19
+          },
+          {
+            "surah": 30,
+            "ayah": 39
+          },
+          {
+            "surah": 92,
+            "ayah": 18
+          }
+        ]
+      },
+      {
+        "topic_id": 204,
+        "title_bn": "হজ্জ ও ওমরাহ",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 158
+          },
+          {
+            "surah": 2,
+            "ayah": 196
+          },
+          {
+            "surah": 2,
+            "ayah": 197
+          },
+          {
+            "surah": 3,
+            "ayah": 97
+          },
+          {
+            "surah": 22,
+            "ayah": 27
+          },
+          {
+            "surah": 22,
+            "ayah": 28
+          },
+          {
+            "surah": 22,
+            "ayah": 29
+          }
+        ]
+      },
+      {
+        "topic_id": 205,
+        "title_bn": "দোয়া ও জিকির",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 152
+          },
+          {
+            "surah": 2,
+            "ayah": 186
+          },
+          {
+            "surah": 3,
+            "ayah": 191
+          },
+          {
+            "surah": 13,
+            "ayah": 28
+          },
+          {
+            "surah": 33,
+            "ayah": 41
+          },
+          {
+            "surah": 33,
+            "ayah": 42
+          },
+          {
+            "surah": 40,
+            "ayah": 60
+          },
+          {
+            "surah": 7,
+            "ayah": 55
+          },
+          {
+            "surah": 39,
+            "ayah": 53
+          },
+          {
+            "surah": 29,
+            "ayah": 45
+          }
+        ]
+      },
+      {
+        "topic_id": 206,
+        "title_bn": "তওবা ও ইস্তিগফার",
+        "verses": [
+          {
+            "surah": 3,
+            "ayah": 135
+          },
+          {
+            "surah": 3,
+            "ayah": 136
+          },
+          {
+            "surah": 4,
+            "ayah": 17
+          },
+          {
+            "surah": 4,
+            "ayah": 110
+          },
+          {
+            "surah": 25,
+            "ayah": 70
+          },
+          {
+            "surah": 39,
+            "ayah": 53
+          },
+          {
+            "surah": 66,
+            "ayah": 8
+          },
+          {
+            "surah": 11,
+            "ayah": 3
+          },
+          {
+            "surah": 20,
+            "ayah": 82
+          }
+        ]
+      },
+      {
+        "topic_id": 207,
+        "title_bn": "কুরআন তিলাওয়াত ও অনুসরণ",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 121
+          },
+          {
+            "surah": 7,
+            "ayah": 204
+          },
+          {
+            "surah": 29,
+            "ayah": 45
+          },
+          {
+            "surah": 35,
+            "ayah": 29
+          },
+          {
+            "surah": 47,
+            "ayah": 24
+          },
+          {
+            "surah": 73,
+            "ayah": 4
+          },
+          {
+            "surah": 73,
+            "ayah": 20
+          },
+          {
+            "surah": 17,
+            "ayah": 9
+          },
+          {
+            "surah": 38,
+            "ayah": 29
+          }
+        ]
+      },
+      {
+        "topic_id": 208,
+        "title_bn": "জিহাদ — ফজিলত (মর্যাদা)",
+        "verses": [
+          {
+            "surah": 3,
+            "ayah": 169
+          },
+          {
+            "surah": 3,
+            "ayah": 170
+          },
+          {
+            "surah": 4,
+            "ayah": 95
+          },
+          {
+            "surah": 9,
+            "ayah": 20
+          },
+          {
+            "surah": 9,
+            "ayah": 111
+          },
+          {
+            "surah": 61,
+            "ayah": 10
+          },
+          {
+            "surah": 61,
+            "ayah": 11
+          },
+          {
+            "surah": 61,
+            "ayah": 12
+          }
+        ]
+      },
+      {
+        "topic_id": 209,
+        "title_bn": "জিহাদ — আহকাম (বিধিবিধান ও শর্তাবলী)",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 190
+          },
+          {
+            "surah": 2,
+            "ayah": 191
+          },
+          {
+            "surah": 2,
+            "ayah": 193
+          },
+          {
+            "surah": 2,
+            "ayah": 216
+          },
+          {
+            "surah": 8,
+            "ayah": 39
+          },
+          {
+            "surah": 8,
+            "ayah": 60
+          },
+          {
+            "surah": 8,
+            "ayah": 61
+          },
+          {
+            "surah": 9,
+            "ayah": 5
+          },
+          {
+            "surah": 9,
+            "ayah": 6
+          },
+          {
+            "surah": 9,
+            "ayah": 36
+          },
+          {
+            "surah": 22,
+            "ayah": 39
+          },
+          {
+            "surah": 22,
+            "ayah": 40
+          }
+        ]
+      },
+      {
+        "topic_id": 210,
+        "title_bn": "তাওয়াক্কুল (আল্লাহর উপর ভরসা)",
+        "verses": [
+          {
+            "surah": 3,
+            "ayah": 159
+          },
+          {
+            "surah": 3,
+            "ayah": 173
+          },
+          {
+            "surah": 8,
+            "ayah": 2
+          },
+          {
+            "surah": 9,
+            "ayah": 51
+          },
+          {
+            "surah": 65,
+            "ayah": 3
+          }
+        ]
+      },
+      {
+        "topic_id": 211,
+        "title_bn": "ওযু, তায়াম্মুম ও পবিত্রতা",
+        "verses": [
+          {
+            "surah": 4,
+            "ayah": 43
+          },
+          {
+            "surah": 5,
+            "ayah": 6
+          }
+        ]
+      },
+      {
+        "topic_id": 212,
+        "title_bn": "জুমুআ ও ঈদের নামায",
+        "verses": [
+          {
+            "surah": 62,
+            "ayah": 9
+          },
+          {
+            "surah": 62,
+            "ayah": 10
+          },
+          {
+            "surah": 87,
+            "ayah": 14
+          },
+          {
+            "surah": 87,
+            "ayah": 15
+          }
+        ]
+      },
+      {
+        "topic_id": 213,
+        "title_bn": "কুরবানী ও পশু যবেহ",
+        "verses": [
+          {
+            "surah": 22,
+            "ayah": 34
+          },
+          {
+            "surah": 22,
+            "ayah": 36
+          },
+          {
+            "surah": 22,
+            "ayah": 37
+          },
+          {
+            "surah": 108,
+            "ayah": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category_id": 3,
+    "category_name_bn": "পরকাল, কিয়ামত ও আখিরাত",
+    "icon": "ic_akhirah",
+    "topics": [
+      {
+        "topic_id": 301,
+        "title_bn": "কিয়ামতের নিদর্শন ও ভয়াবহতা",
+        "verses": [
+          {
+            "surah": 22,
+            "ayah": 1
+          },
+          {
+            "surah": 22,
+            "ayah": 2
+          },
+          {
+            "surah": 56,
+            "ayah": 1
+          },
+          {
+            "surah": 56,
+            "ayah": 2
+          },
+          {
+            "surah": 56,
+            "ayah": 3
+          },
+          {
+            "surah": 75,
+            "ayah": 7
+          },
+          {
+            "surah": 75,
+            "ayah": 8
+          },
+          {
+            "surah": 75,
+            "ayah": 9
+          },
+          {
+            "surah": 81,
+            "ayah": 1
+          },
+          {
+            "surah": 81,
+            "ayah": 2
+          },
+          {
+            "surah": 81,
+            "ayah": 3
+          },
+          {
+            "surah": 99,
+            "ayah": 1
+          },
+          {
+            "surah": 99,
+            "ayah": 2
+          },
+          {
+            "surah": 101,
+            "ayah": 1
+          },
+          {
+            "surah": 101,
+            "ayah": 4
+          },
+          {
+            "surah": 101,
+            "ayah": 5
+          },
+          {
+            "surah": 69,
+            "ayah": 13
+          },
+          {
+            "surah": 69,
+            "ayah": 14
+          },
+          {
+            "surah": 69,
+            "ayah": 15
+          },
+          {
+            "surah": 70,
+            "ayah": 4
+          }
+        ]
+      },
+      {
+        "topic_id": 302,
+        "title_bn": "মৃত্যু ও কবরের জীবন",
+        "verses": [
+          {
+            "surah": 3,
+            "ayah": 185
+          },
+          {
+            "surah": 6,
+            "ayah": 61
+          },
+          {
+            "surah": 23,
+            "ayah": 99
+          },
+          {
+            "surah": 23,
+            "ayah": 100
+          },
+          {
+            "surah": 32,
+            "ayah": 11
+          },
+          {
+            "surah": 40,
+            "ayah": 46
+          },
+          {
+            "surah": 50,
+            "ayah": 19
+          },
+          {
+            "surah": 56,
+            "ayah": 83
+          },
+          {
+            "surah": 21,
+            "ayah": 35
+          },
+          {
+            "surah": 29,
+            "ayah": 57
+          }
+        ]
+      },
+      {
+        "topic_id": 303,
+        "title_bn": "হাশর ও মীযান (আমল ওজন)",
+        "verses": [
+          {
+            "surah": 7,
+            "ayah": 8
+          },
+          {
+            "surah": 7,
+            "ayah": 9
+          },
+          {
+            "surah": 18,
+            "ayah": 47
+          },
+          {
+            "surah": 21,
+            "ayah": 47
+          },
+          {
+            "surah": 23,
+            "ayah": 102
+          },
+          {
+            "surah": 23,
+            "ayah": 103
+          },
+          {
+            "surah": 101,
+            "ayah": 6
+          },
+          {
+            "surah": 101,
+            "ayah": 7
+          },
+          {
+            "surah": 101,
+            "ayah": 8
+          },
+          {
+            "surah": 101,
+            "ayah": 9
+          }
+        ]
+      },
+      {
+        "topic_id": 304,
+        "title_bn": "জান্নাতের বর্ণনা",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 25
+          },
+          {
+            "surah": 18,
+            "ayah": 31
+          },
+          {
+            "surah": 47,
+            "ayah": 15
+          },
+          {
+            "surah": 55,
+            "ayah": 46
+          },
+          {
+            "surah": 56,
+            "ayah": 12
+          },
+          {
+            "surah": 56,
+            "ayah": 13
+          },
+          {
+            "surah": 56,
+            "ayah": 14
+          },
+          {
+            "surah": 76,
+            "ayah": 12
+          },
+          {
+            "surah": 76,
+            "ayah": 13
+          },
+          {
+            "surah": 76,
+            "ayah": 21
+          },
+          {
+            "surah": 9,
+            "ayah": 72
+          },
+          {
+            "surah": 13,
+            "ayah": 23
+          },
+          {
+            "surah": 13,
+            "ayah": 24
+          },
+          {
+            "surah": 83,
+            "ayah": 22
+          },
+          {
+            "surah": 83,
+            "ayah": 23
+          }
+        ]
+      },
+      {
+        "topic_id": 305,
+        "title_bn": "জাহান্নামের বর্ণনা",
+        "verses": [
+          {
+            "surah": 4,
+            "ayah": 56
+          },
+          {
+            "surah": 14,
+            "ayah": 16
+          },
+          {
+            "surah": 14,
+            "ayah": 17
+          },
+          {
+            "surah": 22,
+            "ayah": 19
+          },
+          {
+            "surah": 22,
+            "ayah": 20
+          },
+          {
+            "surah": 25,
+            "ayah": 11
+          },
+          {
+            "surah": 25,
+            "ayah": 12
+          },
+          {
+            "surah": 104,
+            "ayah": 4
+          },
+          {
+            "surah": 104,
+            "ayah": 5
+          },
+          {
+            "surah": 104,
+            "ayah": 6
+          },
+          {
+            "surah": 66,
+            "ayah": 6
+          },
+          {
+            "surah": 72,
+            "ayah": 15
+          },
+          {
+            "surah": 78,
+            "ayah": 21
+          },
+          {
+            "surah": 78,
+            "ayah": 22
+          }
+        ]
+      },
+      {
+        "topic_id": 306,
+        "title_bn": "পুলসিরাত ও শাফায়াত",
+        "verses": [
+          {
+            "surah": 19,
+            "ayah": 71
+          },
+          {
+            "surah": 19,
+            "ayah": 72
+          },
+          {
+            "surah": 2,
+            "ayah": 255
+          },
+          {
+            "surah": 20,
+            "ayah": 109
+          },
+          {
+            "surah": 34,
+            "ayah": 23
+          },
+          {
+            "surah": 53,
+            "ayah": 26
+          }
+        ]
+      },
+      {
+        "topic_id": 307,
+        "title_bn": "আমলনামা ও হিসাব-নিকাশ",
+        "verses": [
+          {
+            "surah": 17,
+            "ayah": 13
+          },
+          {
+            "surah": 17,
+            "ayah": 14
+          },
+          {
+            "surah": 18,
+            "ayah": 49
+          },
+          {
+            "surah": 69,
+            "ayah": 19
+          },
+          {
+            "surah": 69,
+            "ayah": 20
+          },
+          {
+            "surah": 69,
+            "ayah": 25
+          },
+          {
+            "surah": 84,
+            "ayah": 7
+          },
+          {
+            "surah": 84,
+            "ayah": 10
+          }
+        ]
+      },
+      {
+        "topic_id": 308,
+        "title_bn": "আখিরাতের জন্য প্রস্তুতি",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 281
+          },
+          {
+            "surah": 59,
+            "ayah": 18
+          },
+          {
+            "surah": 87,
+            "ayah": 16
+          },
+          {
+            "surah": 87,
+            "ayah": 17
+          }
+        ]
+      },
+      {
+        "topic_id": 309,
+        "title_bn": "কবর থেকে পুনরুত্থান (হাশর)",
+        "verses": [
+          {
+            "surah": 36,
+            "ayah": 51
+          },
+          {
+            "surah": 36,
+            "ayah": 52
+          },
+          {
+            "surah": 50,
+            "ayah": 20
+          },
+          {
+            "surah": 50,
+            "ayah": 21
+          },
+          {
+            "surah": 79,
+            "ayah": 34
+          },
+          {
+            "surah": 79,
+            "ayah": 35
+          }
+        ]
+      },
+      {
+        "topic_id": 310,
+        "title_bn": "জান্নাত-জাহান্নামের অধিবাসীদের কথোপকথন",
+        "verses": [
+          {
+            "surah": 7,
+            "ayah": 44
+          },
+          {
+            "surah": 7,
+            "ayah": 46
+          },
+          {
+            "surah": 7,
+            "ayah": 50
+          }
+        ]
+      },
+      {
+        "topic_id": 311,
+        "title_bn": "শাফায়াতের শর্ত ও অনুমতি",
+        "verses": [
+          {
+            "surah": 10,
+            "ayah": 3
+          },
+          {
+            "surah": 21,
+            "ayah": 28
+          },
+          {
+            "surah": 53,
+            "ayah": 26
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category_id": 4,
+    "category_name_bn": "আখলাক, চরিত্র ও শিষ্টাচার",
+    "icon": "ic_akhlaq",
+    "topics": [
+      {
+        "topic_id": 401,
+        "title_bn": "সততা ও ন্যায়পরায়ণতা",
+        "verses": [
+          {
+            "surah": 5,
+            "ayah": 8
+          },
+          {
+            "surah": 9,
+            "ayah": 119
+          },
+          {
+            "surah": 16,
+            "ayah": 90
+          },
+          {
+            "surah": 33,
+            "ayah": 70
+          },
+          {
+            "surah": 33,
+            "ayah": 71
+          },
+          {
+            "surah": 4,
+            "ayah": 135
+          },
+          {
+            "surah": 6,
+            "ayah": 152
+          }
+        ]
+      },
+      {
+        "topic_id": 402,
+        "title_bn": "ধৈর্য (সবর)",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 45
+          },
+          {
+            "surah": 2,
+            "ayah": 153
+          },
+          {
+            "surah": 2,
+            "ayah": 155
+          },
+          {
+            "surah": 2,
+            "ayah": 156
+          },
+          {
+            "surah": 2,
+            "ayah": 157
+          },
+          {
+            "surah": 3,
+            "ayah": 200
+          },
+          {
+            "surah": 39,
+            "ayah": 10
+          },
+          {
+            "surah": 103,
+            "ayah": 1
+          },
+          {
+            "surah": 103,
+            "ayah": 2
+          },
+          {
+            "surah": 103,
+            "ayah": 3
+          },
+          {
+            "surah": 16,
+            "ayah": 126
+          },
+          {
+            "surah": 16,
+            "ayah": 127
+          }
+        ]
+      },
+      {
+        "topic_id": 403,
+        "title_bn": "বিনয় ও নম্রতা",
+        "verses": [
+          {
+            "surah": 17,
+            "ayah": 37
+          },
+          {
+            "surah": 25,
+            "ayah": 63
+          },
+          {
+            "surah": 31,
+            "ayah": 18
+          },
+          {
+            "surah": 31,
+            "ayah": 19
+          }
+        ]
+      },
+      {
+        "topic_id": 404,
+        "title_bn": "সদাচরণ ও প্রতিবেশীর হক",
+        "verses": [
+          {
+            "surah": 4,
+            "ayah": 36
+          },
+          {
+            "surah": 17,
+            "ayah": 26
+          },
+          {
+            "surah": 17,
+            "ayah": 27
+          }
+        ]
+      },
+      {
+        "topic_id": 405,
+        "title_bn": "মিথ্যা, পরনিন্দা ও গীবত থেকে বিরত থাকা",
+        "verses": [
+          {
+            "surah": 22,
+            "ayah": 30
+          },
+          {
+            "surah": 24,
+            "ayah": 15
+          },
+          {
+            "surah": 49,
+            "ayah": 6
+          },
+          {
+            "surah": 49,
+            "ayah": 11
+          },
+          {
+            "surah": 49,
+            "ayah": 12
+          },
+          {
+            "surah": 104,
+            "ayah": 1
+          },
+          {
+            "surah": 17,
+            "ayah": 36
+          },
+          {
+            "surah": 68,
+            "ayah": 11
+          }
+        ]
+      },
+      {
+        "topic_id": 406,
+        "title_bn": "ক্ষমা ও উদারতা",
+        "verses": [
+          {
+            "surah": 3,
+            "ayah": 134
+          },
+          {
+            "surah": 3,
+            "ayah": 159
+          },
+          {
+            "surah": 7,
+            "ayah": 199
+          },
+          {
+            "surah": 24,
+            "ayah": 22
+          },
+          {
+            "surah": 42,
+            "ayah": 40
+          },
+          {
+            "surah": 42,
+            "ayah": 43
+          },
+          {
+            "surah": 5,
+            "ayah": 13
+          },
+          {
+            "surah": 64,
+            "ayah": 14
+          }
+        ]
+      },
+      {
+        "topic_id": 407,
+        "title_bn": "কৃতজ্ঞতা (শোকর)",
+        "verses": [
+          {
+            "surah": 14,
+            "ayah": 7
+          },
+          {
+            "surah": 16,
+            "ayah": 18
+          },
+          {
+            "surah": 27,
+            "ayah": 40
+          },
+          {
+            "surah": 31,
+            "ayah": 12
+          }
+        ]
+      },
+      {
+        "topic_id": 408,
+        "title_bn": "অহংকার পরিহার",
+        "verses": [
+          {
+            "surah": 7,
+            "ayah": 13
+          },
+          {
+            "surah": 17,
+            "ayah": 37
+          },
+          {
+            "surah": 28,
+            "ayah": 83
+          },
+          {
+            "surah": 31,
+            "ayah": 18
+          },
+          {
+            "surah": 40,
+            "ayah": 60
+          }
+        ]
+      },
+      {
+        "topic_id": 409,
+        "title_bn": "ওয়াদা পালন ও আমানতদারিতা",
+        "verses": [
+          {
+            "surah": 4,
+            "ayah": 58
+          },
+          {
+            "surah": 8,
+            "ayah": 27
+          },
+          {
+            "surah": 17,
+            "ayah": 34
+          },
+          {
+            "surah": 23,
+            "ayah": 8
+          }
+        ]
+      },
+      {
+        "topic_id": 410,
+        "title_bn": "হিংসা ও প্রতিহিংসা পরিহার",
+        "verses": [
+          {
+            "surah": 4,
+            "ayah": 54
+          },
+          {
+            "surah": 113,
+            "ayah": 5
+          },
+          {
+            "surah": 59,
+            "ayah": 9
+          }
+        ]
+      },
+      {
+        "topic_id": 411,
+        "title_bn": "সত্যবাদিতা ও ওয়াদা রক্ষা",
+        "verses": [
+          {
+            "surah": 33,
+            "ayah": 23
+          },
+          {
+            "surah": 33,
+            "ayah": 24
+          }
+        ]
+      },
+      {
+        "topic_id": 412,
+        "title_bn": "পরচর্চা ও দোষ অনুসন্ধান নিষেধ",
+        "verses": [
+          {
+            "surah": 49,
+            "ayah": 12
+          },
+          {
+            "surah": 24,
+            "ayah": 19
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category_id": 5,
+    "category_name_bn": "পরিবার, সমাজ ও আইন",
+    "icon": "ic_family_society",
+    "topics": [
+      {
+        "topic_id": 501,
+        "title_bn": "পিতামাতার হক",
+        "verses": [
+          {
+            "surah": 17,
+            "ayah": 23
+          },
+          {
+            "surah": 17,
+            "ayah": 24
+          },
+          {
+            "surah": 29,
+            "ayah": 8
+          },
+          {
+            "surah": 31,
+            "ayah": 14
+          },
+          {
+            "surah": 31,
+            "ayah": 15
+          },
+          {
+            "surah": 46,
+            "ayah": 15
+          },
+          {
+            "surah": 2,
+            "ayah": 83
+          },
+          {
+            "surah": 4,
+            "ayah": 36
+          }
+        ]
+      },
+      {
+        "topic_id": 502,
+        "title_bn": "বিবাহ ও দাম্পত্য জীবন",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 187
+          },
+          {
+            "surah": 2,
+            "ayah": 221
+          },
+          {
+            "surah": 4,
+            "ayah": 1
+          },
+          {
+            "surah": 4,
+            "ayah": 3
+          },
+          {
+            "surah": 4,
+            "ayah": 34
+          },
+          {
+            "surah": 30,
+            "ayah": 21
+          },
+          {
+            "surah": 4,
+            "ayah": 19
+          },
+          {
+            "surah": 4,
+            "ayah": 21
+          }
+        ]
+      },
+      {
+        "topic_id": 503,
+        "title_bn": "তালাক ও বিবাহবিচ্ছেদ",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 228
+          },
+          {
+            "surah": 2,
+            "ayah": 229
+          },
+          {
+            "surah": 2,
+            "ayah": 230
+          },
+          {
+            "surah": 65,
+            "ayah": 1
+          },
+          {
+            "surah": 65,
+            "ayah": 2
+          }
+        ]
+      },
+      {
+        "topic_id": 504,
+        "title_bn": "সন্তান লালন-পালন",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 233
+          },
+          {
+            "surah": 31,
+            "ayah": 13
+          },
+          {
+            "surah": 31,
+            "ayah": 17
+          },
+          {
+            "surah": 66,
+            "ayah": 6
+          }
+        ]
+      },
+      {
+        "topic_id": 505,
+        "title_bn": "উত্তরাধিকার (মিরাস) আইন",
+        "verses": [
+          {
+            "surah": 4,
+            "ayah": 7
+          },
+          {
+            "surah": 4,
+            "ayah": 11
+          },
+          {
+            "surah": 4,
+            "ayah": 12
+          },
+          {
+            "surah": 4,
+            "ayah": 176
+          }
+        ]
+      },
+      {
+        "topic_id": 506,
+        "title_bn": "ন্যায়বিচার ও শাসনব্যবস্থা",
+        "verses": [
+          {
+            "surah": 4,
+            "ayah": 58
+          },
+          {
+            "surah": 4,
+            "ayah": 59
+          },
+          {
+            "surah": 4,
+            "ayah": 135
+          },
+          {
+            "surah": 5,
+            "ayah": 8
+          },
+          {
+            "surah": 16,
+            "ayah": 90
+          },
+          {
+            "surah": 38,
+            "ayah": 26
+          },
+          {
+            "surah": 5,
+            "ayah": 42
+          },
+          {
+            "surah": 6,
+            "ayah": 152
+          }
+        ]
+      },
+      {
+        "topic_id": 507,
+        "title_bn": "অর্থনীতি, ব্যবসা ও সুদ নিষিদ্ধ",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 275
+          },
+          {
+            "surah": 2,
+            "ayah": 276
+          },
+          {
+            "surah": 2,
+            "ayah": 278
+          },
+          {
+            "surah": 2,
+            "ayah": 279
+          },
+          {
+            "surah": 2,
+            "ayah": 282
+          },
+          {
+            "surah": 3,
+            "ayah": 130
+          },
+          {
+            "surah": 4,
+            "ayah": 29
+          },
+          {
+            "surah": 83,
+            "ayah": 1
+          },
+          {
+            "surah": 83,
+            "ayah": 2
+          },
+          {
+            "surah": 83,
+            "ayah": 3
+          },
+          {
+            "surah": 2,
+            "ayah": 188
+          },
+          {
+            "surah": 4,
+            "ayah": 161
+          }
+        ]
+      },
+      {
+        "topic_id": 508,
+        "title_bn": "সামাজিক সম্পর্ক ও ঐক্য",
+        "verses": [
+          {
+            "surah": 3,
+            "ayah": 103
+          },
+          {
+            "surah": 3,
+            "ayah": 105
+          },
+          {
+            "surah": 49,
+            "ayah": 9
+          },
+          {
+            "surah": 49,
+            "ayah": 10
+          },
+          {
+            "surah": 49,
+            "ayah": 13
+          }
+        ]
+      },
+      {
+        "topic_id": 509,
+        "title_bn": "নারীর অধিকার ও মর্যাদা",
+        "verses": [
+          {
+            "surah": 4,
+            "ayah": 19
+          },
+          {
+            "surah": 4,
+            "ayah": 32
+          },
+          {
+            "surah": 4,
+            "ayah": 124
+          },
+          {
+            "surah": 16,
+            "ayah": 97
+          },
+          {
+            "surah": 33,
+            "ayah": 35
+          }
+        ]
+      },
+      {
+        "topic_id": 510,
+        "title_bn": "ইয়াতিমের হক ও সহায়তা",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 220
+          },
+          {
+            "surah": 4,
+            "ayah": 2
+          },
+          {
+            "surah": 4,
+            "ayah": 6
+          },
+          {
+            "surah": 4,
+            "ayah": 10
+          },
+          {
+            "surah": 93,
+            "ayah": 9
+          },
+          {
+            "surah": 107,
+            "ayah": 1
+          },
+          {
+            "surah": 107,
+            "ayah": 2
+          }
+        ]
+      },
+      {
+        "topic_id": 511,
+        "title_bn": "প্রতিবেশী ও আত্মীয়তার হক (সিলা রেহেম)",
+        "verses": [
+          {
+            "surah": 4,
+            "ayah": 1
+          },
+          {
+            "surah": 13,
+            "ayah": 21
+          },
+          {
+            "surah": 47,
+            "ayah": 22
+          },
+          {
+            "surah": 47,
+            "ayah": 23
+          }
+        ]
+      },
+      {
+        "topic_id": 512,
+        "title_bn": "দাসপ্রথা ও সামাজিক ন্যায়বিচার",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 177
+          },
+          {
+            "surah": 24,
+            "ayah": 33
+          },
+          {
+            "surah": 90,
+            "ayah": 13
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category_id": 6,
+    "category_name_bn": "আম্বিয়া ও পূর্ববর্তী উম্মতের কাহিনী",
+    "icon": "ic_prophets_stories",
+    "topics": [
+      {
+        "topic_id": 601,
+        "title_bn": "আদম (আঃ) এর কাহিনী",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 30
+          },
+          {
+            "surah": 2,
+            "ayah": 31
+          },
+          {
+            "surah": 2,
+            "ayah": 34
+          },
+          {
+            "surah": 2,
+            "ayah": 35
+          },
+          {
+            "surah": 2,
+            "ayah": 36
+          },
+          {
+            "surah": 2,
+            "ayah": 37
+          },
+          {
+            "surah": 7,
+            "ayah": 19
+          },
+          {
+            "surah": 7,
+            "ayah": 20
+          },
+          {
+            "surah": 7,
+            "ayah": 22
+          },
+          {
+            "surah": 7,
+            "ayah": 23
+          },
+          {
+            "surah": 20,
+            "ayah": 115
+          },
+          {
+            "surah": 20,
+            "ayah": 121
+          },
+          {
+            "surah": 20,
+            "ayah": 122
+          }
+        ]
+      },
+      {
+        "topic_id": 602,
+        "title_bn": "নূহ (আঃ) ও মহাপ্লাবন",
+        "verses": [
+          {
+            "surah": 7,
+            "ayah": 59
+          },
+          {
+            "surah": 11,
+            "ayah": 25
+          },
+          {
+            "surah": 11,
+            "ayah": 37
+          },
+          {
+            "surah": 11,
+            "ayah": 40
+          },
+          {
+            "surah": 11,
+            "ayah": 44
+          },
+          {
+            "surah": 23,
+            "ayah": 23
+          },
+          {
+            "surah": 71,
+            "ayah": 1
+          },
+          {
+            "surah": 71,
+            "ayah": 5
+          }
+        ]
+      },
+      {
+        "topic_id": 603,
+        "title_bn": "ইবরাহীম (আঃ) এর কাহিনী",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 124
+          },
+          {
+            "surah": 6,
+            "ayah": 74
+          },
+          {
+            "surah": 21,
+            "ayah": 51
+          },
+          {
+            "surah": 21,
+            "ayah": 58
+          },
+          {
+            "surah": 21,
+            "ayah": 69
+          },
+          {
+            "surah": 37,
+            "ayah": 83
+          },
+          {
+            "surah": 37,
+            "ayah": 97
+          },
+          {
+            "surah": 37,
+            "ayah": 102
+          },
+          {
+            "surah": 37,
+            "ayah": 107
+          }
+        ]
+      },
+      {
+        "topic_id": 604,
+        "title_bn": "মূসা (আঃ) ও ফিরআউনের কাহিনী",
+        "verses": [
+          {
+            "surah": 20,
+            "ayah": 9
+          },
+          {
+            "surah": 20,
+            "ayah": 17
+          },
+          {
+            "surah": 20,
+            "ayah": 77
+          },
+          {
+            "surah": 26,
+            "ayah": 10
+          },
+          {
+            "surah": 28,
+            "ayah": 3
+          },
+          {
+            "surah": 28,
+            "ayah": 7
+          },
+          {
+            "surah": 28,
+            "ayah": 40
+          },
+          {
+            "surah": 79,
+            "ayah": 15
+          },
+          {
+            "surah": 79,
+            "ayah": 25
+          },
+          {
+            "surah": 2,
+            "ayah": 50
+          },
+          {
+            "surah": 7,
+            "ayah": 103
+          },
+          {
+            "surah": 7,
+            "ayah": 137
+          }
+        ]
+      },
+      {
+        "topic_id": 605,
+        "title_bn": "ইউসুফ (আঃ) এর কাহিনী",
+        "verses": [
+          {
+            "surah": 12,
+            "ayah": 4
+          },
+          {
+            "surah": 12,
+            "ayah": 5
+          },
+          {
+            "surah": 12,
+            "ayah": 15
+          },
+          {
+            "surah": 12,
+            "ayah": 24
+          },
+          {
+            "surah": 12,
+            "ayah": 36
+          },
+          {
+            "surah": 12,
+            "ayah": 54
+          },
+          {
+            "surah": 12,
+            "ayah": 100
+          },
+          {
+            "surah": 12,
+            "ayah": 101
+          }
+        ]
+      },
+      {
+        "topic_id": 606,
+        "title_bn": "ঈসা (আঃ) এর কাহিনী",
+        "verses": [
+          {
+            "surah": 3,
+            "ayah": 45
+          },
+          {
+            "surah": 3,
+            "ayah": 47
+          },
+          {
+            "surah": 3,
+            "ayah": 49
+          },
+          {
+            "surah": 19,
+            "ayah": 16
+          },
+          {
+            "surah": 19,
+            "ayah": 22
+          },
+          {
+            "surah": 19,
+            "ayah": 30
+          },
+          {
+            "surah": 19,
+            "ayah": 34
+          }
+        ]
+      },
+      {
+        "topic_id": 607,
+        "title_bn": "ইউনুস (আঃ) ও মাছের পেটের কাহিনী",
+        "verses": [
+          {
+            "surah": 21,
+            "ayah": 87
+          },
+          {
+            "surah": 21,
+            "ayah": 88
+          },
+          {
+            "surah": 37,
+            "ayah": 139
+          },
+          {
+            "surah": 37,
+            "ayah": 142
+          },
+          {
+            "surah": 37,
+            "ayah": 145
+          },
+          {
+            "surah": 37,
+            "ayah": 148
+          },
+          {
+            "surah": 68,
+            "ayah": 48
+          }
+        ]
+      },
+      {
+        "topic_id": 608,
+        "title_bn": "সুলাইমান ও দাউদ (আঃ) এর কাহিনী",
+        "verses": [
+          {
+            "surah": 21,
+            "ayah": 78
+          },
+          {
+            "surah": 21,
+            "ayah": 79
+          },
+          {
+            "surah": 21,
+            "ayah": 82
+          },
+          {
+            "surah": 27,
+            "ayah": 16
+          },
+          {
+            "surah": 27,
+            "ayah": 17
+          },
+          {
+            "surah": 34,
+            "ayah": 12
+          },
+          {
+            "surah": 38,
+            "ayah": 30
+          },
+          {
+            "surah": 38,
+            "ayah": 34
+          }
+        ]
+      },
+      {
+        "topic_id": 609,
+        "title_bn": "মুহাম্মাদ (সাঃ) এর জীবন ও বৈশিষ্ট্য",
+        "verses": [
+          {
+            "surah": 3,
+            "ayah": 144
+          },
+          {
+            "surah": 9,
+            "ayah": 128
+          },
+          {
+            "surah": 21,
+            "ayah": 107
+          },
+          {
+            "surah": 33,
+            "ayah": 21
+          },
+          {
+            "surah": 33,
+            "ayah": 40
+          },
+          {
+            "surah": 48,
+            "ayah": 29
+          },
+          {
+            "surah": 68,
+            "ayah": 4
+          }
+        ]
+      },
+      {
+        "topic_id": 610,
+        "title_bn": "আসহাবে কাহাফ (গুহাবাসীদের কাহিনী)",
+        "verses": [
+          {
+            "surah": 18,
+            "ayah": 9
+          },
+          {
+            "surah": 18,
+            "ayah": 10
+          },
+          {
+            "surah": 18,
+            "ayah": 13
+          },
+          {
+            "surah": 18,
+            "ayah": 17
+          },
+          {
+            "surah": 18,
+            "ayah": 18
+          },
+          {
+            "surah": 18,
+            "ayah": 25
+          }
+        ]
+      },
+      {
+        "topic_id": 611,
+        "title_bn": "লুত (আঃ) ও তাঁর জাতির ধ্বংস",
+        "verses": [
+          {
+            "surah": 7,
+            "ayah": 80
+          },
+          {
+            "surah": 7,
+            "ayah": 81
+          },
+          {
+            "surah": 11,
+            "ayah": 77
+          },
+          {
+            "surah": 11,
+            "ayah": 82
+          },
+          {
+            "surah": 26,
+            "ayah": 165
+          },
+          {
+            "surah": 26,
+            "ayah": 166
+          }
+        ]
+      },
+      {
+        "topic_id": 612,
+        "title_bn": "সালেহ (আঃ) ও সামুদ জাতি",
+        "verses": [
+          {
+            "surah": 7,
+            "ayah": 73
+          },
+          {
+            "surah": 7,
+            "ayah": 77
+          },
+          {
+            "surah": 7,
+            "ayah": 78
+          },
+          {
+            "surah": 11,
+            "ayah": 61
+          },
+          {
+            "surah": 91,
+            "ayah": 11
+          },
+          {
+            "surah": 91,
+            "ayah": 14
+          }
+        ]
+      },
+      {
+        "topic_id": 613,
+        "title_bn": "হুদ (আঃ) ও আদ জাতি",
+        "verses": [
+          {
+            "surah": 7,
+            "ayah": 65
+          },
+          {
+            "surah": 7,
+            "ayah": 70
+          },
+          {
+            "surah": 7,
+            "ayah": 72
+          },
+          {
+            "surah": 11,
+            "ayah": 50
+          },
+          {
+            "surah": 11,
+            "ayah": 58
+          }
+        ]
+      },
+      {
+        "topic_id": 614,
+        "title_bn": "ইয়াকুব ও ইসহাক (আঃ)",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 133
+          },
+          {
+            "surah": 19,
+            "ayah": 49
+          },
+          {
+            "surah": 19,
+            "ayah": 50
+          },
+          {
+            "surah": 38,
+            "ayah": 45
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category_id": 7,
+    "category_name_bn": "বিজ্ঞান, প্রকৃতি ও সৃষ্টিজগত",
+    "icon": "ic_science_nature",
+    "topics": [
+      {
+        "topic_id": 701,
+        "title_bn": "আকাশ ও মহাবিশ্বের সৃষ্টি",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 29
+          },
+          {
+            "surah": 21,
+            "ayah": 30
+          },
+          {
+            "surah": 21,
+            "ayah": 32
+          },
+          {
+            "surah": 41,
+            "ayah": 11
+          },
+          {
+            "surah": 41,
+            "ayah": 12
+          },
+          {
+            "surah": 51,
+            "ayah": 47
+          },
+          {
+            "surah": 67,
+            "ayah": 3
+          },
+          {
+            "surah": 50,
+            "ayah": 6
+          },
+          {
+            "surah": 79,
+            "ayah": 27
+          },
+          {
+            "surah": 79,
+            "ayah": 28
+          }
+        ]
+      },
+      {
+        "topic_id": 702,
+        "title_bn": "ভ্রূণতত্ত্ব ও মানব সৃষ্টি",
+        "verses": [
+          {
+            "surah": 22,
+            "ayah": 5
+          },
+          {
+            "surah": 23,
+            "ayah": 12
+          },
+          {
+            "surah": 23,
+            "ayah": 13
+          },
+          {
+            "surah": 23,
+            "ayah": 14
+          },
+          {
+            "surah": 32,
+            "ayah": 7
+          },
+          {
+            "surah": 32,
+            "ayah": 8
+          },
+          {
+            "surah": 32,
+            "ayah": 9
+          },
+          {
+            "surah": 76,
+            "ayah": 2
+          },
+          {
+            "surah": 96,
+            "ayah": 1
+          },
+          {
+            "surah": 96,
+            "ayah": 2
+          },
+          {
+            "surah": 40,
+            "ayah": 67
+          },
+          {
+            "surah": 75,
+            "ayah": 37
+          },
+          {
+            "surah": 75,
+            "ayah": 38
+          },
+          {
+            "surah": 75,
+            "ayah": 39
+          }
+        ]
+      },
+      {
+        "topic_id": 703,
+        "title_bn": "পানি চক্র ও বৃষ্টি",
+        "verses": [
+          {
+            "surah": 15,
+            "ayah": 22
+          },
+          {
+            "surah": 23,
+            "ayah": 18
+          },
+          {
+            "surah": 24,
+            "ayah": 43
+          },
+          {
+            "surah": 25,
+            "ayah": 48
+          },
+          {
+            "surah": 25,
+            "ayah": 49
+          },
+          {
+            "surah": 30,
+            "ayah": 48
+          },
+          {
+            "surah": 39,
+            "ayah": 21
+          }
+        ]
+      },
+      {
+        "topic_id": 704,
+        "title_bn": "পাহাড়-পর্বতের রহস্য",
+        "verses": [
+          {
+            "surah": 15,
+            "ayah": 19
+          },
+          {
+            "surah": 16,
+            "ayah": 15
+          },
+          {
+            "surah": 21,
+            "ayah": 31
+          },
+          {
+            "surah": 27,
+            "ayah": 88
+          },
+          {
+            "surah": 31,
+            "ayah": 10
+          },
+          {
+            "surah": 78,
+            "ayah": 6
+          },
+          {
+            "surah": 78,
+            "ayah": 7
+          }
+        ]
+      },
+      {
+        "topic_id": 705,
+        "title_bn": "সমুদ্র ও এর বৈশিষ্ট্য",
+        "verses": [
+          {
+            "surah": 16,
+            "ayah": 14
+          },
+          {
+            "surah": 24,
+            "ayah": 40
+          },
+          {
+            "surah": 25,
+            "ayah": 53
+          },
+          {
+            "surah": 35,
+            "ayah": 12
+          },
+          {
+            "surah": 55,
+            "ayah": 19
+          },
+          {
+            "surah": 55,
+            "ayah": 20
+          }
+        ]
+      },
+      {
+        "topic_id": 706,
+        "title_bn": "সূর্য, চন্দ্র ও কক্ষপথ",
+        "verses": [
+          {
+            "surah": 13,
+            "ayah": 2
+          },
+          {
+            "surah": 21,
+            "ayah": 33
+          },
+          {
+            "surah": 31,
+            "ayah": 29
+          },
+          {
+            "surah": 36,
+            "ayah": 38
+          },
+          {
+            "surah": 36,
+            "ayah": 39
+          },
+          {
+            "surah": 36,
+            "ayah": 40
+          },
+          {
+            "surah": 55,
+            "ayah": 5
+          },
+          {
+            "surah": 14,
+            "ayah": 33
+          },
+          {
+            "surah": 16,
+            "ayah": 12
+          }
+        ]
+      },
+      {
+        "topic_id": 707,
+        "title_bn": "উদ্ভিদ ও প্রাণীজগত",
+        "verses": [
+          {
+            "surah": 6,
+            "ayah": 38
+          },
+          {
+            "surah": 6,
+            "ayah": 99
+          },
+          {
+            "surah": 13,
+            "ayah": 4
+          },
+          {
+            "surah": 16,
+            "ayah": 66
+          },
+          {
+            "surah": 16,
+            "ayah": 68
+          },
+          {
+            "surah": 16,
+            "ayah": 69
+          },
+          {
+            "surah": 20,
+            "ayah": 53
+          },
+          {
+            "surah": 29,
+            "ayah": 41
+          }
+        ]
+      },
+      {
+        "topic_id": 708,
+        "title_bn": "মহাকাশ সম্প্রসারণ ও সৃষ্টির নিদর্শন",
+        "verses": [
+          {
+            "surah": 41,
+            "ayah": 53
+          },
+          {
+            "surah": 45,
+            "ayah": 3
+          },
+          {
+            "surah": 45,
+            "ayah": 4
+          },
+          {
+            "surah": 51,
+            "ayah": 47
+          },
+          {
+            "surah": 51,
+            "ayah": 20
+          },
+          {
+            "surah": 51,
+            "ayah": 21
+          }
+        ]
+      },
+      {
+        "topic_id": 709,
+        "title_bn": "রাত-দিনের আবর্তন",
+        "verses": [
+          {
+            "surah": 3,
+            "ayah": 27
+          },
+          {
+            "surah": 7,
+            "ayah": 54
+          },
+          {
+            "surah": 22,
+            "ayah": 61
+          },
+          {
+            "surah": 36,
+            "ayah": 37
+          },
+          {
+            "surah": 39,
+            "ayah": 5
+          }
+        ]
+      },
+      {
+        "topic_id": 710,
+        "title_bn": "ভূমি, মাটি ও কৃষি",
+        "verses": [
+          {
+            "surah": 6,
+            "ayah": 141
+          },
+          {
+            "surah": 13,
+            "ayah": 3
+          },
+          {
+            "surah": 16,
+            "ayah": 10
+          },
+          {
+            "surah": 16,
+            "ayah": 11
+          },
+          {
+            "surah": 36,
+            "ayah": 33
+          },
+          {
+            "surah": 36,
+            "ayah": 34
+          }
+        ]
+      },
+      {
+        "topic_id": 711,
+        "title_bn": "মৌমাছি ও পিঁপড়ার নিদর্শন",
+        "verses": [
+          {
+            "surah": 16,
+            "ayah": 68
+          },
+          {
+            "surah": 16,
+            "ayah": 69
+          },
+          {
+            "surah": 27,
+            "ayah": 18
+          },
+          {
+            "surah": 27,
+            "ayah": 19
+          }
+        ]
+      },
+      {
+        "topic_id": 712,
+        "title_bn": "লোহা ও খনিজ সম্পদ",
+        "verses": [
+          {
+            "surah": 18,
+            "ayah": 96
+          },
+          {
+            "surah": 57,
+            "ayah": 25
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category_id": 8,
+    "category_name_bn": "কুরআনের বিশেষ ও প্রয়োজনীয় আয়াতসমূহ",
+    "icon": "ic_special_verses",
+    "topics": [
+      {
+        "topic_id": 801,
+        "title_bn": "আয়াতুল কুরসি",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 255
+          }
+        ]
+      },
+      {
+        "topic_id": 802,
+        "title_bn": "সূরা ফাতিহা",
+        "verses": [
+          {
+            "surah": 1,
+            "ayah": 1
+          },
+          {
+            "surah": 1,
+            "ayah": 2
+          },
+          {
+            "surah": 1,
+            "ayah": 3
+          },
+          {
+            "surah": 1,
+            "ayah": 4
+          },
+          {
+            "surah": 1,
+            "ayah": 5
+          },
+          {
+            "surah": 1,
+            "ayah": 6
+          },
+          {
+            "surah": 1,
+            "ayah": 7
+          }
+        ]
+      },
+      {
+        "topic_id": 803,
+        "title_bn": "আয়াতে শিফা (রোগমুক্তির আয়াত)",
+        "verses": [
+          {
+            "surah": 9,
+            "ayah": 14
+          },
+          {
+            "surah": 10,
+            "ayah": 57
+          },
+          {
+            "surah": 16,
+            "ayah": 69
+          },
+          {
+            "surah": 17,
+            "ayah": 82
+          },
+          {
+            "surah": 26,
+            "ayah": 80
+          },
+          {
+            "surah": 41,
+            "ayah": 44
+          }
+        ]
+      },
+      {
+        "topic_id": 804,
+        "title_bn": "চার কুল (সুরক্ষার সূরাসমূহ)",
+        "verses": [
+          {
+            "surah": 109,
+            "ayah": 1
+          },
+          {
+            "surah": 112,
+            "ayah": 1
+          },
+          {
+            "surah": 113,
+            "ayah": 1
+          },
+          {
+            "surah": 114,
+            "ayah": 1
+          }
+        ]
+      },
+      {
+        "topic_id": 805,
+        "title_bn": "সূরা ইখলাসের ফযীলত",
+        "verses": [
+          {
+            "surah": 112,
+            "ayah": 1
+          },
+          {
+            "surah": 112,
+            "ayah": 2
+          },
+          {
+            "surah": 112,
+            "ayah": 3
+          },
+          {
+            "surah": 112,
+            "ayah": 4
+          }
+        ]
+      },
+      {
+        "topic_id": 806,
+        "title_bn": "বিপদে ধৈর্যের আয়াত (ইন্না লিল্লাহ)",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 155
+          },
+          {
+            "surah": 2,
+            "ayah": 156
+          },
+          {
+            "surah": 2,
+            "ayah": 157
+          }
+        ]
+      },
+      {
+        "topic_id": 807,
+        "title_bn": "রিযিকের নিশ্চয়তার আয়াত",
+        "verses": [
+          {
+            "surah": 11,
+            "ayah": 6
+          },
+          {
+            "surah": 29,
+            "ayah": 60
+          },
+          {
+            "surah": 51,
+            "ayah": 58
+          },
+          {
+            "surah": 65,
+            "ayah": 2
+          },
+          {
+            "surah": 65,
+            "ayah": 3
+          }
+        ]
+      },
+      {
+        "topic_id": 808,
+        "title_bn": "সংকট থেকে মুক্তির দোয়া (ইউনুসের দোয়া)",
+        "verses": [
+          {
+            "surah": 21,
+            "ayah": 87
+          },
+          {
+            "surah": 21,
+            "ayah": 88
+          }
+        ]
+      },
+      {
+        "topic_id": 809,
+        "title_bn": "আয়াতুস সাজদাহ (সিজদার আয়াত)",
+        "verses": [
+          {
+            "surah": 7,
+            "ayah": 206
+          },
+          {
+            "surah": 13,
+            "ayah": 15
+          },
+          {
+            "surah": 16,
+            "ayah": 50
+          },
+          {
+            "surah": 17,
+            "ayah": 109
+          },
+          {
+            "surah": 19,
+            "ayah": 58
+          },
+          {
+            "surah": 22,
+            "ayah": 18
+          },
+          {
+            "surah": 22,
+            "ayah": 77
+          },
+          {
+            "surah": 25,
+            "ayah": 60
+          },
+          {
+            "surah": 27,
+            "ayah": 26
+          },
+          {
+            "surah": 32,
+            "ayah": 15
+          },
+          {
+            "surah": 38,
+            "ayah": 24
+          },
+          {
+            "surah": 41,
+            "ayah": 38
+          },
+          {
+            "surah": 53,
+            "ayah": 62
+          },
+          {
+            "surah": 84,
+            "ayah": 21
+          },
+          {
+            "surah": 96,
+            "ayah": 19
+          }
+        ]
+      },
+      {
+        "topic_id": 810,
+        "title_bn": "শেষ যুগের সাধারণ দোয়াসমূহ",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 201
+          },
+          {
+            "surah": 2,
+            "ayah": 286
+          },
+          {
+            "surah": 3,
+            "ayah": 8
+          },
+          {
+            "surah": 3,
+            "ayah": 26
+          },
+          {
+            "surah": 14,
+            "ayah": 40
+          },
+          {
+            "surah": 25,
+            "ayah": 74
+          },
+          {
+            "surah": 28,
+            "ayah": 24
+          }
+        ]
+      },
+      {
+        "topic_id": 811,
+        "title_bn": "সূরা আর-রহমানের ফযীলত",
+        "verses": [
+          {
+            "surah": 55,
+            "ayah": 1
+          },
+          {
+            "surah": 55,
+            "ayah": 2
+          },
+          {
+            "surah": 55,
+            "ayah": 3
+          },
+          {
+            "surah": 55,
+            "ayah": 13
+          }
+        ]
+      },
+      {
+        "topic_id": 812,
+        "title_bn": "সূরা ইয়াসীনের ফযীলত (কুরআনের হৃদয়)",
+        "verses": [
+          {
+            "surah": 36,
+            "ayah": 1
+          },
+          {
+            "surah": 36,
+            "ayah": 2
+          },
+          {
+            "surah": 36,
+            "ayah": 58
+          }
+        ]
+      },
+      {
+        "topic_id": 813,
+        "title_bn": "সূরা মুলকের ফযীলত (কবর আজাব থেকে রক্ষাকারী)",
+        "verses": [
+          {
+            "surah": 67,
+            "ayah": 1
+          },
+          {
+            "surah": 67,
+            "ayah": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category_id": 9,
+    "category_name_bn": "খাদ্য, পানীয় ও হালাল-হারাম",
+    "icon": "ic_food_halal",
+    "topics": [
+      {
+        "topic_id": 901,
+        "title_bn": "হালাল খাদ্যের নির্দেশ",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 168
+          },
+          {
+            "surah": 2,
+            "ayah": 172
+          },
+          {
+            "surah": 5,
+            "ayah": 4
+          },
+          {
+            "surah": 5,
+            "ayah": 5
+          },
+          {
+            "surah": 16,
+            "ayah": 114
+          }
+        ]
+      },
+      {
+        "topic_id": 902,
+        "title_bn": "হারাম খাদ্য (শূকর, মৃত জন্তু, রক্ত)",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 173
+          },
+          {
+            "surah": 5,
+            "ayah": 3
+          },
+          {
+            "surah": 6,
+            "ayah": 145
+          },
+          {
+            "surah": 16,
+            "ayah": 115
+          }
+        ]
+      },
+      {
+        "topic_id": 903,
+        "title_bn": "মদ ও জুয়া নিষিদ্ধ",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 219
+          },
+          {
+            "surah": 5,
+            "ayah": 90
+          },
+          {
+            "surah": 5,
+            "ayah": 91
+          }
+        ]
+      },
+      {
+        "topic_id": 904,
+        "title_bn": "অপচয় ও অতিরিক্ত ভোজন নিষেধ",
+        "verses": [
+          {
+            "surah": 6,
+            "ayah": 141
+          },
+          {
+            "surah": 7,
+            "ayah": 31
+          },
+          {
+            "surah": 17,
+            "ayah": 26
+          },
+          {
+            "surah": 17,
+            "ayah": 27
+          }
+        ]
+      },
+      {
+        "topic_id": 905,
+        "title_bn": "মধু, দুধ ও ফলমূলের নিয়ামত",
+        "verses": [
+          {
+            "surah": 16,
+            "ayah": 66
+          },
+          {
+            "surah": 16,
+            "ayah": 67
+          },
+          {
+            "surah": 16,
+            "ayah": 69
+          },
+          {
+            "surah": 47,
+            "ayah": 15
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "category_id": 10,
+    "category_name_bn": "যুদ্ধ, শান্তি ও আন্তর্জাতিক সম্পর্ক",
+    "icon": "ic_peace_war",
+    "topics": [
+      {
+        "topic_id": 1001,
+        "title_bn": "শান্তি ও সন্ধির নির্দেশ",
+        "verses": [
+          {
+            "surah": 2,
+            "ayah": 208
+          },
+          {
+            "surah": 8,
+            "ayah": 61
+          },
+          {
+            "surah": 47,
+            "ayah": 35
+          }
+        ]
+      },
+      {
+        "topic_id": 1002,
+        "title_bn": "অমুসলিমদের সাথে আচরণ",
+        "verses": [
+          {
+            "surah": 60,
+            "ayah": 8
+          },
+          {
+            "surah": 60,
+            "ayah": 9
+          },
+          {
+            "surah": 109,
+            "ayah": 6
+          }
+        ]
+      },
+      {
+        "topic_id": 1003,
+        "title_bn": "চুক্তি ও অঙ্গীকার রক্ষা",
+        "verses": [
+          {
+            "surah": 8,
+            "ayah": 56
+          },
+          {
+            "surah": 8,
+            "ayah": 58
+          },
+          {
+            "surah": 9,
+            "ayah": 4
+          },
+          {
+            "surah": 16,
+            "ayah": 91
+          }
+        ]
+      },
+      {
+        "topic_id": 1004,
+        "title_bn": "আত্মরক্ষামূলক যুদ্ধের অনুমতি",
+        "verses": [
+          {
+            "surah": 22,
+            "ayah": 39
+          },
+          {
+            "surah": 22,
+            "ayah": 40
+          },
+          {
+            "surah": 2,
+            "ayah": 190
+          }
+        ]
+      },
+      {
+        "topic_id": 1005,
+        "title_bn": "যুদ্ধবন্দী ও শত্রুর প্রতি আচরণ",
+        "verses": [
+          {
+            "surah": 8,
+            "ayah": 67
+          },
+          {
+            "surah": 47,
+            "ayah": 4
+          },
+          {
+            "surah": 76,
+            "ayah": 8
+          }
+        ]
+      }
+    ]
+  }
+]
