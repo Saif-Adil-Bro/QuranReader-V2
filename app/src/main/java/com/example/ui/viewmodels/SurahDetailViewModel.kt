@@ -7,8 +7,11 @@ import com.example.data.local.entity.BookmarkEntity
 import com.example.data.model.CombinedAyah
 import com.example.data.repository.QuranRepository
 import com.example.data.repository.SettingsRepository
+import com.example.data.repository.RecentReadTrack
 import com.example.data.repository.AiRepository
 import com.example.data.repository.AudioRepository
+import com.example.data.QuranData
+import com.example.utils.DateUtil
 import com.example.ui.state.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -427,6 +430,16 @@ class SurahDetailViewModel(
                 _uiState.value = UiState.Success(combinedAyahs)
                 settingsRepository.setLastReadSurah(surahNumber)
                 settingsRepository.setLastReadMode("DETAIL")
+
+                val surahName = QuranData.surahNames.find { it.first == surahNumber }?.second?.first ?: "সূরা $surahNumber"
+                settingsRepository.addRecentRead(
+                    RecentReadTrack(
+                        title = "সূরা $surahName",
+                        surahNumber = surahNumber,
+                        ayahNumber = 1,
+                        mode = "DETAIL"
+                    )
+                )
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Failed to load Surah details")
             }
@@ -436,6 +449,17 @@ class SurahDetailViewModel(
     fun updateLastReadAyah(ayahNumber: Int) {
         viewModelScope.launch {
             settingsRepository.setLastReadAyah(ayahNumber)
+            currentLoadedSurahNumber?.let { sNum ->
+                val surahName = QuranData.surahNames.find { it.first == sNum }?.second?.first ?: "সূরা $sNum"
+                settingsRepository.addRecentRead(
+                    RecentReadTrack(
+                        title = "সূরা $surahName আয়াত ${DateUtil.toBengaliNumerals(ayahNumber)}",
+                        surahNumber = sNum,
+                        ayahNumber = ayahNumber,
+                        mode = "DETAIL"
+                    )
+                )
+            }
         }
     }
 
@@ -450,6 +474,16 @@ class SurahDetailViewModel(
                 combinedAyahs.firstOrNull()?.let {
                     settingsRepository.setLastReadSurah(it.surahNumber)
                     settingsRepository.setLastReadMode("DETAIL")
+
+                    val surahName = QuranData.surahNames.find { s -> s.first == it.surahNumber }?.second?.first ?: "সূরা ${it.surahNumber}"
+                    settingsRepository.addRecentRead(
+                        RecentReadTrack(
+                            title = "পারা ${DateUtil.toBengaliNumerals(juzNumber)} (সূরা $surahName)",
+                            surahNumber = it.surahNumber,
+                            ayahNumber = it.numberInSurah,
+                            mode = "DETAIL"
+                        )
+                    )
                 }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Failed to load Juz details")

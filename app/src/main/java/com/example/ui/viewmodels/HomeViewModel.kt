@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.repository.QuranRepository
 import com.example.data.repository.SettingsRepository
+import com.example.data.repository.RecentReadTrack
 import com.example.data.repository.MushafRepository
 import com.example.data.repository.AudioRepository
 import com.example.data.local.dao.BookmarkDao
@@ -77,6 +78,13 @@ class HomeViewModel(
             scope = viewModelScope,
             started = SharingStarted.Lazily,
             initialValue = 1
+        )
+
+    val recentReads: StateFlow<List<RecentReadTrack>> = settingsRepository.recentReadsFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Lazily,
+            initialValue = emptyList()
         )
 
     val hijriOffset: StateFlow<Int> = settingsRepository.hijriOffsetFlow

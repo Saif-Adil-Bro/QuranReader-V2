@@ -17,8 +17,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import com.google.firebase.Firebase
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
+
+data class RecentReadTrack(
+    val title: String,
+    val surahNumber: Int,
+    val ayahNumber: Int = 1,
+    val pageNumber: Int? = null,
+    val mode: String = "DETAIL"
+)
 
 /**
  * Repository for handling app-wide settings like translation toggles.
@@ -34,6 +44,7 @@ class SettingsRepository(val context: Context) {
     private val LAST_READ_MUSHAF_PAGE_KEY = intPreferencesKey("last_read_mushaf_page")
     private val LAST_READ_MODE_KEY = stringPreferencesKey("last_read_mode")
     private val LAST_READ_AYAH_KEY = intPreferencesKey("last_read_ayah")
+    private val RECENT_READS_KEY = stringPreferencesKey("recent_reads_list")
     
     // Reading Mode Settings
     private val ARABIC_FONT_SIZE_KEY = floatPreferencesKey("arabic_font_size")
@@ -89,6 +100,21 @@ class SettingsRepository(val context: Context) {
 
     val lastReadAyahFlow: Flow<Int> = context.dataStore.data
         .map { preferences -> preferences[LAST_READ_AYAH_KEY] ?: 1 }
+
+    val recentReadsFlow: Flow<List<RecentReadTrack>> = context.dataStore.data
+        .map { preferences ->
+            val json = preferences[RECENT_READS_KEY]
+            if (json.isNullOrBlank()) {
+                emptyList()
+            } else {
+                try {
+                    val type = object : TypeToken<List<RecentReadTrack>>() {}.type
+                    Gson().fromJson<List<RecentReadTrack>>(json, type) ?: emptyList()
+                } catch (e: Exception) {
+                    emptyList()
+                }
+            }
+        }
 
     val arabicFontSizeFlow: Flow<Float> = context.dataStore.data
         .map { preferences -> preferences[ARABIC_FONT_SIZE_KEY] ?: 20f }
@@ -216,6 +242,37 @@ class SettingsRepository(val context: Context) {
 
     suspend fun setLastReadAyah(ayahNumber: Int) {
         context.dataStore.edit { preferences -> preferences[LAST_READ_AYAH_KEY] = ayahNumber }
+    }
+
+    suspend fun addRecentRead(track: RecentReadTrack) {
+        context.dataStore.edit { preferences ->
+            val currentJson = preferences[RECENT_READS_KEY]
+            val currentList = if (currentJson.isNullOrBlank()) {
+                mutableListOf()
+            } else {
+                try {
+                    val type = object : TypeToken<List<RecentReadTrack>>() {}.type
+                    Gson().fromJson<List<RecentReadTrack>>(currentJson, type)?.toMutableList() ?: mutableListOf()
+                } catch (e: Exception) {
+                    mutableListOf()
+                }
+            }
+
+            // Remove duplicates
+            currentList.removeAll {
+                (it.surahNumber == track.surahNumber && it.ayahNumber == track.ayahNumber && it.mode == track.mode) ||
+                (it.mode == track.mode && track.pageNumber != null && it.pageNumber == track.pageNumber) ||
+                (it.title == track.title)
+            }
+
+            // Add new track at the beginning
+            currentList.add(0, track)
+
+            // Keep max 5 tracks
+            val trimmedList = currentList.take(5)
+
+            preferences[RECENT_READS_KEY] = Gson().toJson(trimmedList)
+        }
     }
 
     suspend fun setArabicFontSize(size: Float) {

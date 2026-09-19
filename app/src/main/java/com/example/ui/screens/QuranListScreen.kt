@@ -35,23 +35,17 @@ fun QuranListScreen(
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     
-    val lastReadSurah by homeViewModel.lastReadSurah.collectAsState()
-    val lastReadAyah by homeViewModel.lastReadAyah.collectAsState()
-    val surahName = com.example.data.QuranData.surahNames.find { it.first == lastReadSurah }?.second?.first ?: ""
+    val recentTracks by homeViewModel.recentReads.collectAsState()
 
-    val recentReads = remember(lastReadSurah, lastReadAyah, surahName) {
-        if (surahName.isNotEmpty()) {
-            listOf(
-                com.example.ui.components.RecentReadItem(
-                    title = "সূরা $surahName আয়াত ${lastReadAyah.toBengaliNumerals()}",
-                    surahNumber = lastReadSurah,
-                    ayahNumber = lastReadAyah
-                ),
-                com.example.ui.components.RecentReadItem("সূরা মারইয়াম আয়াত ২", 19, 2),
-                com.example.ui.components.RecentReadItem("সূরা ইউসুফ আয়াত ১১", 12, 11)
+    val recentReads = remember(recentTracks) {
+        recentTracks.map { track ->
+            com.example.ui.components.RecentReadItem(
+                title = track.title,
+                surahNumber = track.surahNumber,
+                ayahNumber = track.ayahNumber,
+                pageNumber = track.pageNumber,
+                mode = track.mode
             )
-        } else {
-            null
         }
     }
 

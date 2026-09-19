@@ -27,6 +27,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -40,6 +42,16 @@ import com.example.utils.DateUtil
 
 private fun Int.toBengaliNumerals(): String = DateUtil.toBengaliNumerals(this)
 
+val surahNameFont = FontFamily(Font(R.font.surah_name_v4))
+
+fun getSurahNameGlyph(surahNumber: Int): String {
+    return if (surahNumber in 1..114) {
+        Char(0xE000 + surahNumber).toString()
+    } else {
+        ""
+    }
+}
+
 data class QuickLinkItem(
     val title: String,
     val surahNumber: Int,
@@ -49,7 +61,9 @@ data class QuickLinkItem(
 data class RecentReadItem(
     val title: String,
     val surahNumber: Int,
-    val ayahNumber: Int = 1
+    val ayahNumber: Int = 1,
+    val pageNumber: Int? = null,
+    val mode: String? = null
 )
 
 private val defaultQuickLinks = listOf(
@@ -129,6 +143,7 @@ fun QuranIndexComponent(
     onSearchQueryChange: (String) -> Unit = {},
     onSurahClick: (Int) -> Unit,
     onJuzClick: (Int) -> Unit,
+    onPageClick: ((Int) -> Unit)? = null,
     onNavigateToSurahWithAyah: ((Int, Int) -> Unit)? = null,
     recentReads: List<RecentReadItem>? = null,
     onRetryClick: () -> Unit = {}
@@ -210,69 +225,119 @@ fun QuranIndexComponent(
         }
     }
 
-    Column(
+    val currentListState = if (selectedTabIndex == 0) surahListState else paraListState
+
+    LazyColumn(
+        state = currentListState,
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(bottom = 32.dp)
     ) {
         // 1. Search Bar
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            placeholder = {
-                Text(
-                    text = if (selectedTabIndex == 1) "পারা খুঁজুন..." else "সূরা খুঁজুন (নাম বা নম্বর)...",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    fontSize = 14.sp
-                )
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search",
-                    tint = emeraldAccent,
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { onSearchQueryChange("") }) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Clear",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+        item(key = "search_field") {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = {
+                    Text(
+                        text = if (selectedTabIndex == 1) "পারা খুঁজুন..." else "সূরা খুঁজুন (নাম বা নম্বর)...",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        fontSize = 14.sp
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = emeraldAccent,
+                        modifier = Modifier.size(20.dp)
+                    )
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { onSearchQueryChange("") }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                }
-            },
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = emeraldAccent,
-                unfocusedBorderColor = searchFieldBorder,
-                focusedContainerColor = searchFieldBg,
-                unfocusedContainerColor = searchFieldBg,
-                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-            ),
-            shape = RoundedCornerShape(14.dp)
-        )
+                },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = emeraldAccent,
+                    unfocusedBorderColor = searchFieldBorder,
+                    focusedContainerColor = searchFieldBg,
+                    unfocusedContainerColor = searchFieldBg,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                ),
+                shape = RoundedCornerShape(14.dp)
+            )
+        }
 
         // When search is not active, show Recently Read & Quick Links
         if (searchQuery.isEmpty()) {
-            // 2. সর্বশেষ পঠিত (Recently Read)
-            val displayRecentReads = recentReads ?: listOf(
-                RecentReadItem("সূরা মারইয়াম আয়াত ২", 19, 2),
-                RecentReadItem("সূরা ইউসুফ আয়াত ১১", 12, 11),
-                RecentReadItem("সূরা আন-নুর আয়াত ৩৫", 24, 35)
-            )
+            // 2. সর্বশেষ পঠিত (Recently Read) - Show ONLY when there is history/track, max 5 items
+            if (!recentReads.isNullOrEmpty()) {
+                val displayRecentReads = recentReads.take(5)
+                item(key = "recent_reads_section") {
+                    Column(modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)) {
+                        Text(
+                            text = "সর্বশেষ পঠিত",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            displayRecentReads.forEach { item ->
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(100.dp))
+                                        .background(chipBg)
+                                        .border(1.dp, chipBorder, RoundedCornerShape(100.dp))
+                                        .clickable {
+                                            if (item.pageNumber != null && onPageClick != null) {
+                                                onPageClick(item.pageNumber)
+                                            } else if (onNavigateToSurahWithAyah != null) {
+                                                onNavigateToSurahWithAyah(item.surahNumber, item.ayahNumber)
+                                            } else {
+                                                onSurahClick(item.surahNumber)
+                                            }
+                                        }
+                                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = item.title,
+                                        color = chipTextColor,
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
-            if (displayRecentReads.isNotEmpty()) {
-                Column(modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)) {
+            // 3. কুইক লিংক (Quick Links)
+            item(key = "quick_links_section") {
+                Column(modifier = Modifier.padding(bottom = 12.dp)) {
                     Text(
-                        text = "সর্বশেষ পঠিত",
+                        text = "কুইক লিংক",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
@@ -285,21 +350,21 @@ fun QuranIndexComponent(
                             .padding(horizontal = 16.dp, vertical = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        displayRecentReads.forEach { item ->
+                        defaultQuickLinks.forEach { qLink ->
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(100.dp))
                                     .background(chipBg)
                                     .border(1.dp, chipBorder, RoundedCornerShape(100.dp))
                                     .clickable {
-                                        onNavigateToSurahWithAyah?.invoke(item.surahNumber, item.ayahNumber)
-                                            ?: onSurahClick(item.surahNumber)
+                                        onNavigateToSurahWithAyah?.invoke(qLink.surahNumber, qLink.ayahNumber)
+                                            ?: onSurahClick(qLink.surahNumber)
                                     }
                                     .padding(horizontal = 14.dp, vertical = 8.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = item.title,
+                                    text = qLink.title,
                                     color = chipTextColor,
                                     fontSize = 12.5.sp,
                                     fontWeight = FontWeight.SemiBold
@@ -309,171 +374,126 @@ fun QuranIndexComponent(
                     }
                 }
             }
-
-            // 3. কুইক লিংক (Quick Links)
-            Column(modifier = Modifier.padding(bottom = 12.dp)) {
-                Text(
-                    text = "কুইক লিংক",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    defaultQuickLinks.forEach { qLink ->
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(100.dp))
-                                .background(chipBg)
-                                .border(1.dp, chipBorder, RoundedCornerShape(100.dp))
-                            .clickable {
-                                onNavigateToSurahWithAyah?.invoke(qLink.surahNumber, qLink.ayahNumber)
-                                    ?: onSurahClick(qLink.surahNumber)
-                            }
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = qLink.title,
-                            color = chipTextColor,
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-                }
-            }
         }
 
         // 4. Pill Tab Switcher [ সূরাসমূহ ] [ পারা ]
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Tab: সূরাসমূহ
-            Box(
+        item(key = "tab_switcher_section") {
+            Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(100.dp))
-                    .background(if (selectedTabIndex == 0) emeraldAccent else inactivePillBg)
-                    .border(
-                        width = 1.dp,
-                        color = if (selectedTabIndex == 0) emeraldAccent else inactivePillBorder,
-                        shape = RoundedCornerShape(100.dp)
-                    )
-                    .clickable { selectedTabIndex = 0 }
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "সূরাসমূহ",
-                    color = if (selectedTabIndex == 0) Color.White else inactivePillText,
-                    fontSize = 13.5.sp,
-                    fontWeight = if (selectedTabIndex == 0) FontWeight.Bold else FontWeight.Medium
-                )
-            }
+                // Tab: সূরাসমূহ
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(100.dp))
+                        .background(if (selectedTabIndex == 0) emeraldAccent else inactivePillBg)
+                        .border(
+                            width = 1.dp,
+                            color = if (selectedTabIndex == 0) emeraldAccent else inactivePillBorder,
+                            shape = RoundedCornerShape(100.dp)
+                        )
+                        .clickable { selectedTabIndex = 0 }
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "সূরাসমূহ",
+                        color = if (selectedTabIndex == 0) Color.White else inactivePillText,
+                        fontSize = 13.5.sp,
+                        fontWeight = if (selectedTabIndex == 0) FontWeight.Bold else FontWeight.Medium
+                    )
+                }
 
-            // Tab: পারা
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(100.dp))
-                    .background(if (selectedTabIndex == 1) emeraldAccent else inactivePillBg)
-                    .border(
-                        width = 1.dp,
-                        color = if (selectedTabIndex == 1) emeraldAccent else inactivePillBorder,
-                        shape = RoundedCornerShape(100.dp)
+                // Tab: পারা
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(100.dp))
+                        .background(if (selectedTabIndex == 1) emeraldAccent else inactivePillBg)
+                        .border(
+                            width = 1.dp,
+                            color = if (selectedTabIndex == 1) emeraldAccent else inactivePillBorder,
+                            shape = RoundedCornerShape(100.dp)
+                        )
+                        .clickable { selectedTabIndex = 1 }
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "পারা",
+                        color = if (selectedTabIndex == 1) Color.White else inactivePillText,
+                        fontSize = 13.5.sp,
+                        fontWeight = if (selectedTabIndex == 1) FontWeight.Bold else FontWeight.Medium
                     )
-                    .clickable { selectedTabIndex = 1 }
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "পারা",
-                    color = if (selectedTabIndex == 1) Color.White else inactivePillText,
-                    fontSize = 13.5.sp,
-                    fontWeight = if (selectedTabIndex == 1) FontWeight.Bold else FontWeight.Medium
-                )
+                }
             }
+            Spacer(modifier = Modifier.height(4.dp))
         }
-
-        Spacer(modifier = Modifier.height(4.dp))
 
         // 5. Content List (Surahs or Paras)
         if (selectedTabIndex == 0) {
             // Surah List
             if (filteredSurahs.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "কোনো সূরা পাওয়া যায়নি",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 15.sp
-                    )
-                }
-            } else {
-                LazyColumn(
-                    state = surahListState,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(filteredSurahs, key = { it.number }) { surah ->
-                        SurahIndexRow(
-                            item = surah,
-                            emeraldAccent = emeraldAccent,
-                            emeraldBorder = emeraldBorder,
-                            onClick = { onSurahClick(surah.number) }
-                        )
-                        HorizontalDivider(
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
-                            thickness = 0.6.dp,
-                            modifier = Modifier.padding(horizontal = 16.dp)
+                item(key = "empty_surahs_state") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "কোনো সূরা পাওয়া যায়নি",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 15.sp
                         )
                     }
+                }
+            } else {
+                items(filteredSurahs, key = { "surah_${it.number}" }) { surah ->
+                    SurahIndexRow(
+                        item = surah,
+                        emeraldAccent = emeraldAccent,
+                        emeraldBorder = emeraldBorder,
+                        onClick = { onSurahClick(surah.number) }
+                    )
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                        thickness = 0.6.dp,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
                 }
             }
         } else {
             // Para List
             if (filteredParas.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "কোনো পারা পাওয়া যায়নি",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 15.sp
-                    )
-                }
-            } else {
-                LazyColumn(
-                    state = paraListState,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(filteredParas, key = { it.number }) { para ->
-                        ParaIndexRow(
-                            item = para,
-                            emeraldAccent = emeraldAccent,
-                            emeraldBorder = emeraldBorder,
-                            onClick = { onJuzClick(para.number) }
-                        )
-                        HorizontalDivider(
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
-                            thickness = 0.6.dp,
-                            modifier = Modifier.padding(horizontal = 16.dp)
+                item(key = "empty_paras_state") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "কোনো পারা পাওয়া যায়নি",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 15.sp
                         )
                     }
+                }
+            } else {
+                items(filteredParas, key = { "para_${it.number}" }) { para ->
+                    ParaIndexRow(
+                        item = para,
+                        emeraldAccent = emeraldAccent,
+                        emeraldBorder = emeraldBorder,
+                        onClick = { onJuzClick(para.number) }
+                    )
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                        thickness = 0.6.dp,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
                 }
             }
         }
@@ -574,12 +594,12 @@ fun SurahIndexRow(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Right: Arabic Calligraphy / Surah Name
+        // Right: Arabic Calligraphy / Surah Name using Tarteel V4 Font
         Text(
-            text = item.arabicName,
+            text = getSurahNameGlyph(item.number),
+            fontFamily = surahNameFont,
             color = emeraldAccent,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
+            fontSize = 32.sp,
             maxLines = 1
         )
     }

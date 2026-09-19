@@ -3,8 +3,10 @@ package com.example.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.model.CombinedAyah
+import com.example.data.QuranData
 import com.example.domain.usecase.GetSurahDetailsUseCase
 import com.example.data.repository.SettingsRepository
+import com.example.data.repository.RecentReadTrack
 import com.example.ui.state.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -55,6 +57,16 @@ class ReadingModeViewModel(
                 _uiState.value = UiState.Success(ayahs)
                 settingsRepository.setLastReadSurah(surahNumber)
                 settingsRepository.setLastReadMode("READING")
+
+                val surahName = QuranData.surahNames.find { it.first == surahNumber }?.second?.first ?: "সূরা $surahNumber"
+                settingsRepository.addRecentRead(
+                    RecentReadTrack(
+                        title = "রিডিং: সূরা $surahName",
+                        surahNumber = surahNumber,
+                        ayahNumber = 1,
+                        mode = "READING"
+                    )
+                )
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Failed to load Surah details")
             }

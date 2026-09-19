@@ -25,18 +25,18 @@ fun TajweedIndexScreen(
     onSettingsClick: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    val lastReadPage by homeViewModel.lastReadPage.collectAsState()
+    val recentTracks by homeViewModel.recentReads.collectAsState()
 
-    val recentReads = remember(lastReadPage) {
-        listOf(
+    val recentReads = remember(recentTracks) {
+        recentTracks.map { track ->
             RecentReadItem(
-                title = "তাজবীদ পৃষ্ঠা ${lastReadPage.toBengaliNumerals()}",
-                surahNumber = 1,
-                ayahNumber = 1
-            ),
-            RecentReadItem("সূরা মারইয়াম আয়াত ২", 19, 2),
-            RecentReadItem("সূরা ইউসুফ আয়াত ১১", 12, 11)
-        )
+                title = track.title,
+                surahNumber = track.surahNumber,
+                ayahNumber = track.ayahNumber,
+                pageNumber = track.pageNumber,
+                mode = track.mode
+            )
+        }
     }
 
     Scaffold(
@@ -89,6 +89,7 @@ fun TajweedIndexScreen(
                 onSearchQueryChange = { searchQuery = it },
                 onSurahClick = onSurahClick,
                 onJuzClick = onJuzClick,
+                onPageClick = onPageClick,
                 onNavigateToSurahWithAyah = { surah, _ ->
                     onSurahClick(surah)
                 },

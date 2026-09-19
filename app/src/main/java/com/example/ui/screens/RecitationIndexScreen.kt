@@ -34,15 +34,18 @@ fun RecitationIndexScreen(
     var searchQuery by remember { mutableStateOf("") }
     var showQariSelectorDialog by remember { mutableStateOf(false) }
 
-    val recentReads = remember(currentPlayingSurah) {
-        val sNum = currentPlayingSurah ?: 1
-        val sName = QuranData.surahNames.find { it.first == sNum }?.second?.first ?: "ফাতিহা"
-        listOf(
-            RecentReadItem("সূরা $sName", sNum, 1),
-            RecentReadItem("সূরা মারইয়াম", 19, 1),
-            RecentReadItem("সূরা ইউসুফ", 12, 1),
-            RecentReadItem("সূরা ইয়াসীন", 36, 1)
-        )
+    val recentTracks by viewModel.recentReads.collectAsState()
+
+    val recentReads = remember(recentTracks) {
+        recentTracks.map { track ->
+            RecentReadItem(
+                title = track.title,
+                surahNumber = track.surahNumber,
+                ayahNumber = track.ayahNumber,
+                pageNumber = track.pageNumber,
+                mode = track.mode
+            )
+        }
     }
 
     Scaffold(

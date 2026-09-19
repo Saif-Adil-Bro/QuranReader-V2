@@ -1058,11 +1058,12 @@ fun TajweedPageContent(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    val surahFontFamily = remember { androidx.compose.ui.text.font.FontFamily(androidx.compose.ui.text.font.Font(com.example.R.font.surah_name_v4)) }
+                                    val surahGlyph = if (surahId in 1..114) Char(0xE000 + surahId).toString() else arabicName
                                     Text(
-                                        text = arabicName,
-                                        fontSize = 24.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        fontFamily = arabicFont,
+                                        text = surahGlyph,
+                                        fontSize = 34.sp,
+                                        fontFamily = if (surahId in 1..114) surahFontFamily else arabicFont,
                                         color = if (theme == "Dark") Color(0xFFE0E0E0) else Color(0xFF1A1A1A)
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))

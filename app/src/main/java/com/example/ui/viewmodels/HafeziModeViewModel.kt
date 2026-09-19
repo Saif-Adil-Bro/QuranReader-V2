@@ -7,10 +7,13 @@ import com.example.data.local.dao.MemorizedPageDao
 import com.example.data.local.entity.BookmarkEntity
 import com.example.data.local.entity.MemorizedPageEntity
 import com.example.data.model.CombinedAyah
+import com.example.data.QuranData
 import com.example.data.repository.AudioRepository
 import com.example.data.repository.SettingsRepository
+import com.example.data.repository.RecentReadTrack
 import com.example.domain.usecase.GetPageDetailsUseCase
 import com.example.ui.state.UiState
+import com.example.utils.DateUtil
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -87,10 +90,27 @@ class HafeziModeViewModel(
                 
                 // Save last read page, surah and mode
                 settingsRepository.setLastReadPage(pageNumber)
+                val firstSurah = ayahs.firstOrNull()?.surahNumber ?: 1
                 ayahs.firstOrNull()?.let {
                     settingsRepository.setLastReadSurah(it.surahNumber)
                 }
                 settingsRepository.setLastReadMode("HAFEZI")
+
+                val surahName = QuranData.surahNames.find { it.first == firstSurah }?.second?.first ?: ""
+                val recentTitle = if (surahName.isNotEmpty()) {
+                    "হাফেজী: সূরা $surahName (পৃ. ${DateUtil.toBengaliNumerals(pageNumber)})"
+                } else {
+                    "হাফেজী পৃষ্ঠা ${DateUtil.toBengaliNumerals(pageNumber)}"
+                }
+                settingsRepository.addRecentRead(
+                    RecentReadTrack(
+                        title = recentTitle,
+                        surahNumber = firstSurah,
+                        ayahNumber = 1,
+                        pageNumber = pageNumber,
+                        mode = "HAFEZI"
+                    )
+                )
                 
                 // Check if memorized
                 val memorizedEntity = memorizedPageDao.getMemorizedPage(pageNumber)
@@ -281,10 +301,27 @@ class HafeziModeViewModel(
                 
                 // Save last read page, surah and mode
                 settingsRepository.setLastReadPage(pageNumber)
+                val firstSurah = ayahs.firstOrNull()?.surahNumber ?: 1
                 ayahs.firstOrNull()?.let {
                     settingsRepository.setLastReadSurah(it.surahNumber)
                 }
                 settingsRepository.setLastReadMode("HAFEZI")
+
+                val surahName = QuranData.surahNames.find { it.first == firstSurah }?.second?.first ?: ""
+                val recentTitle = if (surahName.isNotEmpty()) {
+                    "হাফেজী: সূরা $surahName (পৃ. ${DateUtil.toBengaliNumerals(pageNumber)})"
+                } else {
+                    "হাফেজী পৃষ্ঠা ${DateUtil.toBengaliNumerals(pageNumber)}"
+                }
+                settingsRepository.addRecentRead(
+                    RecentReadTrack(
+                        title = recentTitle,
+                        surahNumber = firstSurah,
+                        ayahNumber = 1,
+                        pageNumber = pageNumber,
+                        mode = "HAFEZI"
+                    )
+                )
                 
                 // Check if memorized
                 val memorizedEntity = memorizedPageDao.getMemorizedPage(pageNumber)
