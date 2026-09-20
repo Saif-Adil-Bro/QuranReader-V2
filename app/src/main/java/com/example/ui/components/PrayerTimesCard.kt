@@ -727,6 +727,18 @@ private fun GoldenPrayerIcon(
                     style = Stroke(width = 2.5f, cap = StrokeCap.Round)
                 )
             }
+            PrayerName.TAHAJJUD -> {
+                // Tahajjud icon: deep night crescent and stars
+                val moonPath = Path().apply {
+                    moveTo(width * 0.52f, height * 0.15f)
+                    cubicTo(width * 0.12f, height * 0.25f, width * 0.12f, height * 0.75f, width * 0.52f, height * 0.85f)
+                    cubicTo(width * 0.28f, height * 0.68f, width * 0.28f, height * 0.32f, width * 0.52f, height * 0.15f)
+                    close()
+                }
+                drawPath(moonPath, goldColor, style = Fill)
+                drawCircle(goldColor, radius = width * 0.07f, center = Offset(width * 0.72f, height * 0.35f))
+                drawCircle(goldColor, radius = width * 0.05f, center = Offset(width * 0.85f, height * 0.55f))
+            }
         }
     }
 }

@@ -108,6 +108,9 @@ fun PrayerTimesDetailSheet(
     val iftarOffset by settingsRepo.iftarOffsetFlow.collectAsState(initial = 0)
 
     var showSawmAdjustDialog by remember { mutableStateOf(false) }
+    var selectedWaqtForAlarmSettings by remember { mutableStateOf<com.example.data.model.PrayerName?>(null) }
+    var showAlarmOverviewSheet by remember { mutableStateOf(false) }
+
 
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -470,7 +473,9 @@ fun PrayerTimesDetailSheet(
                 PrayerDetailRow(
                     icon = Icons.Outlined.WbTwilight,
                     name = "ফজর",
-                    timeRange = activeSchedule.fajrRange
+                    timeRange = activeSchedule.fajrRange,
+                    prayerName = com.example.data.model.PrayerName.FAJR,
+                    onAlarmClick = { selectedWaqtForAlarmSettings = it }
                 )
 
                 PrayerDivider()
@@ -479,7 +484,9 @@ fun PrayerTimesDetailSheet(
                 PrayerDetailRow(
                     icon = Icons.Outlined.WbSunny,
                     name = "যুহর",
-                    timeRange = activeSchedule.dhuhrRange
+                    timeRange = activeSchedule.dhuhrRange,
+                    prayerName = com.example.data.model.PrayerName.DHUHR,
+                    onAlarmClick = { selectedWaqtForAlarmSettings = it }
                 )
 
                 PrayerDivider()
@@ -491,7 +498,9 @@ fun PrayerTimesDetailSheet(
                     timeRange = activeSchedule.asrRange,
                     subItems = listOf(
                         BulletSubItem("মাকরূহ: ${activeSchedule.asrMakruhTime}", AmberBullet)
-                    )
+                    ),
+                    prayerName = com.example.data.model.PrayerName.ASR,
+                    onAlarmClick = { selectedWaqtForAlarmSettings = it }
                 )
 
                 PrayerDivider()
@@ -500,7 +509,9 @@ fun PrayerTimesDetailSheet(
                 PrayerDetailRow(
                     icon = Icons.Outlined.WbCloudy,
                     name = "মাগরিব",
-                    timeRange = activeSchedule.maghribRange
+                    timeRange = activeSchedule.maghribRange,
+                    prayerName = com.example.data.model.PrayerName.MAGHRIB,
+                    onAlarmClick = { selectedWaqtForAlarmSettings = it }
                 )
 
                 PrayerDivider()
@@ -513,7 +524,9 @@ fun PrayerTimesDetailSheet(
                     subItems = listOf(
                         BulletSubItem("উত্তম সময় শেষ: ${activeSchedule.ishaUttomTime}", GreenBullet),
                         BulletSubItem("মাকরূহ: ${activeSchedule.ishaMakruhTime}", AmberBullet)
-                    )
+                    ),
+                    prayerName = com.example.data.model.PrayerName.ISHA,
+                    onAlarmClick = { selectedWaqtForAlarmSettings = it }
                 )
             }
 
@@ -558,7 +571,9 @@ fun PrayerTimesDetailSheet(
                     timeRange = activeSchedule.tahajjudRange,
                     subItems = listOf(
                         BulletSubItem("রাতের শেষ ১/৩ শুরু: ${activeSchedule.tahajjudLastThirdStart}", GreenBullet)
-                    )
+                    ),
+                    prayerName = com.example.data.model.PrayerName.TAHAJJUD,
+                    onAlarmClick = { selectedWaqtForAlarmSettings = it }
                 )
             }
 
@@ -876,6 +891,52 @@ fun PrayerTimesDetailSheet(
                                 )
                             )
                         }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Dynamic Alarm & Adhan Customization Button
+                        Surface(
+                            onClick = { showAlarmOverviewSheet = true },
+                            shape = RoundedCornerShape(10.dp),
+                            color = EmeraldAccent.copy(alpha = 0.12f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldAccent.copy(alpha = 0.35f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Tune,
+                                        contentDescription = null,
+                                        tint = EmeraldAccent,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = "ডায়নামিক অ্যালার্ম ও আজান সেটিংস",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = "ওয়াক্ত অনুযায়ী সময় সমন্বয়, আজান ও রিংটোন নির্বাচন",
+                                            fontSize = 10.5.sp,
+                                            color = EmeraldAccent
+                                        )
+                                    }
+                                }
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = null,
+                                    tint = EmeraldAccent,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -1022,6 +1083,56 @@ fun PrayerTimesDetailSheet(
             onDismiss = { showSawmAdjustDialog = false }
         )
     }
+
+    // Dynamic Waqt Alarm Customization Dialog
+    if (selectedWaqtForAlarmSettings != null) {
+        val pName = selectedWaqtForAlarmSettings!!
+        val matchingPrayer = activeSchedule.prayers.find { it.name == pName }
+        val formattedTime = when (pName) {
+            com.example.data.model.PrayerName.SAHRI -> activeSchedule.sahriEndTimeFormatted
+            com.example.data.model.PrayerName.IFTAR -> activeSchedule.iftarTimeFormatted
+            com.example.data.model.PrayerName.TAHAJJUD -> activeSchedule.tahajjudEndTimeFormatted
+            else -> matchingPrayer?.timeFormatted ?: ""
+        }
+        val timestampMillis = matchingPrayer?.timestampMillis ?: 0L
+
+        WaqtAlarmConfigDialog(
+            prayerName = pName,
+            baseTimeFormatted = formattedTime,
+            baseTimestampMillis = timestampMillis,
+            onDismiss = {
+                selectedWaqtForAlarmSettings = null
+                isMasterNotifEnabled = com.example.utils.PrayerNotificationHelper.isMasterEnabled(context)
+                isNotifFajr = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.FAJR)
+                isNotifDhuhr = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.DHUHR)
+                isNotifAsr = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.ASR)
+                isNotifMaghrib = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.MAGHRIB)
+                isNotifIsha = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.ISHA)
+                isNotifSahri = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.SAHRI)
+                isNotifIftar = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.IFTAR)
+                isNotifSound = com.example.utils.PrayerNotificationHelper.isSoundEnabled(context)
+            }
+        )
+    }
+
+    // Dynamic Waqt Alarm Overview Sheet
+    if (showAlarmOverviewSheet) {
+        WaqtAlarmOverviewSheet(
+            schedule = activeSchedule,
+            onDismiss = {
+                showAlarmOverviewSheet = false
+                isMasterNotifEnabled = com.example.utils.PrayerNotificationHelper.isMasterEnabled(context)
+                isNotifFajr = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.FAJR)
+                isNotifDhuhr = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.DHUHR)
+                isNotifAsr = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.ASR)
+                isNotifMaghrib = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.MAGHRIB)
+                isNotifIsha = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.ISHA)
+                isNotifSahri = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.SAHRI)
+                isNotifIftar = com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.IFTAR)
+                isNotifSound = com.example.utils.PrayerNotificationHelper.isSoundEnabled(context)
+            }
+        )
+    }
 }
 
 data class BulletSubItem(val text: String, val color: Color)
@@ -1077,15 +1188,25 @@ private fun PrayerDetailRow(
     icon: ImageVector,
     name: String,
     timeRange: String,
-    subItems: List<BulletSubItem> = emptyList()
+    subItems: List<BulletSubItem> = emptyList(),
+    prayerName: com.example.data.model.PrayerName? = null,
+    onAlarmClick: ((com.example.data.model.PrayerName) -> Unit)? = null
 ) {
+    val context = LocalContext.current
+    val config = prayerName?.let {
+        com.example.utils.PrayerNotificationHelper.getPrayerAlarmConfig(context, it)
+    }
+
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
@@ -1101,12 +1222,29 @@ private fun PrayerDetailRow(
                 )
             }
 
-            Text(
-                text = timeRange,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = timeRange,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White
+                )
+
+                if (prayerName != null && onAlarmClick != null) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    IconButton(
+                        onClick = { onAlarmClick(prayerName) },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (config?.isEnabled == true) Icons.Filled.NotificationsActive else Icons.Outlined.Notifications,
+                            contentDescription = "অ্যালার্ম কাস্টমাইজ করুন",
+                            tint = if (config?.isEnabled == true) EmeraldAccent else Color(0xFF64748B),
+                            modifier = Modifier.size(17.dp)
+                        )
+                    }
+                }
+            }
         }
 
         // Sub items (e.g. Makruh, Uttom somoy)

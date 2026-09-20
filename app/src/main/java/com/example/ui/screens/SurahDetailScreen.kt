@@ -1097,7 +1097,7 @@ fun AyahCard(
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Justify
                         )
-                    } else {
+                    } else if (isTafsirLoading) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1107,6 +1107,21 @@ fun AyahCard(
                             com.example.ui.components.MinimalTafsirLoadingIndicator(
                                 text = "তাফসীর লোড হচ্ছে...",
                                 subText = "অনলাইন থেকে তাফসীর তথ্য সংগ্রহ করা হচ্ছে..."
+                            )
+                        }
+                    } else {
+                        val isOnline = com.example.util.NetworkUtils.isNetworkAvailable(context)
+                        if (selectedTafsirNames.isEmpty()) {
+                            com.example.ui.components.MinimalTafsirFallbackCard(
+                                type = com.example.ui.components.TafsirFallbackType.NO_TAFSIR_SELECTED
+                            )
+                        } else if (!isOnline) {
+                            com.example.ui.components.MinimalTafsirFallbackCard(
+                                type = com.example.ui.components.TafsirFallbackType.NO_INTERNET
+                            )
+                        } else {
+                            com.example.ui.components.MinimalTafsirFallbackCard(
+                                type = com.example.ui.components.TafsirFallbackType.NOT_FOUND
                             )
                         }
                     }
@@ -1396,12 +1411,28 @@ fun AyahCard(
                         textAlign = TextAlign.Justify,
                         modifier = Modifier.fillMaxWidth()
                     )
-                } else {
+                } else if (isTafsirLoading) {
                     Spacer(modifier = Modifier.height(12.dp))
                     com.example.ui.components.MinimalTafsirLoadingIndicator(
                         text = "তাফসীর লোড হচ্ছে...",
-                        subText = if (isTafsirLoading) "সার্ভার থেকে তাফসীর তথ্য সংগ্রহ করা হচ্ছে..." else null
+                        subText = "সার্ভার থেকে তাফসীর তথ্য সংগ্রহ করা হচ্ছে..."
                     )
+                } else {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    val isOnline = com.example.util.NetworkUtils.isNetworkAvailable(context)
+                    if (selectedTafsirNames.isEmpty()) {
+                        com.example.ui.components.MinimalTafsirFallbackCard(
+                            type = com.example.ui.components.TafsirFallbackType.NO_TAFSIR_SELECTED
+                        )
+                    } else if (!isOnline) {
+                        com.example.ui.components.MinimalTafsirFallbackCard(
+                            type = com.example.ui.components.TafsirFallbackType.NO_INTERNET
+                        )
+                    } else {
+                        com.example.ui.components.MinimalTafsirFallbackCard(
+                            type = com.example.ui.components.TafsirFallbackType.NOT_FOUND
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 AyahActionButtonsRow(

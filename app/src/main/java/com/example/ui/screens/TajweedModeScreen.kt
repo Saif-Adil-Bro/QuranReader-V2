@@ -852,6 +852,7 @@ fun TajweedModeScreen(
                             items(30, key = { it + 1 }) { index ->
                                 val juzNum = index + 1
                                 val juzName = paraNamesBangla[index]
+                                val juzNameArabic = com.example.data.QuranData.paraNamesArabic.getOrElse(index) { "" }
                                 val startPage = getJuzStartPage(juzNum)
                                 
                                 Row(
@@ -879,11 +880,12 @@ fun TajweedModeScreen(
                                             color = topBarContentColor.copy(alpha = 0.7f)
                                         )
                                     }
-                                    Icon(
-                                        imageVector = Icons.Default.ArrowForward,
-                                        contentDescription = "Go to Juz",
-                                        tint = topBarContentColor.copy(alpha = 0.5f),
-                                        modifier = Modifier.size(20.dp)
+                                    Text(
+                                        text = juzNameArabic,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = getArabicFont(arabicFontName),
+                                        color = topBarContentColor
                                     )
                                 }
                                 if (index < 29) {

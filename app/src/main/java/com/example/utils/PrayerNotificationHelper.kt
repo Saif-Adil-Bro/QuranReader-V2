@@ -11,19 +11,27 @@ import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.os.Build
 import com.example.data.model.DistrictInfo
+import com.example.data.model.PrayerAlarmSoundType
 import com.example.data.model.PrayerName
 import com.example.data.model.SinglePrayerTime
+import com.example.data.model.WaqtAlarmConfig
 import com.example.data.repository.PrayerTimesRepository
 import com.example.receiver.PrayerNotificationReceiver
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 
 object PrayerNotificationHelper {
 
     private const val PREFS_NAME = "prayer_notification_prefs"
-    const val PRAYER_NOTIFICATION_CHANNEL_ID = "prayer_times_notification_channel_v2"
+    const val PRAYER_NOTIFICATION_CHANNEL_ID = "prayer_times_notification_channel_v3"
     const val KEY_MASTER_ENABLED = "prayer_notif_master_enabled"
+    const val KEY_NOTIF_SOUND = "prayer_notif_sound"
+
+    // Legacy keys for backward compatibility
     const val KEY_NOTIF_FAJR = "prayer_notif_fajr"
     const val KEY_NOTIF_DHUHR = "prayer_notif_dhuhr"
     const val KEY_NOTIF_ASR = "prayer_notif_asr"
@@ -31,7 +39,8 @@ object PrayerNotificationHelper {
     const val KEY_NOTIF_ISHA = "prayer_notif_isha"
     const val KEY_NOTIF_SAHRI = "prayer_notif_sahri"
     const val KEY_NOTIF_IFTAR = "prayer_notif_iftar"
-    const val KEY_NOTIF_SOUND = "prayer_notif_sound"
+    const val KEY_NOTIF_SUNRISE = "prayer_notif_sunrise"
+    const val KEY_NOTIF_TAHAJJUD = "prayer_notif_tahajjud"
 
     val VIBRATION_PATTERN = longArrayOf(0, 500, 250, 500)
 
@@ -39,9 +48,9 @@ object PrayerNotificationHelper {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             
-            // Delete legacy channel without vibration pattern if exists
             try {
                 notificationManager.deleteNotificationChannel("prayer_times_notification_channel")
+                notificationManager.deleteNotificationChannel("prayer_times_notification_channel_v2")
             } catch (_: Exception) {}
 
             val audioAttributes = AudioAttributes.Builder()
@@ -53,10 +62,10 @@ object PrayerNotificationHelper {
 
             val channel = NotificationChannel(
                 PRAYER_NOTIFICATION_CHANNEL_ID,
-                "ওয়াক্ত শুরুর নোটিফিকেশন",
+                "ওয়াক্ত ও সালাত অ্যালার্ম",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "প্রতিটি ওয়াক্তের সালাত শুরু হলে স্মরণ করিয়ে দেওয়া হয়"
+                description = "প্রতিটি ওয়াক্তের সালাত, সাহরি, ইফতার ও তাহাজ্জুদ অ্যালার্ম এবং স্মরণ"
                 enableVibration(true)
                 vibrationPattern = VIBRATION_PATTERN
                 enableLights(true)
@@ -84,22 +93,58 @@ object PrayerNotificationHelper {
         }
     }
 
-    fun isPrayerEnabled(context: Context, prayerName: PrayerName): Boolean {
+    fun getPrayerAlarmConfig(context: Context, prayerName: PrayerName): WaqtAlarmConfig {
         val prefs = getPrefs(context)
-        return when (prayerName) {
-            PrayerName.FAJR -> prefs.getBoolean(KEY_NOTIF_FAJR, true)
-            PrayerName.DHUHR -> prefs.getBoolean(KEY_NOTIF_DHUHR, true)
-            PrayerName.ASR -> prefs.getBoolean(KEY_NOTIF_ASR, true)
-            PrayerName.MAGHRIB -> prefs.getBoolean(KEY_NOTIF_MAGHRIB, true)
-            PrayerName.ISHA -> prefs.getBoolean(KEY_NOTIF_ISHA, true)
-            PrayerName.SAHRI -> prefs.getBoolean(KEY_NOTIF_SAHRI, true)
-            PrayerName.IFTAR -> prefs.getBoolean(KEY_NOTIF_IFTAR, true)
-            PrayerName.SUNRISE -> false
+        val defaultEnabled = when (prayerName) {
+            PrayerName.FAJR, PrayerName.DHUHR, PrayerName.ASR, PrayerName.MAGHRIB, PrayerName.ISHA, PrayerName.SAHRI, PrayerName.IFTAR -> true
+            PrayerName.SUNRISE, PrayerName.TAHAJJUD -> false
         }
+
+        // Check modern key or legacy key
+        val legacyKey = getLegacyKey(prayerName)
+        val isEnabled = if (prefs.contains("config_enabled_${prayerName.name}")) {
+            prefs.getBoolean("config_enabled_${prayerName.name}", defaultEnabled)
+        } else if (legacyKey != null) {
+            prefs.getBoolean(legacyKey, defaultEnabled)
+        } else {
+            defaultEnabled
+        }
+
+        val offsetMinutes = prefs.getInt("config_offset_${prayerName.name}", 0)
+        val soundTypeId = prefs.getString("config_sound_${prayerName.name}", PrayerAlarmSoundType.NOTIFICATION.id) ?: PrayerAlarmSoundType.NOTIFICATION.id
+        val soundType = PrayerAlarmSoundType.values().find { it.id == soundTypeId } ?: PrayerAlarmSoundType.NOTIFICATION
+        val isVibration = prefs.getBoolean("config_vibrate_${prayerName.name}", true)
+
+        return WaqtAlarmConfig(
+            prayerName = prayerName,
+            isEnabled = isEnabled,
+            offsetMinutes = offsetMinutes,
+            soundType = soundType,
+            isVibrationEnabled = isVibration
+        )
     }
 
-    fun setPrayerEnabled(context: Context, prayerName: PrayerName, enabled: Boolean) {
-        val key = when (prayerName) {
+    fun savePrayerAlarmConfig(context: Context, config: WaqtAlarmConfig) {
+        val prefs = getPrefs(context)
+        val editor = prefs.edit()
+        editor.putBoolean("config_enabled_${config.prayerName.name}", config.isEnabled)
+        editor.putInt("config_offset_${config.prayerName.name}", config.offsetMinutes)
+        editor.putString("config_sound_${config.prayerName.name}", config.soundType.id)
+        editor.putBoolean("config_vibrate_${config.prayerName.name}", config.isVibrationEnabled)
+
+        // Sync legacy key
+        val legacyKey = getLegacyKey(config.prayerName)
+        if (legacyKey != null) {
+            editor.putBoolean(legacyKey, config.isEnabled)
+        }
+        editor.apply()
+
+        // Reschedule alarms immediately with new configuration
+        scheduleNextPrayerAlarms(context)
+    }
+
+    private fun getLegacyKey(prayerName: PrayerName): String? {
+        return when (prayerName) {
             PrayerName.FAJR -> KEY_NOTIF_FAJR
             PrayerName.DHUHR -> KEY_NOTIF_DHUHR
             PrayerName.ASR -> KEY_NOTIF_ASR
@@ -107,10 +152,18 @@ object PrayerNotificationHelper {
             PrayerName.ISHA -> KEY_NOTIF_ISHA
             PrayerName.SAHRI -> KEY_NOTIF_SAHRI
             PrayerName.IFTAR -> KEY_NOTIF_IFTAR
-            PrayerName.SUNRISE -> return
+            PrayerName.SUNRISE -> KEY_NOTIF_SUNRISE
+            PrayerName.TAHAJJUD -> KEY_NOTIF_TAHAJJUD
         }
-        getPrefs(context).edit().putBoolean(key, enabled).apply()
-        scheduleNextPrayerAlarms(context)
+    }
+
+    fun isPrayerEnabled(context: Context, prayerName: PrayerName): Boolean {
+        return getPrayerAlarmConfig(context, prayerName).isEnabled
+    }
+
+    fun setPrayerEnabled(context: Context, prayerName: PrayerName, enabled: Boolean) {
+        val currentConfig = getPrayerAlarmConfig(context, prayerName)
+        savePrayerAlarmConfig(context, currentConfig.copy(isEnabled = enabled))
     }
 
     fun isSoundEnabled(context: Context): Boolean {
@@ -131,11 +184,12 @@ object PrayerNotificationHelper {
             PrayerName.SUNRISE -> 3006
             PrayerName.SAHRI -> 3007
             PrayerName.IFTAR -> 3008
+            PrayerName.TAHAJJUD -> 3009
         }
     }
 
     /**
-     * Schedules the next exact alarms for all enabled prayers.
+     * Schedules the next exact alarms for all enabled prayers with offsets.
      */
     fun scheduleNextPrayerAlarms(context: Context) {
         if (!isMasterEnabled(context)) {
@@ -148,6 +202,18 @@ object PrayerNotificationHelper {
         val district = prayerRepo.selectedDistrict.value
         val isHanafi = prayerRepo.isHanafi.value
 
+        val settingsRepo = com.example.data.repository.SettingsRepository.getInstance(context)
+        val sahriOffset = try {
+            runBlocking { settingsRepo.sahriOffsetFlow.first() }
+        } catch (e: Exception) {
+            -3
+        }
+        val iftarOffset = try {
+            runBlocking { settingsRepo.iftarOffsetFlow.first() }
+        } catch (e: Exception) {
+            0
+        }
+
         val zoneId = try {
             ZoneId.of(district.timeZoneId)
         } catch (e: Exception) {
@@ -156,42 +222,70 @@ object PrayerNotificationHelper {
 
         val today = LocalDate.now(zoneId)
         val tomorrow = today.plusDays(1)
+        val dayAfterTomorrow = today.plusDays(2)
 
-        val scheduleToday = PrayerTimesCalculator.calculatePrayerSchedule(today, district, isHanafi)
-        val scheduleTomorrow = PrayerTimesCalculator.calculatePrayerSchedule(tomorrow, district, isHanafi)
+        val scheduleToday = PrayerTimesCalculator.calculatePrayerSchedule(
+            date = today,
+            district = district,
+            isHanafi = isHanafi,
+            sahriOffsetMinutes = sahriOffset,
+            iftarOffsetMinutes = iftarOffset
+        )
+        val scheduleTomorrow = PrayerTimesCalculator.calculatePrayerSchedule(
+            date = tomorrow,
+            district = district,
+            isHanafi = isHanafi,
+            sahriOffsetMinutes = sahriOffset,
+            iftarOffsetMinutes = iftarOffset
+        )
+        val scheduleDayAfter = PrayerTimesCalculator.calculatePrayerSchedule(
+            date = dayAfterTomorrow,
+            district = district,
+            isHanafi = isHanafi,
+            sahriOffsetMinutes = sahriOffset,
+            iftarOffsetMinutes = iftarOffset
+        )
 
         val nowMillis = System.currentTimeMillis()
 
-        val fardPrayers = listOf(
+        val allWaqtItems = listOf(
             PrayerName.FAJR,
+            PrayerName.SUNRISE,
             PrayerName.DHUHR,
             PrayerName.ASR,
             PrayerName.MAGHRIB,
-            PrayerName.ISHA
+            PrayerName.ISHA,
+            PrayerName.SAHRI,
+            PrayerName.IFTAR,
+            PrayerName.TAHAJJUD
         )
 
-        for (prayerName in fardPrayers) {
-            if (!isPrayerEnabled(context, prayerName)) {
+        for (prayerName in allWaqtItems) {
+            val config = getPrayerAlarmConfig(context, prayerName)
+            if (!config.isEnabled) {
                 cancelSingleAlarm(context, prayerName)
                 continue
             }
 
-            val todayPrayer = scheduleToday.prayers.find { it.name == prayerName }
-            val tomorrowPrayer = scheduleTomorrow.prayers.find { it.name == prayerName }
+            val offsetMillis = config.offsetMinutes * 60 * 1000L
 
-            // Find the closest upcoming trigger timestamp that is strictly in the future
+            // Get standard prayer time objects
+            val todayPrayer = getSinglePrayerTime(scheduleToday, today, zoneId, prayerName, sahriOffset, iftarOffset)
+            val tomorrowPrayer = getSinglePrayerTime(scheduleTomorrow, tomorrow, zoneId, prayerName, sahriOffset, iftarOffset)
+            val dayAfterPrayer = getSinglePrayerTime(scheduleDayAfter, dayAfterTomorrow, zoneId, prayerName, sahriOffset, iftarOffset)
+
             val targetPrayer: SinglePrayerTime? = when {
-                todayPrayer != null && todayPrayer.timestampMillis > nowMillis + 5000L -> todayPrayer
-                tomorrowPrayer != null && tomorrowPrayer.timestampMillis > nowMillis + 5000L -> tomorrowPrayer
-                else -> {
-                    val dayAfterTomorrow = today.plusDays(2)
-                    val scheduleDayAfter = PrayerTimesCalculator.calculatePrayerSchedule(dayAfterTomorrow, district, isHanafi)
-                    scheduleDayAfter.prayers.find { it.name == prayerName }
-                }
+                todayPrayer != null && (todayPrayer.timestampMillis + offsetMillis) > nowMillis + 5000L -> todayPrayer
+                tomorrowPrayer != null && (tomorrowPrayer.timestampMillis + offsetMillis) > nowMillis + 5000L -> tomorrowPrayer
+                dayAfterPrayer != null && (dayAfterPrayer.timestampMillis + offsetMillis) > nowMillis + 5000L -> dayAfterPrayer
+                else -> null
             }
 
-            if (targetPrayer != null && targetPrayer.timestampMillis > nowMillis + 3000L) {
-                scheduleAlarmForPrayer(context, alarmManager, targetPrayer, district)
+            if (targetPrayer != null) {
+                val triggerMillis = targetPrayer.timestampMillis + offsetMillis
+                if (triggerMillis > nowMillis + 3000L) {
+                    scheduleAlarmForPrayer(context, alarmManager, targetPrayer, district, config, triggerMillis)
+                }
             }
         }
 
@@ -199,17 +293,74 @@ object PrayerNotificationHelper {
         scheduleDailyMidnightRefresher(context, alarmManager, zoneId)
     }
 
+    private fun getSinglePrayerTime(
+        schedule: com.example.data.model.DailyPrayerSchedule,
+        date: LocalDate,
+        zoneId: ZoneId,
+        prayerName: PrayerName,
+        sahriOffset: Int,
+        iftarOffset: Int
+    ): SinglePrayerTime? {
+        val standard = schedule.prayers.find { it.name == prayerName }
+        if (standard != null) return standard
+
+        // Special handling for SAHRI, IFTAR, TAHAJJUD if not in standard list
+        return when (prayerName) {
+            PrayerName.SAHRI -> {
+                val fajr = schedule.prayers.find { it.name == PrayerName.FAJR } ?: return null
+                val sahriMillis = fajr.timestampMillis + (sahriOffset * 60 * 1000L)
+                SinglePrayerTime(
+                    name = PrayerName.SAHRI,
+                    timeDigits = schedule.sahriTimeDigits,
+                    amPm = "AM",
+                    timeFormatted = schedule.sahriEndTimeFormatted,
+                    timestampMillis = sahriMillis,
+                    endTimeDigits = "",
+                    endTimeFormatted = "",
+                    timeRangeFormatted = "সাহরির শেষ সময়: ${schedule.sahriEndTimeFormatted}"
+                )
+            }
+            PrayerName.IFTAR -> {
+                val maghrib = schedule.prayers.find { it.name == PrayerName.MAGHRIB } ?: return null
+                val iftarMillis = maghrib.timestampMillis + (iftarOffset * 60 * 1000L)
+                SinglePrayerTime(
+                    name = PrayerName.IFTAR,
+                    timeDigits = schedule.iftarTimeDigits,
+                    amPm = "PM",
+                    timeFormatted = schedule.iftarTimeFormatted,
+                    timestampMillis = iftarMillis,
+                    endTimeDigits = "",
+                    endTimeFormatted = "",
+                    timeRangeFormatted = "ইফতারের সময়: ${schedule.iftarTimeFormatted}"
+                )
+            }
+            PrayerName.TAHAJJUD -> {
+                val fajr = schedule.prayers.find { it.name == PrayerName.FAJR } ?: return null
+                // Tahajjud optimal time: ~1 hour before Fajr
+                val tahajjudMillis = fajr.timestampMillis - (60 * 60 * 1000L)
+                SinglePrayerTime(
+                    name = PrayerName.TAHAJJUD,
+                    timeDigits = "",
+                    amPm = "AM",
+                    timeFormatted = schedule.tahajjudEndTimeFormatted,
+                    timestampMillis = tahajjudMillis,
+                    endTimeDigits = "",
+                    endTimeFormatted = "",
+                    timeRangeFormatted = "তাহাজ্জুদ: ${schedule.tahajjudRange}"
+                )
+            }
+            else -> null
+        }
+    }
+
     private fun scheduleAlarmForPrayer(
         context: Context,
         alarmManager: AlarmManager,
         prayer: SinglePrayerTime,
-        district: DistrictInfo
+        district: DistrictInfo,
+        config: WaqtAlarmConfig,
+        triggerMillis: Long
     ) {
-        val nowMillis = System.currentTimeMillis()
-        if (prayer.timestampMillis <= nowMillis + 3000L) {
-            return
-        }
-
         val requestCode = getRequestCodeForPrayer(prayer.name)
         val intent = Intent(context, PrayerNotificationReceiver::class.java).apply {
             action = "com.example.ACTION_PRAYER_NOTIFICATION"
@@ -220,6 +371,9 @@ object PrayerNotificationHelper {
             putExtra("prayer_end_formatted", prayer.endTimeFormatted)
             putExtra("prayer_range_formatted", prayer.timeRangeFormatted)
             putExtra("district_name_bn", district.nameBn)
+            putExtra("offset_minutes", config.offsetMinutes)
+            putExtra("sound_type", config.soundType.id)
+            putExtra("vibration_enabled", config.isVibrationEnabled)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -233,21 +387,20 @@ object PrayerNotificationHelper {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
-                    prayer.timestampMillis,
+                    triggerMillis,
                     pendingIntent
                 )
             } else {
                 alarmManager.setExact(
                     AlarmManager.RTC_WAKEUP,
-                    prayer.timestampMillis,
+                    triggerMillis,
                     pendingIntent
                 )
             }
         } catch (e: SecurityException) {
-            // In case exact alarm permission is restricted
             alarmManager.set(
                 AlarmManager.RTC_WAKEUP,
-                prayer.timestampMillis,
+                triggerMillis,
                 pendingIntent
             )
         } catch (e: Exception) {
@@ -309,16 +462,19 @@ object PrayerNotificationHelper {
 
     fun cancelAllPrayerAlarms(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val fardPrayers = listOf(
+        val allPrayers = listOf(
             PrayerName.FAJR,
+            PrayerName.SUNRISE,
             PrayerName.DHUHR,
             PrayerName.ASR,
             PrayerName.MAGHRIB,
             PrayerName.ISHA,
-            PrayerName.SUNRISE
+            PrayerName.SAHRI,
+            PrayerName.IFTAR,
+            PrayerName.TAHAJJUD
         )
 
-        for (p in fardPrayers) {
+        for (p in allPrayers) {
             val requestCode = getRequestCodeForPrayer(p)
             val intent = Intent(context, PrayerNotificationReceiver::class.java).apply {
                 action = "com.example.ACTION_PRAYER_NOTIFICATION"
@@ -343,5 +499,35 @@ object PrayerNotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         alarmManager.cancel(refreshPendingIntent)
+    }
+
+    /**
+     * Snooze an alarm by 10 minutes
+     */
+    fun snoozePrayerAlarm(context: Context, prayerName: PrayerName) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        val requestCode = getRequestCodeForPrayer(prayerName) + 1000
+        val snoozeMillis = System.currentTimeMillis() + (10 * 60 * 1000L)
+
+        val intent = Intent(context, PrayerNotificationReceiver::class.java).apply {
+            action = "com.example.ACTION_PRAYER_NOTIFICATION"
+            putExtra("prayer_name", prayerName.name)
+            putExtra("is_snooze", true)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, snoozeMillis, pendingIntent)
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, snoozeMillis, pendingIntent)
+            }
+        } catch (_: Exception) {}
     }
 }

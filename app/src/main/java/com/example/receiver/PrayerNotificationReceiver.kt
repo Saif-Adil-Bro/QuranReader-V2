@@ -1,6 +1,5 @@
 package com.example.receiver
 
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -11,12 +10,10 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.MainActivity
 import com.example.R
+import com.example.data.model.PrayerAlarmSoundType
 import com.example.data.model.PrayerName
-import com.example.utils.DateUtil
 import com.example.utils.PrayerNotificationHelper
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import com.example.utils.PrayerSoundManager
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -30,6 +27,33 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             return
         }
 
+        if (action == "com.example.ACTION_STOP_PRAYER_ALARM") {
+            val notifId = intent.getIntExtra("notif_id", -1)
+            PrayerSoundManager.stopAll()
+            if (notifId != -1) {
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.cancel(notifId)
+            }
+            return
+        }
+
+        if (action == "com.example.ACTION_SNOOZE_PRAYER_ALARM") {
+            val prayerNameStr = intent.getStringExtra("prayer_name") ?: return
+            val prayerName = try {
+                PrayerName.valueOf(prayerNameStr)
+            } catch (e: Exception) {
+                null
+            } ?: return
+            val notifId = intent.getIntExtra("notif_id", -1)
+            PrayerSoundManager.stopAll()
+            if (notifId != -1) {
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.cancel(notifId)
+            }
+            PrayerNotificationHelper.snoozePrayerAlarm(context, prayerName)
+            return
+        }
+
         if (action == "com.example.ACTION_PRAYER_NOTIFICATION") {
             val prayerNameStr = intent.getStringExtra("prayer_name") ?: return
             val prayerName = try {
@@ -38,22 +62,27 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 null
             } ?: return
 
-            if (!PrayerNotificationHelper.isMasterEnabled(context) ||
-                !PrayerNotificationHelper.isPrayerEnabled(context, prayerName)
-            ) {
-                // Reschedule next ones and return
+            if (!PrayerNotificationHelper.isMasterEnabled(context)) {
                 PrayerNotificationHelper.scheduleNextPrayerAlarms(context)
                 return
             }
 
-            // Deduplication Guard: Do not show notification for the same prayer within 30 minutes
+            val config = PrayerNotificationHelper.getPrayerAlarmConfig(context, prayerName)
+            if (!config.isEnabled) {
+                PrayerNotificationHelper.scheduleNextPrayerAlarms(context)
+                return
+            }
+
+            val isSnooze = intent.getBooleanExtra("is_snooze", false)
+            val offsetMinutes = intent.getIntExtra("offset_minutes", config.offsetMinutes)
+
+            // Deduplication Guard: Do not show notification for the same prayer within 5 minutes unless it is snooze
             val prefs = context.getSharedPreferences("prayer_notification_prefs", Context.MODE_PRIVATE)
             val lastNotifiedKey = "last_notified_${prayerName.name}"
             val lastNotifiedTime = prefs.getLong(lastNotifiedKey, 0L)
             val nowTime = System.currentTimeMillis()
 
-            if (nowTime - lastNotifiedTime < 30 * 60 * 1000L) {
-                // Already notified within the last 30 minutes, skip sending again
+            if (!isSnooze && (nowTime - lastNotifiedTime < 5 * 60 * 1000L)) {
                 PrayerNotificationHelper.scheduleNextPrayerAlarms(context)
                 return
             }
@@ -63,47 +92,39 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             val prayerTimeFormatted = intent.getStringExtra("prayer_time_formatted") ?: ""
             val districtNameBn = intent.getStringExtra("district_name_bn") ?: "ঢাকা"
 
-            // Fallback calculation for time range if not passed in intent
-            if (prayerRangeFormatted.isBlank() && prayerName != PrayerName.SAHRI && prayerName != PrayerName.IFTAR) {
-                try {
-                    val prayerRepo = com.example.data.repository.PrayerTimesRepository.getInstance(context)
-                    val district = prayerRepo.selectedDistrict.value
-                    val isHanafi = prayerRepo.isHanafi.value
-                    val schedule = com.example.utils.PrayerTimesCalculator.calculatePrayerSchedule(
-                        LocalDate.now(),
-                        district,
-                        isHanafi
-                    )
-                    val match = schedule.prayers.find { it.name == prayerName }
-                    if (match != null && match.timeRangeFormatted.isNotBlank()) {
-                        prayerRangeFormatted = match.timeRangeFormatted
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
+            // Trigger alarm audio & vibration according to config
+            val isSoundEnabled = PrayerNotificationHelper.isSoundEnabled(context)
+            val soundTypeToPlay = if (isSoundEnabled) config.soundType else PrayerAlarmSoundType.SILENT
+            PrayerSoundManager.triggerAlarmSoundAndVibrate(
+                context = context,
+                soundType = soundTypeToPlay,
+                prayerName = prayerName,
+                enableVibration = config.isVibrationEnabled
+            )
 
             val isFriday = LocalDate.now().dayOfWeek == DayOfWeek.FRIDAY
             val isDhuhrOnFriday = isFriday && prayerName == PrayerName.DHUHR
 
             val title = when (prayerName) {
-                PrayerName.FAJR -> "ফজরের ওয়াক্ত শুরু হয়েছে 🕌"
-                PrayerName.DHUHR -> if (isDhuhrOnFriday) "পবিত্র জুমুআর ওয়াক্ত শুরু হয়েছে 🕌✨" else "যুহরের ওয়াক্ত শুরু হয়েছে 🕌"
-                PrayerName.ASR -> "আসরের ওয়াক্ত শুরু হয়েছে 🕌"
-                PrayerName.MAGHRIB -> "মাগরিবের ওয়াক্ত শুরু হয়েছে 🕌"
-                PrayerName.ISHA -> "এশার ওয়াক্ত শুরু হয়েছে 🌙"
+                PrayerName.FAJR -> if (offsetMinutes < 0) "ফজরের ওয়াক্ত আসন্ন (${-offsetMinutes} মিনিট বাকি) 🌅" else "ফজরের ওয়াক্ত শুরু হয়েছে 🕌"
+                PrayerName.DHUHR -> if (isDhuhrOnFriday) "পবিত্র জুমুআর ওয়াক্ত হয়েছে 🕌✨" else if (offsetMinutes < 0) "যুহরের ওয়াক্ত আসন্ন (${-offsetMinutes} মিনিট বাকি) ☀️" else "যুহরের ওয়াক্ত শুরু হয়েছে 🕌"
+                PrayerName.ASR -> if (offsetMinutes < 0) "আসরের ওয়াক্ত আসন্ন (${-offsetMinutes} মিনিট বাকি) 🌤️" else "আসরের ওয়াক্ত শুরু হয়েছে 🕌"
+                PrayerName.MAGHRIB -> if (offsetMinutes < 0) "মাগরিবের ওয়াক্ত আসন্ন (${-offsetMinutes} মিনিট বাকি) 🌇" else "মাগরিবের ওয়াক্ত শুরু হয়েছে 🕌"
+                PrayerName.ISHA -> if (offsetMinutes < 0) "এশার ওয়াক্ত আসন্ন (${-offsetMinutes} মিনিট বাকি) 🌙" else "এশার ওয়াক্ত শুরু হয়েছে 🌙"
                 PrayerName.SUNRISE -> "সূর্যোদয় হয়েছে ☀️"
-                PrayerName.SAHRI -> "সাহরির সময় শেষ হয়েছে 🌙"
+                PrayerName.TAHAJJUD -> "তাহাজ্জুদের বিশেষ সময় হয়েছে 🌌"
+                PrayerName.SAHRI -> "সাহরির সময় শেষ হতে যাচ্ছে 🌙"
                 PrayerName.IFTAR -> "ইফতারের সময় হয়েছে ✨"
             }
 
             val prayerDisplayTitle = when (prayerName) {
-                PrayerName.FAJR -> "ফজরের"
-                PrayerName.DHUHR -> if (isDhuhrOnFriday) "পবিত্র জুমুআর" else "যুহরের"
-                PrayerName.ASR -> "আসরের"
-                PrayerName.MAGHRIB -> "মাগরিবের"
-                PrayerName.ISHA -> "এশার"
+                PrayerName.FAJR -> "ফজর"
+                PrayerName.DHUHR -> if (isDhuhrOnFriday) "জুমুআ" else "যুহর"
+                PrayerName.ASR -> "আসর"
+                PrayerName.MAGHRIB -> "মাগরিব"
+                PrayerName.ISHA -> "এশা"
                 PrayerName.SUNRISE -> "সূর্যোদয়"
+                PrayerName.TAHAJJUD -> "তাহাজ্জুদ"
                 PrayerName.SAHRI -> "সাহরি শেষ"
                 PrayerName.IFTAR -> "ইফতার"
             }
@@ -111,11 +132,14 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             val message = when (prayerName) {
                 PrayerName.SAHRI -> {
                     if (prayerTimeFormatted.isNotBlank()) "সাহরির শেষ সময়: $prayerTimeFormatted ($districtNameBn)। রোজার নিয়ত করে নিন।"
-                    else "সাহরির শেষ সময় হয়েছে ($districtNameBn)। রোজার নিয়ত করে নিন।"
+                    else "সাহরির সময় শেষ হয়েছে ($districtNameBn)। রোজার নিয়ত করে নিন।"
                 }
                 PrayerName.IFTAR -> {
                     if (prayerTimeFormatted.isNotBlank()) "ইফতারের সময়: $prayerTimeFormatted ($districtNameBn)। দুআ পাঠ করে ইফতার করুন: আল্লাহুম্মা লাকা সুমতু..."
                     else "ইফতারের সময় হয়েছে ($districtNameBn)। দুআ পাঠ করে ইফতার করুন।"
+                }
+                PrayerName.TAHAJJUD -> {
+                    "তাহাজ্জুদের বরকতময় সময়। শেষ রাতে রবের দরবারে তাওবা ও দুআ করার উত্তম মুহূর্ত।"
                 }
                 else -> {
                     val timeDisplay = if (prayerRangeFormatted.isNotBlank()) {
@@ -149,6 +173,31 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
+            // Stop Action
+            val stopIntent = Intent(context, PrayerNotificationReceiver::class.java).apply {
+                setAction("com.example.ACTION_STOP_PRAYER_ALARM")
+                putExtra("notif_id", notifId)
+            }
+            val stopPendingIntent = PendingIntent.getBroadcast(
+                context,
+                notifId + 500,
+                stopIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            // Snooze Action
+            val snoozeIntent = Intent(context, PrayerNotificationReceiver::class.java).apply {
+                setAction("com.example.ACTION_SNOOZE_PRAYER_ALARM")
+                putExtra("prayer_name", prayerName.name)
+                putExtra("notif_id", notifId)
+            }
+            val snoozePendingIntent = PendingIntent.getBroadcast(
+                context,
+                notifId + 600,
+                snoozeIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
             val iconRes = R.mipmap.ic_launcher
             val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
@@ -161,15 +210,21 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
-                .setVibrate(PrayerNotificationHelper.VIBRATION_PATTERN)
+                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "বন্ধ করুন", stopPendingIntent)
+                .addAction(android.R.drawable.ic_lock_idle_alarm, "১০ মিনিট পর", snoozePendingIntent)
 
-            if (PrayerNotificationHelper.isSoundEnabled(context)) {
+            if (config.isVibrationEnabled) {
+                builder.setVibrate(PrayerNotificationHelper.VIBRATION_PATTERN)
+            } else {
+                builder.setVibrate(longArrayOf(0))
+            }
+
+            if (isSoundEnabled && config.soundType != PrayerAlarmSoundType.SILENT) {
                 builder.setSound(defaultSoundUri)
-                builder.setDefaults(NotificationCompat.DEFAULT_VIBRATE or NotificationCompat.DEFAULT_LIGHTS)
+                builder.setDefaults(NotificationCompat.DEFAULT_LIGHTS)
             } else {
                 builder.setSound(null)
                 builder.setDefaults(NotificationCompat.DEFAULT_LIGHTS)
-                builder.setVibrate(longArrayOf(0))
             }
 
             notificationManager.notify(notifId, builder.build())

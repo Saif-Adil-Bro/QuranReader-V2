@@ -1747,8 +1747,47 @@ fun AyahSelectionSheetContent(
                 val surahName = surahData?.second?.first ?: "সূরা ${currentAyah.surahNumber}"
                 val isCurrentPlaying = isPlaying && currentPlayingAyahNum == currentAyah.numberInSurah
 
-                val parsedTafsir = remember(currentAyah.tafsirText) {
-                    currentAyah.tafsirText?.parseHtmlToAnnotatedString(primaryGreen)
+                val app = remember(context) { context.applicationContext as? com.example.QuranApplication }
+                val quranRepo = app?.container?.quranRepository
+
+                val sNum = remember(currentAyah.surahNumber, currentAyah.number) {
+                    if (currentAyah.surahNumber > 0) currentAyah.surahNumber else com.example.data.QuranData.getSurahAndAyahFromGlobal(currentAyah.number).first
+                }
+                val aInSurah = remember(currentAyah.numberInSurah, currentAyah.number) {
+                    if (currentAyah.numberInSurah > 0) currentAyah.numberInSurah else com.example.data.QuranData.getSurahAndAyahFromGlobal(currentAyah.number).second
+                }
+
+                var dynamicTafsirResult by remember(currentAyah.number, sNum, aInSurah) {
+                    mutableStateOf<com.example.data.repository.QuranRepository.TafsirResult?>(
+                        if (!currentAyah.tafsirText.isNullOrBlank()) com.example.data.repository.QuranRepository.TafsirResult.Success(currentAyah.tafsirText) else null
+                    )
+                }
+                var isTafsirResolving by remember(currentAyah.number, sNum, aInSurah) {
+                    mutableStateOf(currentAyah.tafsirText.isNullOrBlank())
+                }
+                var tafsirRetryCount by remember { mutableStateOf(0) }
+
+                LaunchedEffect(currentAyah.number, sNum, aInSurah, tafsirRetryCount) {
+                    if (!currentAyah.tafsirText.isNullOrBlank() && tafsirRetryCount == 0) {
+                        dynamicTafsirResult = com.example.data.repository.QuranRepository.TafsirResult.Success(currentAyah.tafsirText)
+                        isTafsirResolving = false
+                        return@LaunchedEffect
+                    }
+                    if (quranRepo == null) {
+                        isTafsirResolving = false
+                        dynamicTafsirResult = com.example.data.repository.QuranRepository.TafsirResult.Error("রেপোজিটরি পাওয়া যায়নি")
+                        return@LaunchedEffect
+                    }
+                    isTafsirResolving = true
+                    val result = quranRepo.getAyahTafsirResult(sNum, aInSurah)
+                    dynamicTafsirResult = result
+                    isTafsirResolving = false
+                }
+
+                val activeTafsirRaw = (dynamicTafsirResult as? com.example.data.repository.QuranRepository.TafsirResult.Success)?.tafsirText
+                    ?: currentAyah.tafsirText
+                val parsedTafsir = remember(activeTafsirRaw) {
+                    activeTafsirRaw?.parseHtmlToAnnotatedString(primaryGreen)
                 }
 
                 if (showFullTafsirDialog) {
@@ -1772,7 +1811,7 @@ fun AyahSelectionSheetContent(
                                         color = textColor,
                                         textAlign = TextAlign.Justify
                                     )
-                                } else {
+                                } else if (isTafsirResolving) {
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -1781,8 +1820,46 @@ fun AyahSelectionSheetContent(
                                     ) {
                                         com.example.ui.components.MinimalTafsirLoadingIndicator(
                                             text = "তাফসীর লোড হচ্ছে...",
-                                            subText = "অনলাইন থেকে তাফসীর তথ্য সংগ্রহ করা হচ্ছে..."
+                                            subText = "অনলাইন বা ক্যাশ থেকে তাফসীর তথ্য সংগ্রহ করা হচ্ছে..."
                                         )
+                                    }
+                                } else {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 12.dp)
+                                    ) {
+                                        when (dynamicTafsirResult) {
+                                            is com.example.data.repository.QuranRepository.TafsirResult.NoInternet -> {
+                                                com.example.ui.components.MinimalTafsirFallbackCard(
+                                                    type = com.example.ui.components.TafsirFallbackType.NO_INTERNET,
+                                                    onAction = { tafsirRetryCount++ }
+                                                )
+                                            }
+                                            is com.example.data.repository.QuranRepository.TafsirResult.NoTafsirSelected -> {
+                                                com.example.ui.components.MinimalTafsirFallbackCard(
+                                                    type = com.example.ui.components.TafsirFallbackType.NO_TAFSIR_SELECTED
+                                                )
+                                            }
+                                            is com.example.data.repository.QuranRepository.TafsirResult.NotFound -> {
+                                                com.example.ui.components.MinimalTafsirFallbackCard(
+                                                    type = com.example.ui.components.TafsirFallbackType.NOT_FOUND
+                                                )
+                                            }
+                                            is com.example.data.repository.QuranRepository.TafsirResult.Error -> {
+                                                val err = (dynamicTafsirResult as com.example.data.repository.QuranRepository.TafsirResult.Error).message
+                                                com.example.ui.components.MinimalTafsirFallbackCard(
+                                                    type = com.example.ui.components.TafsirFallbackType.ERROR,
+                                                    message = err,
+                                                    onAction = { tafsirRetryCount++ }
+                                                )
+                                            }
+                                            else -> {
+                                                com.example.ui.components.MinimalTafsirFallbackCard(
+                                                    type = com.example.ui.components.TafsirFallbackType.NOT_FOUND
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1962,11 +2039,43 @@ fun AyahSelectionSheetContent(
                                     maxLines = 6,
                                     overflow = TextOverflow.Ellipsis
                                 )
-                            } else {
+                            } else if (isTafsirResolving) {
                                 com.example.ui.components.MinimalTafsirLoadingIndicator(
                                     text = "তাফসীর লোড হচ্ছে...",
-                                    subText = "অনলাইন থেকে তাফসীর তথ্য সংগ্রহ করা হচ্ছে..."
+                                    subText = "অনলাইন বা ক্যাশ থেকে তথ্য সংগ্রহ করা হচ্ছে..."
                                 )
+                            } else {
+                                when (dynamicTafsirResult) {
+                                    is com.example.data.repository.QuranRepository.TafsirResult.NoInternet -> {
+                                        com.example.ui.components.MinimalTafsirFallbackCard(
+                                            type = com.example.ui.components.TafsirFallbackType.NO_INTERNET,
+                                            onAction = { tafsirRetryCount++ }
+                                        )
+                                    }
+                                    is com.example.data.repository.QuranRepository.TafsirResult.NoTafsirSelected -> {
+                                        com.example.ui.components.MinimalTafsirFallbackCard(
+                                            type = com.example.ui.components.TafsirFallbackType.NO_TAFSIR_SELECTED
+                                        )
+                                    }
+                                    is com.example.data.repository.QuranRepository.TafsirResult.NotFound -> {
+                                        com.example.ui.components.MinimalTafsirFallbackCard(
+                                            type = com.example.ui.components.TafsirFallbackType.NOT_FOUND
+                                        )
+                                    }
+                                    is com.example.data.repository.QuranRepository.TafsirResult.Error -> {
+                                        val err = (dynamicTafsirResult as com.example.data.repository.QuranRepository.TafsirResult.Error).message
+                                        com.example.ui.components.MinimalTafsirFallbackCard(
+                                            type = com.example.ui.components.TafsirFallbackType.ERROR,
+                                            message = err,
+                                            onAction = { tafsirRetryCount++ }
+                                        )
+                                    }
+                                    else -> {
+                                        com.example.ui.components.MinimalTafsirFallbackCard(
+                                            type = com.example.ui.components.TafsirFallbackType.NOT_FOUND
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

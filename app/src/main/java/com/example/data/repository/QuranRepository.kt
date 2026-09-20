@@ -312,6 +312,72 @@ class QuranRepository(
         }
     }
 
+    sealed class TafsirResult {
+        data class Success(val tafsirText: String) : TafsirResult()
+        object NoTafsirSelected : TafsirResult()
+        object NoInternet : TafsirResult()
+        object NotFound : TafsirResult()
+        data class Error(val message: String) : TafsirResult()
+    }
+
+    suspend fun getAyahTafsirResult(surahNumber: Int, ayahNumberInSurah: Int): TafsirResult {
+        val tafsirIdsSet = settingsRepository.selectedTafsirIdsFlow.first()
+        val tafsirIdsStr = tafsirIdsSet.filter { it.isNotBlank() }.joinToString(",")
+        if (tafsirIdsStr.isBlank()) {
+            return TafsirResult.NoTafsirSelected
+        }
+
+        val verseKey = "$surahNumber:$ayahNumberInSurah"
+
+        // 1. Check local files
+        val localCombined = getCombinedSurahTafsirs(surahNumber, tafsirIdsStr)
+        if (localCombined != null) {
+            val localText = buildCombinedTafsirText(localCombined.tafsirs, verseKey)
+            if (!localText.isNullOrBlank()) {
+                return TafsirResult.Success(localText)
+            }
+        }
+
+        // 2. Check internet connection
+        val isOnline = com.example.util.NetworkUtils.isNetworkAvailable(context)
+        if (!isOnline) {
+            return TafsirResult.NoInternet
+        }
+
+        // 3. Online fetch with timeout
+        return try {
+            kotlinx.coroutines.withTimeout(5000L) {
+                val ids = tafsirIdsStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                for (id in ids) {
+                    val file = File(context.filesDir, "tafsir_cache/$id/$surahNumber.json")
+                    if (!file.exists() || file.length() == 0L) {
+                        try {
+                            val response = quranComApi.getSurahTafsirs(surahNumber, id)
+                            if (response != null && !response.tafsirs.isNullOrEmpty()) {
+                                file.parentFile?.mkdirs()
+                                file.writeText(Gson().toJson(response))
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+
+                val freshlyLoaded = getCombinedSurahTafsirs(surahNumber, tafsirIdsStr)
+                val freshlyParsedText = if (freshlyLoaded != null) buildCombinedTafsirText(freshlyLoaded.tafsirs, verseKey) else null
+                if (!freshlyParsedText.isNullOrBlank()) {
+                    TafsirResult.Success(freshlyParsedText)
+                } else {
+                    TafsirResult.NotFound
+                }
+            }
+        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+            TafsirResult.Error("তাফসীর লোড হতে অতিরিক্ত সময় নিচ্ছে। অনুগ্রহ করে ইন্টারনেট সংযোগ চেক করে আবার চেষ্টা করুন।")
+        } catch (e: Exception) {
+            TafsirResult.Error("তাফসীর লোড করতে সমস্যা হয়েছে: ${e.localizedMessage ?: "অজানা ত্রুটি"}")
+        }
+    }
+
 
     private val BISMILLAH_PREFIXES = listOf(
         "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ ",

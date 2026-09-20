@@ -23,9 +23,29 @@ enum class PrayerName(val id: String, val nameBn: String, val nameEn: String, va
     ASR("asr", "আসর", "Asr", "🌤️"),
     MAGHRIB("maghrib", "মাগরিব", "Maghrib", "🌇"),
     ISHA("isha", "এশা", "Isha", "🌙"),
+    TAHAJJUD("tahajjud", "তাহাজ্জুদ", "Tahajjud", "🌌"),
     SAHRI("sahri", "সাহরি শেষ", "Sahri", "🌙"),
     IFTAR("iftar", "ইফতার", "Iftar", "✨")
 }
+
+enum class PrayerAlarmSoundType(val id: String, val titleBn: String, val subtitleBn: String) {
+    SILENT("silent", "নিঃশব্দ", "কোনো শব্দ হবে না"),
+    BEEP("beep", "বিপ", "মৃদু অ্যালার্ম বিপ টোন"),
+    RING("ring", "রিং", "মধুর সুরের রিংটোন"),
+    VOICE_NAME("voice_name", "ওয়াক্তের নাম", "বাংলায় ওয়াক্তের নাম ঘোষণা"),
+    NOTIFICATION("notification", "নোটিফিকেশন", "ডিফল্ট নোটিফিকেশন টিউন"),
+    AZAN_MECCA("azan_mecca", "মক্কা মুকাররমা আজান", "মক্কার সুমধুর আজান ধ্বনি"),
+    AZAN_MADINA("azan_madina", "মদিনা মুনাওয়ারা আজান", "মদিনার হৃদয়স্পর্শী আজান")
+}
+
+data class WaqtAlarmConfig(
+    val prayerName: PrayerName,
+    val isEnabled: Boolean = true,
+    val offsetMinutes: Int = 0, // -30 min to +30 min
+    val soundType: PrayerAlarmSoundType = PrayerAlarmSoundType.NOTIFICATION,
+    val isVibrationEnabled: Boolean = true
+)
+
 
 data class SinglePrayerTime(
     val name: PrayerName,

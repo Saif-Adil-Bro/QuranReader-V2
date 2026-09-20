@@ -152,6 +152,7 @@ fun SettingsScreen(
                 MenuItem("manzil", "মানযিল", Icons.Default.AutoAwesome, Color(0xFF10B981)),
                 MenuItem("qibla", "কিবলা কম্পাস", Icons.Default.Explore, Color(0xFFEAB308)),
                 MenuItem("prayer_times", "নামাজের সময়সূচি", Icons.Default.AccessTime, Color(0xFF059669)),
+                MenuItem("prayer_alarms", "নামাজ ও আজান অ্যালার্ম", Icons.Default.Alarm, Color(0xFF10B981)),
                 MenuItem("calendar", "ক্যালেন্ডার", Icons.Default.CalendarMonth, Color(0xFF10B981)),
                 MenuItem("planner", "কুরআন প্ল্যানার", Icons.Default.DateRange, Color(0xFF10B981))
             )
@@ -974,6 +975,20 @@ fun SettingsScreen(
             hijriOffset = combinedHijriOffset,
             onDistrictSelected = { prayerRepo.setDistrict(it) },
             onHanafiChanged = { prayerRepo.setHanafi(it) },
+            onDismiss = {
+                if (initialSubScreen != null) {
+                    onNavigateBack()
+                } else {
+                    activeDialog = null
+                }
+            }
+        )
+    } else if (activeDialog == "prayer_alarms") {
+        val prayerRepo = remember(context) { com.example.data.repository.PrayerTimesRepository.getInstance(context) }
+        val prayerSchedule by prayerRepo.todaySchedule.collectAsState()
+
+        com.example.ui.components.WaqtAlarmOverviewSheet(
+            schedule = prayerSchedule,
             onDismiss = {
                 if (initialSubScreen != null) {
                     onNavigateBack()
