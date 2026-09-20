@@ -133,20 +133,7 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             }
 
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val channelId = "prayer_times_notification_channel"
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val channel = NotificationChannel(
-                    channelId,
-                    "ওয়াক্ত শুরুর নোটিফিকেশন",
-                    NotificationManager.IMPORTANCE_HIGH
-                ).apply {
-                    description = "প্রতিটি ওয়াক্তের সালাত শুরু হলে স্মরণ করিয়ে দেওয়া হয়"
-                    enableVibration(true)
-                    enableLights(true)
-                }
-                notificationManager.createNotificationChannel(channel)
-            }
+            PrayerNotificationHelper.createNotificationChannel(context)
 
             val openIntent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -165,7 +152,7 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             val iconRes = R.mipmap.ic_launcher
             val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
-            val builder = NotificationCompat.Builder(context, channelId)
+            val builder = NotificationCompat.Builder(context, PrayerNotificationHelper.PRAYER_NOTIFICATION_CHANNEL_ID)
                 .setSmallIcon(iconRes)
                 .setContentTitle(title)
                 .setContentText(message)
@@ -174,9 +161,15 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setVibrate(PrayerNotificationHelper.VIBRATION_PATTERN)
 
             if (PrayerNotificationHelper.isSoundEnabled(context)) {
                 builder.setSound(defaultSoundUri)
+                builder.setDefaults(NotificationCompat.DEFAULT_VIBRATE or NotificationCompat.DEFAULT_LIGHTS)
+            } else {
+                builder.setSound(null)
+                builder.setDefaults(NotificationCompat.DEFAULT_LIGHTS)
+                builder.setVibrate(longArrayOf(0))
             }
 
             notificationManager.notify(notifId, builder.build())

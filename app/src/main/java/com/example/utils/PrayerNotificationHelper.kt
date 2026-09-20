@@ -1,10 +1,14 @@
 package com.example.utils
 
 import android.app.AlarmManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import android.os.Build
 import com.example.data.model.DistrictInfo
 import com.example.data.model.PrayerName
@@ -18,6 +22,7 @@ import java.time.ZoneId
 object PrayerNotificationHelper {
 
     private const val PREFS_NAME = "prayer_notification_prefs"
+    const val PRAYER_NOTIFICATION_CHANNEL_ID = "prayer_times_notification_channel_v2"
     const val KEY_MASTER_ENABLED = "prayer_notif_master_enabled"
     const val KEY_NOTIF_FAJR = "prayer_notif_fajr"
     const val KEY_NOTIF_DHUHR = "prayer_notif_dhuhr"
@@ -27,6 +32,40 @@ object PrayerNotificationHelper {
     const val KEY_NOTIF_SAHRI = "prayer_notif_sahri"
     const val KEY_NOTIF_IFTAR = "prayer_notif_iftar"
     const val KEY_NOTIF_SOUND = "prayer_notif_sound"
+
+    val VIBRATION_PATTERN = longArrayOf(0, 500, 250, 500)
+
+    fun createNotificationChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            
+            // Delete legacy channel without vibration pattern if exists
+            try {
+                notificationManager.deleteNotificationChannel("prayer_times_notification_channel")
+            } catch (_: Exception) {}
+
+            val audioAttributes = AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .build()
+
+            val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+            val channel = NotificationChannel(
+                PRAYER_NOTIFICATION_CHANNEL_ID,
+                "ওয়াক্ত শুরুর নোটিফিকেশন",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "প্রতিটি ওয়াক্তের সালাত শুরু হলে স্মরণ করিয়ে দেওয়া হয়"
+                enableVibration(true)
+                vibrationPattern = VIBRATION_PATTERN
+                enableLights(true)
+                lightColor = android.graphics.Color.GREEN
+                setSound(defaultSoundUri, audioAttributes)
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
 
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

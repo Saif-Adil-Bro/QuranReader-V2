@@ -123,6 +123,7 @@ fun SurahDetailScreen(
 
     val selectedTafsirIds by viewModel.selectedTafsirIds.collectAsState()
     val selectedTafsirNames by viewModel.selectedTafsirNames.collectAsState()
+    val isTafsirSyncing by viewModel.isTafsirSyncing.collectAsState()
     val keepScreenOn by viewModel.keepScreenOn.collectAsState()
     val availableTafsirs by viewModel.availableTafsirs.collectAsState()
     val selectedTranslationIds by viewModel.selectedTranslationIds.collectAsState()
@@ -580,7 +581,8 @@ fun SurahDetailScreen(
                                     isBookmarked = isBookmarked,
                                     onToggleBookmark = { viewModel.toggleBookmark(ayah, activeSurahNumber) },
                                     arabicLineSpacing = arabicLineSpacing,
-                                    selectedTafsirNames = selectedTafsirNames
+                                    selectedTafsirNames = selectedTafsirNames,
+                                    isTafsirLoading = isTafsirSyncing
                                 )
                             }
                         }
@@ -1042,7 +1044,8 @@ fun AyahCard(
     isBookmarked: Boolean = false,
     onToggleBookmark: () -> Unit = {},
     arabicLineSpacing: Float = 2.0f,
-    selectedTafsirNames: List<String> = emptyList()
+    selectedTafsirNames: List<String> = emptyList(),
+    isTafsirLoading: Boolean = false
 ) {
     var showTafsirDialog by remember { mutableStateOf(false) }
     var showMoreMenu by remember { mutableStateOf(false) }
@@ -1095,7 +1098,17 @@ fun AyahCard(
                             textAlign = TextAlign.Justify
                         )
                     } else {
-                        Text(text = "এই আয়াতের তাফসীর পাওয়া যায়নি।", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            com.example.ui.components.MinimalTafsirLoadingIndicator(
+                                text = "তাফসীর লোড হচ্ছে...",
+                                subText = "অনলাইন থেকে তাফসীর তথ্য সংগ্রহ করা হচ্ছে..."
+                            )
+                        }
                     }
                 }
             },
@@ -1382,6 +1395,12 @@ fun AyahCard(
                         lineHeight = 24.sp,
                         textAlign = TextAlign.Justify,
                         modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    com.example.ui.components.MinimalTafsirLoadingIndicator(
+                        text = "তাফসীর লোড হচ্ছে...",
+                        subText = if (isTafsirLoading) "সার্ভার থেকে তাফসীর তথ্য সংগ্রহ করা হচ্ছে..." else null
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))

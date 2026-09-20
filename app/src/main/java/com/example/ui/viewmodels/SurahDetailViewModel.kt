@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -133,10 +134,32 @@ class SurahDetailViewModel(
                 e.printStackTrace()
             }
         }
+        viewModelScope.launch {
+            repository.surahDataUpdated.collect { updatedSurahNum ->
+                if (currentLoadedSurahNumber == updatedSurahNum) {
+                    try {
+                        val fontStyle = settingsRepository.tanzilTextStyleFlow.first()
+                        val updated = repository.getSurahDetailsCombined(updatedSurahNum, fontStyle)
+                        _uiState.value = UiState.Success(updated)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }
     }
 
     private val _uiState = MutableStateFlow<UiState<List<CombinedAyah>>>(UiState.Loading)
     val uiState: StateFlow<UiState<List<CombinedAyah>>> = _uiState.asStateFlow()
+
+    val isTafsirSyncing: StateFlow<Boolean> = repository.tafsirSyncingSurahs.map { syncingSet ->
+        val current = currentLoadedSurahNumber
+        current != null && syncingSet.contains(current)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
 
     private val _tafsirState = MutableStateFlow<UiState<String>>(UiState.Loading)
     val tafsirState: StateFlow<UiState<String>> = _tafsirState.asStateFlow()

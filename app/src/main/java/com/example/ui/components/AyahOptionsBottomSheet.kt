@@ -289,10 +289,9 @@ fun AyahOptionsBottomSheet(
                                 overflow = TextOverflow.Ellipsis
                             )
                         } else {
-                            Text(
-                                text = "এই আয়াতের তাফসীর লোড করতে সেটিংস থেকে তাফসীর প্যাক নির্বাচন করুন অথবা ইন্টারনেট সংযোগ পরীক্ষা করুন।",
-                                fontSize = 13.sp,
-                                color = subtitleColor
+                            MinimalTafsirLoadingIndicator(
+                                text = "তাফসীর লোড হচ্ছে...",
+                                subText = "অনলাইন থেকে তাফসীর তথ্য সংগ্রহ করা হচ্ছে..."
                             )
                         }
                     }
@@ -481,7 +480,17 @@ fun AyahOptionsBottomSheet(
                             textAlign = TextAlign.Justify
                         )
                     } else {
-                        Text("এই আয়াতের তাফসীর তথ্য পাওয়া যায়নি।", fontSize = 15.sp, color = subtitleColor)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            MinimalTafsirLoadingIndicator(
+                                text = "তাফসীর লোড হচ্ছে...",
+                                subText = "অনলাইন থেকে তাফসীর তথ্য সংগ্রহ করা হচ্ছে..."
+                            )
+                        }
                     }
                 }
             },

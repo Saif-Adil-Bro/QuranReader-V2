@@ -1773,7 +1773,17 @@ fun AyahSelectionSheetContent(
                                         textAlign = TextAlign.Justify
                                     )
                                 } else {
-                                    Text("এই আয়াতের তাফসীর তথ্য পাওয়া যায়নি।", fontSize = 15.sp, color = subtitleColor)
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 12.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        com.example.ui.components.MinimalTafsirLoadingIndicator(
+                                            text = "তাফসীর লোড হচ্ছে...",
+                                            subText = "অনলাইন থেকে তাফসীর তথ্য সংগ্রহ করা হচ্ছে..."
+                                        )
+                                    }
                                 }
                             }
                         },
@@ -1953,10 +1963,9 @@ fun AyahSelectionSheetContent(
                                     overflow = TextOverflow.Ellipsis
                                 )
                             } else {
-                                Text(
-                                    text = "এই আয়াতের তাফসীর লোড করতে 'সম্পূর্ণ দেখুন' বাটনে ক্লিক করুন অথবা অনলাইন তাফসীর প্যাক ডাউনলোড করুন।",
-                                    fontSize = 13.sp,
-                                    color = subtitleColor
+                                com.example.ui.components.MinimalTafsirLoadingIndicator(
+                                    text = "তাফসীর লোড হচ্ছে...",
+                                    subText = "অনলাইন থেকে তাফসীর তথ্য সংগ্রহ করা হচ্ছে..."
                                 )
                             }
                         }

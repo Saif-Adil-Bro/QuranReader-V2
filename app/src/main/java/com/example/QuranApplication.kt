@@ -54,15 +54,7 @@ class QuranApplication : Application(), ImageLoaderFactory {
             }
             notificationManager.createNotificationChannel(channel)
 
-            val prayerChannelId = "prayer_times_notification_channel"
-            val prayerChannelName = "ওয়াক্ত শুরুর নোটিফিকেশন"
-            val prayerChannelDesc = "প্রতিটি ওয়াক্তের সালাত শুরু হলে স্মরণ করিয়ে দেওয়া হয়"
-            val prayerChannel = android.app.NotificationChannel(prayerChannelId, prayerChannelName, android.app.NotificationManager.IMPORTANCE_HIGH).apply {
-                description = prayerChannelDesc
-                enableVibration(true)
-                enableLights(true)
-            }
-            notificationManager.createNotificationChannel(prayerChannel)
+            com.example.utils.PrayerNotificationHelper.createNotificationChannel(this)
         }
 
         try {
