@@ -581,7 +581,12 @@ fun WaqtAlarmConfigDialog(
 
                     Switch(
                         checked = isVibrationEnabled,
-                        onCheckedChange = { isVibrationEnabled = it },
+                        onCheckedChange = { checked ->
+                            isVibrationEnabled = checked
+                            if (checked) {
+                                PrayerSoundManager.triggerVibration(context)
+                            }
+                        },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
                             checkedTrackColor = emeraldGreen,

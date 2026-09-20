@@ -69,6 +69,56 @@ object PrayerSoundManager {
         currentlyPlayingType = null
     }
 
+    fun getRawResourceName(soundType: PrayerAlarmSoundType, prayerName: PrayerName? = null): String? {
+        return when (soundType) {
+            PrayerAlarmSoundType.AZAN_MECCA -> if (prayerName == PrayerName.FAJR) "azan_fajr" else "azan_mecca"
+            PrayerAlarmSoundType.AZAN_MADINA -> "azan_madina"
+            PrayerAlarmSoundType.BEEP -> "alarm_beep"
+            PrayerAlarmSoundType.RING -> "alarm_ring"
+            else -> null
+        }
+    }
+
+    fun getRawResourceId(context: Context, soundType: PrayerAlarmSoundType, prayerName: PrayerName? = null): Int {
+        val rawName = getRawResourceName(soundType, prayerName) ?: return 0
+        var resId = context.resources.getIdentifier(rawName, "raw", context.packageName)
+        if (resId == 0 && soundType == PrayerAlarmSoundType.AZAN_MECCA && prayerName == PrayerName.FAJR) {
+            // Fallback to azan_mecca if azan_fajr is not provided
+            resId = context.resources.getIdentifier("azan_mecca", "raw", context.packageName)
+        }
+        return resId
+    }
+
+    private fun playRawSound(
+        context: Context,
+        rawResId: Int,
+        onCompletion: () -> Unit = {}
+    ): Boolean {
+        return try {
+            activeMediaPlayer?.stop()
+            activeMediaPlayer?.release()
+            activeMediaPlayer = null
+
+            activeMediaPlayer = MediaPlayer.create(context, rawResId)?.apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build()
+                )
+                setOnCompletionListener {
+                    currentlyPlayingType = null
+                    onCompletion()
+                }
+                start()
+            }
+            activeMediaPlayer != null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     /**
      * Preview sound for UI demonstration
      */
@@ -80,6 +130,12 @@ object PrayerSoundManager {
     ) {
         stopAll()
         currentlyPlayingType = soundType
+
+        val rawResId = getRawResourceId(context, soundType, prayerName)
+        if (rawResId != 0) {
+            val started = playRawSound(context, rawResId, onCompletion)
+            if (started) return
+        }
 
         playbackJob = CoroutineScope(Dispatchers.Main).launch {
             try {
@@ -151,6 +207,12 @@ object PrayerSoundManager {
             triggerVibration(context)
         }
 
+        val rawResId = getRawResourceId(context, soundType, prayerName)
+        if (rawResId != 0) {
+            val played = playRawSound(context, rawResId)
+            if (played) return
+        }
+
         when (soundType) {
             PrayerAlarmSoundType.SILENT -> {
                 // Do not play audio
@@ -193,20 +255,37 @@ object PrayerSoundManager {
 
     fun triggerVibration(context: Context) {
         try {
-            vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vib = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                vibratorManager?.defaultVibrator
+                vibratorManager?.defaultVibrator ?: (context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)
             } else {
                 @Suppress("DEPRECATION")
                 context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
             }
 
+            vibrator = vib
+
+            if (vib == null || !vib.hasVibrator()) {
+                return
+            }
+
             val pattern = longArrayOf(0, 600, 300, 600, 300, 800)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator?.vibrate(VibrationEffect.createWaveform(pattern, -1))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val effect = VibrationEffect.createWaveform(pattern, -1)
+                val attributes = android.os.VibrationAttributes.Builder()
+                    .setUsage(android.os.VibrationAttributes.USAGE_ALARM)
+                    .build()
+                vib.vibrate(effect, attributes)
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val effect = VibrationEffect.createWaveform(pattern, -1)
+                val audioAttributes = AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .build()
+                vib.vibrate(effect, audioAttributes)
             } else {
                 @Suppress("DEPRECATION")
-                vibrator?.vibrate(pattern, -1)
+                vib.vibrate(pattern, -1)
             }
         } catch (e: Exception) {
             e.printStackTrace()
