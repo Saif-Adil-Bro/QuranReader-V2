@@ -71,6 +71,18 @@ fun HafeziModeScreen(
     initialPage: Int,
     onNavigateBack: () -> Unit
 ) {
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.saveLastReadPosition()
+        }
+    }
+
+    androidx.activity.compose.BackHandler {
+        viewModel.stopAudio()
+        viewModel.saveLastReadPosition()
+        onNavigateBack()
+    }
+
     // Initialize the viewmodel's current page to initialPage on first composition
     remember(initialPage) {
         viewModel.updateActivePage(initialPage)
@@ -210,7 +222,11 @@ fun HafeziModeScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = {
+                        viewModel.stopAudio()
+                        viewModel.saveLastReadPosition()
+                        onNavigateBack()
+                    }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },

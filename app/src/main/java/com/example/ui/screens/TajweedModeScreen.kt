@@ -57,8 +57,15 @@ fun TajweedModeScreen(
     initialPage: Int,
     onNavigateBack: () -> Unit
 ) {
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.saveLastReadPosition()
+        }
+    }
+
     BackHandler {
         viewModel.stopAudio()
+        viewModel.saveLastReadPosition()
         onNavigateBack()
     }
 
@@ -214,6 +221,7 @@ fun TajweedModeScreen(
                 navigationIcon = {
                     IconButton(onClick = {
                         viewModel.stopAudio()
+                        viewModel.saveLastReadPosition()
                         onNavigateBack()
                     }) {
                         Icon(

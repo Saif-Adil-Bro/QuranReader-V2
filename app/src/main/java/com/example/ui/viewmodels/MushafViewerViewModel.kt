@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.repository.MushafRepository
 import com.example.data.repository.SettingsRepository
+import com.example.data.repository.RecentReadTrack
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -112,16 +113,35 @@ class MushafViewerViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val path = repository.getMushafPagePath(currentMushafId, pageNumber, _pdfPageOffset.value)
             _currentPagePath.value = path
-            
-            // Save last read state
-            settingsRepository.setLastReadMushaf(currentMushafId, pageNumber)
-            settingsRepository.setLastReadMode("MUSHAF")
 
             val bookmarkEntity = bookmarkDao.getBookmark("MUSHAF_PAGE", pageNumber)
                 ?: bookmarkDao.getBookmark("PAGE", pageNumber)
             _isBookmarked.value = bookmarkEntity != null
         }
         loadPageAyahs(pageNumber)
+    }
+
+    fun saveLastReadPosition() {
+        val pageNumber = _currentPageNumber.value
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                settingsRepository.setLastReadMushaf(currentMushafId, pageNumber)
+                settingsRepository.setLastReadPage(pageNumber)
+                settingsRepository.setLastReadMode("MUSHAF")
+                settingsRepository.addRecentRead(
+                    RecentReadTrack(
+                        title = "মুসহাফ পৃষ্ঠা ${com.example.utils.DateUtil.toBengaliNumerals(pageNumber)}",
+                        surahNumber = 1,
+                        ayahNumber = 1,
+                        pageNumber = pageNumber,
+                        mode = "MUSHAF",
+                        mushafId = currentMushafId
+                    )
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     fun loadPageAyahs(pageNumber: Int) {

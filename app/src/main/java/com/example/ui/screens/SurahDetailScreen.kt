@@ -95,7 +95,16 @@ fun SurahDetailScreen(
     viewModel: SurahDetailViewModel,
     onNavigateBack: () -> Unit
 ) {
-    androidx.activity.compose.BackHandler(onBack = onNavigateBack)
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.saveLastReadPosition()
+        }
+    }
+
+    androidx.activity.compose.BackHandler {
+        viewModel.saveLastReadPosition()
+        onNavigateBack()
+    }
     val uiState by viewModel.uiState.collectAsState()
     val showTranslation by viewModel.showTranslation.collectAsState()
     val showTransliteration by viewModel.showTransliteration.collectAsState()
@@ -255,7 +264,10 @@ fun SurahDetailScreen(
                 onPlayerTabClick = {
                     showPlayerBottomSheet = true
                 },
-                onBackClick = onNavigateBack
+                onBackClick = {
+                    viewModel.saveLastReadPosition()
+                    onNavigateBack()
+                }
             )
         },
         containerColor = MaterialTheme.colorScheme.background

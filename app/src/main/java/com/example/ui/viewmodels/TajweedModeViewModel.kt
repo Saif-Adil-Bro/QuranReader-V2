@@ -15,6 +15,7 @@ import com.example.domain.usecase.GetPageDetailsUseCase
 import com.example.ui.state.UiState
 import com.example.utils.DateUtil
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -89,30 +90,6 @@ class TajweedModeViewModel(
                 val ayahs = getPageDetailsUseCase(pageNumber)
                 playlist = ayahs
                 _uiState.value = UiState.Success(ayahs)
-                
-                // Save last read page, surah and mode
-                settingsRepository.setLastReadPage(pageNumber)
-                val firstSurah = ayahs.firstOrNull()?.surahNumber ?: 1
-                ayahs.firstOrNull()?.let {
-                    settingsRepository.setLastReadSurah(it.surahNumber)
-                }
-                settingsRepository.setLastReadMode("TAJWEED")
-
-                val surahName = QuranData.surahNames.find { it.first == firstSurah }?.second?.first ?: ""
-                val recentTitle = if (surahName.isNotEmpty()) {
-                    "তাজবীদ: সূরা $surahName (পৃ. ${DateUtil.toBengaliNumerals(pageNumber)})"
-                } else {
-                    "তাজবীদ পৃষ্ঠা ${DateUtil.toBengaliNumerals(pageNumber)}"
-                }
-                settingsRepository.addRecentRead(
-                    RecentReadTrack(
-                        title = recentTitle,
-                        surahNumber = firstSurah,
-                        ayahNumber = 1,
-                        pageNumber = pageNumber,
-                        mode = "TAJWEED"
-                    )
-                )
                 
                 // Check if memorized
                 val memorizedEntity = memorizedPageDao.getMemorizedPage(pageNumber)
@@ -300,8 +277,28 @@ class TajweedModeViewModel(
                 val ayahs = getPageDetailsUseCase(pageNumber)
                 playlist = ayahs
                 
-                // Save last read page, surah and mode
+                // Check if memorized
+                val memorizedEntity = memorizedPageDao.getMemorizedPage(pageNumber)
+                _isPageMemorized.value = memorizedEntity?.isMemorized == true
+
+                // Check if bookmarked
+                val bookmarkEntity = bookmarkDao.getBookmark("PAGE", pageNumber)
+                _isBookmarked.value = bookmarkEntity != null
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
+    }
+
+    /**
+     * Save the last read page position when the user closes or leaves Tajweed mode screen.
+     */
+    fun saveLastReadPosition() {
+        val pageNumber = _currentPage.value
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
                 settingsRepository.setLastReadPage(pageNumber)
+                val ayahs = getPageDetailsUseCase(pageNumber)
                 val firstSurah = ayahs.firstOrNull()?.surahNumber ?: 1
                 ayahs.firstOrNull()?.let {
                     settingsRepository.setLastReadSurah(it.surahNumber)
@@ -323,16 +320,8 @@ class TajweedModeViewModel(
                         mode = "TAJWEED"
                     )
                 )
-                
-                // Check if memorized
-                val memorizedEntity = memorizedPageDao.getMemorizedPage(pageNumber)
-                _isPageMemorized.value = memorizedEntity?.isMemorized == true
-
-                // Check if bookmarked
-                val bookmarkEntity = bookmarkDao.getBookmark("PAGE", pageNumber)
-                _isBookmarked.value = bookmarkEntity != null
             } catch (e: Exception) {
-                // ignore
+                e.printStackTrace()
             }
         }
     }

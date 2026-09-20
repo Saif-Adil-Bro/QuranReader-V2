@@ -102,8 +102,12 @@ fun TajweedIndexScreen(
                 onSurahClick = onSurahClick,
                 onJuzClick = onJuzClick,
                 onPageClick = onPageClick,
-                onNavigateToSurahWithAyah = { surah, _ ->
-                    onSurahClick(surah)
+                onNavigateToSurahWithAyah = { surah, ayah ->
+                    if (surah == 2 && ayah == 255) {
+                        onPageClick(42)
+                    } else {
+                        onSurahClick(surah)
+                    }
                 },
                 recentReads = recentReads
             )

@@ -10,16 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.QuranData
 import com.example.ui.components.QuranIndexComponent
-import com.example.ui.components.RecentReadItem
 import com.example.ui.theme.PrimaryGreen
 import com.example.ui.viewmodels.HomeViewModel
-import com.example.utils.DateUtil
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,25 +24,10 @@ fun RecitationIndexScreen(
     onBackClick: () -> Unit,
     onNavigateToPlayer: () -> Unit
 ) {
-    val currentPlayingSurah by viewModel.currentPlayingSurah.collectAsState()
     val selectedQariId by viewModel.selectedQariId.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
     var showQariSelectorDialog by remember { mutableStateOf(false) }
-
-    val recentTracks by viewModel.recentReads.collectAsState()
-
-    val recentReads = remember(recentTracks) {
-        recentTracks.map { track ->
-            RecentReadItem(
-                title = track.title,
-                surahNumber = track.surahNumber,
-                ayahNumber = track.ayahNumber,
-                pageNumber = track.pageNumber,
-                mode = track.mode
-            )
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -122,19 +103,19 @@ fun RecitationIndexScreen(
                 searchQuery = searchQuery,
                 onSearchQueryChange = { searchQuery = it },
                 onSurahClick = { surahNumber ->
-                    viewModel.playSurahAudio(surahNumber)
+                    viewModel.playSurahAudio(surahNumber, 0)
                     onNavigateToPlayer()
                 },
                 onJuzClick = { juzNumber ->
-                    val surahNumber = getSurahForJuz(juzNumber)
-                    viewModel.playSurahAudio(surahNumber)
+                    val (surahNumber, startAyah) = getJuzStartSurahAndAyah(juzNumber)
+                    viewModel.playSurahAudio(surahNumber, (startAyah - 1).coerceAtLeast(0))
                     onNavigateToPlayer()
                 },
-                onNavigateToSurahWithAyah = { surahNumber, _ ->
-                    viewModel.playSurahAudio(surahNumber)
+                onNavigateToSurahWithAyah = { surahNumber, ayahNumber ->
+                    viewModel.playSurahAudio(surahNumber, (ayahNumber - 1).coerceAtLeast(0))
                     onNavigateToPlayer()
                 },
-                recentReads = recentReads
+                recentReads = null
             )
         }
     }
@@ -151,38 +132,38 @@ fun RecitationIndexScreen(
     }
 }
 
-private fun getSurahForJuz(juz: Int): Int {
+private fun getJuzStartSurahAndAyah(juz: Int): Pair<Int, Int> {
     return when (juz) {
-        1 -> 1
-        2 -> 2
-        3 -> 2
-        4 -> 3
-        5 -> 4
-        6 -> 4
-        7 -> 5
-        8 -> 6
-        9 -> 7
-        10 -> 8
-        11 -> 9
-        12 -> 11
-        13 -> 12
-        14 -> 15
-        15 -> 17
-        16 -> 18
-        17 -> 21
-        18 -> 23
-        19 -> 25
-        20 -> 27
-        21 -> 29
-        22 -> 33
-        23 -> 36
-        24 -> 39
-        25 -> 41
-        26 -> 46
-        27 -> 51
-        28 -> 58
-        29 -> 67
-        30 -> 78
-        else -> 1
+        1 -> Pair(1, 1)
+        2 -> Pair(2, 142)
+        3 -> Pair(2, 253)
+        4 -> Pair(3, 93)
+        5 -> Pair(4, 24)
+        6 -> Pair(4, 148)
+        7 -> Pair(5, 82)
+        8 -> Pair(6, 111)
+        9 -> Pair(7, 88)
+        10 -> Pair(8, 41)
+        11 -> Pair(9, 93)
+        12 -> Pair(11, 6)
+        13 -> Pair(12, 53)
+        14 -> Pair(15, 1)
+        15 -> Pair(17, 1)
+        16 -> Pair(18, 75)
+        17 -> Pair(21, 1)
+        18 -> Pair(23, 1)
+        19 -> Pair(25, 21)
+        20 -> Pair(27, 56)
+        21 -> Pair(29, 46)
+        22 -> Pair(33, 31)
+        23 -> Pair(36, 28)
+        24 -> Pair(39, 32)
+        25 -> Pair(41, 47)
+        26 -> Pair(46, 1)
+        27 -> Pair(51, 31)
+        28 -> Pair(58, 1)
+        29 -> Pair(67, 1)
+        30 -> Pair(78, 1)
+        else -> Pair(1, 1)
     }
 }

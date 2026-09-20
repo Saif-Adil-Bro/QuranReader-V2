@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.*
 import com.example.ui.viewmodels.HomeViewModel
+import com.example.data.repository.RecentReadTrack
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.input.pointer.pointerInput
@@ -247,6 +248,7 @@ fun HomeScreen(
     }
     // New premium bookmarks
     val bookmarks by viewModel.bookmarks.collectAsState(initial = emptyList())
+    val recentReads by viewModel.recentReads.collectAsState()
 
     val hasAskedDownloadPrompt by viewModel.hasAskedDownloadPrompt.collectAsState()
     val isDownloading by viewModel.isDownloading.collectAsState()
@@ -625,6 +627,7 @@ fun HomeScreen(
                         defaultMushafId = defaultMushafId,
                         bookmarks = bookmarks,
                         lastReadAyah = lastReadAyah,
+                        recentReads = recentReads,
                         onSurahClick = onNavigateToSurah,
                         onNavigateToHafeziMode = onNavigateToHafeziMode,
                         onNavigateToReadingMode = onNavigateToReadingMode,
@@ -1818,6 +1821,7 @@ fun BookmarksAndLastReadSection(
     defaultMushafId: String,
     bookmarks: List<com.example.data.local.entity.BookmarkEntity>,
     lastReadAyah: Int = 1,
+    recentReads: List<RecentReadTrack> = emptyList(),
     onSurahClick: (Int) -> Unit,
     onNavigateToHafeziMode: (Int) -> Unit,
     onNavigateToReadingMode: (Int) -> Unit,
@@ -1827,97 +1831,171 @@ fun BookmarksAndLastReadSection(
     onDeleteBookmark: (com.example.data.local.entity.BookmarkEntity) -> Unit
 ) {
     val lastReadSurahName = QuranData.surahNames.find { it.first == lastReadSurah }?.second?.first ?: "আল ফাতিহা"
+    val displayRecentReads = recentReads.take(5)
     
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
-        // Last Read Card
-        Card(
+        // Section Header
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+                .padding(bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.History,
+                    contentDescription = null,
+                    tint = PrimaryGreen,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "সর্বশেষ পঠিত",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            if (displayRecentReads.size > 1) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                ) {
+                    Text(
+                        text = "${com.example.utils.DateUtil.toBengaliNumerals(displayRecentReads.size)}টি সাম্প্রতিক",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryGreen,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                }
+            }
+        }
+
+        if (displayRecentReads.isNotEmpty()) {
+            if (displayRecentReads.size == 1) {
+                val track = displayRecentReads.first()
+                RecentReadCardItem(
+                    track = track,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    defaultMushafId = defaultMushafId,
+                    onNavigateToHafeziMode = onNavigateToHafeziMode,
+                    onNavigateToReadingMode = onNavigateToReadingMode,
+                    onNavigateToTajweedMode = onNavigateToTajweedMode,
+                    onNavigateToMushafPage = onNavigateToMushafPage,
+                    onNavigateToSurahWithAyah = onNavigateToSurahWithAyah
+                )
+            } else {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                ) {
+                    items(displayRecentReads) { track ->
+                        RecentReadCardItem(
+                            track = track,
+                            modifier = Modifier.width(260.dp),
+                            defaultMushafId = defaultMushafId,
+                            onNavigateToHafeziMode = onNavigateToHafeziMode,
+                            onNavigateToReadingMode = onNavigateToReadingMode,
+                            onNavigateToTajweedMode = onNavigateToTajweedMode,
+                            onNavigateToMushafPage = onNavigateToMushafPage,
+                            onNavigateToSurahWithAyah = onNavigateToSurahWithAyah
+                        )
+                    }
+                }
+            }
+        } else {
+            // Fallback to default single last read card
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        when (lastReadMode) {
-                            "HAFEZI" -> onNavigateToHafeziMode(lastReadPage)
-                            "READING" -> onNavigateToReadingMode(lastReadSurah)
-                            "TAJWEED" -> onNavigateToTajweedMode(lastReadPage)
-                            "MUSHAF" -> {
-                                val targetMushafId = lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId
-                                onNavigateToMushafPage(targetMushafId, lastReadMushafPage, false)
-                            }
-                            "DETAIL" -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
-                            else -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
-                        }
-                    }
-                    .padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(vertical = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
             ) {
-                Box(
+                Row(
                     modifier = Modifier
-                        .size(40.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .clickable {
+                            when (lastReadMode) {
+                                "HAFEZI" -> onNavigateToHafeziMode(lastReadPage)
+                                "READING" -> onNavigateToReadingMode(lastReadSurah)
+                                "TAJWEED" -> onNavigateToTajweedMode(lastReadPage)
+                                "MUSHAF" -> {
+                                    val targetMushafId = lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId
+                                    onNavigateToMushafPage(targetMushafId, lastReadMushafPage, false)
+                                }
+                                "DETAIL" -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
+                                else -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
+                            }
+                        }
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.MenuBook,
+                            contentDescription = null,
+                            tint = PrimaryGreen,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        val cardTitleText = when (lastReadMode) {
+                            "HAFEZI", "TAJWEED", "MUSHAF" -> "সর্বশেষ পঠিত মুসহাফ"
+                            "READING" -> "সর্বশেষ পঠিত রিডিং মোড"
+                            else -> "সর্বশেষ পঠিত সূরা"
+                        }
+                        val cardMainText = when (lastReadMode) {
+                            "HAFEZI" -> "হাফেজী কুরআন (১৫ লাইন)"
+                            "TAJWEED" -> "রঙিন তাজবীদ কুরআন"
+                            "MUSHAF" -> lastReadMushafName
+                            else -> lastReadSurahName
+                        }
+                        val cardSubtitleText = when (lastReadMode) {
+                            "HAFEZI" -> "পৃষ্ঠা: ${lastReadPage.toBengaliNumerals()}"
+                            "TAJWEED" -> "পৃষ্ঠা: ${lastReadPage.toBengaliNumerals()} • সূরা: $lastReadSurahName"
+                            "MUSHAF" -> "পৃষ্ঠা: ${lastReadMushafPage.toBengaliNumerals()}"
+                            "READING" -> "সূরা: $lastReadSurahName"
+                            else -> "সর্বশেষ বিস্তারিত: $lastReadSurahName"
+                        }
+                        Text(
+                            text = cardTitleText,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = cardMainText,
+                            fontSize = 15.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = cardSubtitleText,
+                            fontSize = 11.sp,
+                            color = PrimaryGreen,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                     Icon(
-                        imageVector = Icons.Outlined.MenuBook,
+                        imageVector = Icons.Default.ChevronRight,
                         contentDescription = null,
-                        tint = PrimaryGreen,
-                        modifier = Modifier.size(20.dp)
+                        tint = GrayText
                     )
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    val cardTitleText = when (lastReadMode) {
-                        "HAFEZI", "TAJWEED", "MUSHAF" -> "সর্বশেষ পঠিত মুসহাফ"
-                        "READING" -> "সর্বশেষ পঠিত রিডিং মোড"
-                        else -> "সর্বশেষ পঠিত সূরা"
-                    }
-                    val cardMainText = when (lastReadMode) {
-                        "HAFEZI" -> "হাফেজী কুরআন (১৫ লাইন)"
-                        "TAJWEED" -> "রঙিন তাজবীদ কুরআন"
-                        "MUSHAF" -> lastReadMushafName
-                        else -> lastReadSurahName
-                    }
-                    val cardSubtitleText = when (lastReadMode) {
-                        "HAFEZI" -> "পৃষ্ঠা: ${lastReadPage.toBengaliNumerals()}"
-                        "TAJWEED" -> "পৃষ্ঠা: ${lastReadPage.toBengaliNumerals()} • সূরা: $lastReadSurahName"
-                        "MUSHAF" -> "পৃষ্ঠা: ${lastReadMushafPage.toBengaliNumerals()}"
-                        "READING" -> "সূরা: $lastReadSurahName"
-                        else -> "সর্বশেষ বিস্তারিত: $lastReadSurahName"
-                    }
-                    Text(
-                        text = cardTitleText,
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = cardMainText,
-                        fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = cardSubtitleText,
-                        fontSize = 11.sp,
-                        color = PrimaryGreen,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    tint = GrayText
-                )
             }
         }
 
@@ -1988,6 +2066,120 @@ fun BookmarksAndLastReadSection(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun RecentReadCardItem(
+    track: RecentReadTrack,
+    modifier: Modifier = Modifier,
+    defaultMushafId: String,
+    onNavigateToHafeziMode: (Int) -> Unit,
+    onNavigateToReadingMode: (Int) -> Unit,
+    onNavigateToTajweedMode: (Int) -> Unit,
+    onNavigateToMushafPage: (String, Int, Boolean) -> Unit,
+    onNavigateToSurahWithAyah: (Int, String, Int) -> Unit
+) {
+    val surahName = QuranData.surahNames.find { it.first == track.surahNumber }?.second?.first ?: "সূরা ${track.surahNumber}"
+    
+    val (badgeText, badgeColor, icon) = when (track.mode) {
+        "TAJWEED" -> Triple("কালার তাজবীদ", Color(0xFF8B5CF6), Icons.Default.Palette)
+        "HAFEZI" -> Triple("হাফেজী কুরআন", Color(0xFF10B981), Icons.Outlined.MenuBook)
+        "MUSHAF" -> Triple("মুসহাফ ভিউয়ার", Color(0xFF0D9488), Icons.Outlined.Book)
+        "READING" -> Triple("প্যারাগ্রাফ রিডিং", Color(0xFFF59E0B), Icons.Outlined.AutoStories)
+        else -> Triple("অনুবাদ ও তাফসীর", Color(0xFF059669), Icons.Outlined.Translate)
+    }
+
+    val mainText = when (track.mode) {
+        "TAJWEED", "HAFEZI", "MUSHAF" -> {
+            if (track.pageNumber != null) "পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(track.pageNumber)}"
+            else "সূরা $surahName"
+        }
+        else -> "সূরা $surahName"
+    }
+
+    val subtitleText = when (track.mode) {
+        "TAJWEED" -> "সূরা: $surahName • পৃষ্ঠাভিত্তিক"
+        "HAFEZI" -> "সূরা: $surahName • ১৫ লাইন"
+        "MUSHAF" -> "মুসহাফ পৃষ্ঠা ${com.example.utils.DateUtil.toBengaliNumerals(track.pageNumber ?: 1)}"
+        "READING" -> "আয়াত: ${com.example.utils.DateUtil.toBengaliNumerals(track.ayahNumber)}"
+        else -> "আয়াত: ${com.example.utils.DateUtil.toBengaliNumerals(track.ayahNumber)}"
+    }
+
+    Card(
+        modifier = modifier
+            .clickable {
+                when (track.mode) {
+                    "HAFEZI" -> onNavigateToHafeziMode(track.pageNumber ?: 1)
+                    "TAJWEED" -> onNavigateToTajweedMode(track.pageNumber ?: 1)
+                    "MUSHAF" -> onNavigateToMushafPage(track.mushafId ?: defaultMushafId, track.pageNumber ?: 1, false)
+                    "READING" -> onNavigateToReadingMode(track.surahNumber)
+                    "DETAIL" -> onNavigateToSurahWithAyah(track.surahNumber, "LIST", track.ayahNumber)
+                    else -> onNavigateToSurahWithAyah(track.surahNumber, "LIST", track.ayahNumber)
+                }
+            },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .background(badgeColor.copy(alpha = 0.12f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = badgeColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = badgeColor.copy(alpha = 0.1f)
+                ) {
+                    Text(
+                        text = badgeText,
+                        fontSize = 10.sp,
+                        color = badgeColor,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = mainText,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+                Text(
+                    text = subtitleText,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = GrayText,
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }

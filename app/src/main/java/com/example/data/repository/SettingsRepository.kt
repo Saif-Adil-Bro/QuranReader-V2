@@ -27,7 +27,8 @@ data class RecentReadTrack(
     val surahNumber: Int,
     val ayahNumber: Int = 1,
     val pageNumber: Int? = null,
-    val mode: String = "DETAIL"
+    val mode: String = "DETAIL",
+    val mushafId: String? = null
 )
 
 /**
@@ -109,7 +110,21 @@ class SettingsRepository(val context: Context) {
             } else {
                 try {
                     val type = object : TypeToken<List<RecentReadTrack>>() {}.type
-                    Gson().fromJson<List<RecentReadTrack>>(json, type) ?: emptyList()
+                    val list = Gson().fromJson<List<RecentReadTrack>>(json, type) ?: emptyList()
+                    val uniqueList = mutableListOf<RecentReadTrack>()
+                    for (track in list) {
+                        val exists = uniqueList.any { existing ->
+                            if (track.pageNumber != null) {
+                                existing.mode == track.mode && existing.pageNumber == track.pageNumber
+                            } else {
+                                existing.mode == track.mode && existing.surahNumber == track.surahNumber
+                            }
+                        }
+                        if (!exists) {
+                            uniqueList.add(track)
+                        }
+                    }
+                    uniqueList
                 } catch (e: Exception) {
                     emptyList()
                 }
@@ -258,14 +273,16 @@ class SettingsRepository(val context: Context) {
                 }
             }
 
-            // Remove duplicates within the same mode
+            // Remove duplicates within the same mode and target entity
             currentList.removeAll {
-                (it.mode == track.mode && it.surahNumber == track.surahNumber && it.ayahNumber == track.ayahNumber) ||
-                (it.mode == track.mode && track.pageNumber != null && it.pageNumber == track.pageNumber) ||
-                (it.mode == track.mode && it.title == track.title)
+                if (track.pageNumber != null) {
+                    it.mode == track.mode && it.pageNumber == track.pageNumber
+                } else {
+                    it.mode == track.mode && it.surahNumber == track.surahNumber
+                }
             }
 
-            // Add new track at the beginning
+            // Add new track at the beginning (MRU / LIFO order)
             currentList.add(0, track)
 
             // Keep max 20 tracks overall so different modes maintain their recent read history

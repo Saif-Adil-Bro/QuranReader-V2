@@ -97,6 +97,17 @@ fun MushafViewerScreen(
     onBack: () -> Unit,
     viewModel: MushafViewerViewModel
 ) {
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.saveLastReadPosition()
+        }
+    }
+
+    androidx.activity.compose.BackHandler {
+        viewModel.saveLastReadPosition()
+        onBack()
+    }
+
     remember(mushafId, initialPage) {
         viewModel.initMushaf(mushafId, initialPage)
         true
@@ -176,7 +187,10 @@ fun MushafViewerScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        viewModel.saveLastReadPosition()
+                        onBack()
+                    }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack, 
                             contentDescription = "Back",

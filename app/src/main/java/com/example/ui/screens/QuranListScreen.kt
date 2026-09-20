@@ -39,10 +39,17 @@ fun QuranListScreen(
 
     val recentReads = remember(recentTracks) {
         recentTracks
-            .filter { it.mode == "DETAIL" || it.mode == "LIST" }
+            .filter { it.mode == "DETAIL" || it.mode == "LIST" || it.mode == "READING" }
+            .take(5)
             .map { track ->
+                val surahName = com.example.data.QuranData.surahNames.find { it.first == track.surahNumber }?.second?.first ?: "সূরা ${track.surahNumber}"
+                val title = if (track.ayahNumber > 1) {
+                    "সূরা $surahName (আয়াত ${com.example.utils.DateUtil.toBengaliNumerals(track.ayahNumber)})"
+                } else {
+                    "সূরা $surahName"
+                }
                 com.example.ui.components.RecentReadItem(
-                    title = track.title,
+                    title = title,
                     surahNumber = track.surahNumber,
                     ayahNumber = track.ayahNumber,
                     pageNumber = null,

@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
+import com.example.data.HafeziQuranData
 import com.example.data.QuranData
 import com.example.data.model.Surah
 import com.example.data.surahInfoList
@@ -55,7 +56,8 @@ fun getSurahNameGlyph(surahNumber: Int): String {
 data class QuickLinkItem(
     val title: String,
     val surahNumber: Int,
-    val ayahNumber: Int = 1
+    val ayahNumber: Int = 1,
+    val pageNumber: Int? = null
 )
 
 data class RecentReadItem(
@@ -67,12 +69,12 @@ data class RecentReadItem(
 )
 
 private val defaultQuickLinks = listOf(
-    QuickLinkItem("আয়াতুল কুরসী", 2, 255),
-    QuickLinkItem("সূরা ইয়াসীন", 36, 1),
-    QuickLinkItem("সূরা আল কাহফ", 18, 1),
-    QuickLinkItem("সূরা আর-রহমান", 55, 1),
-    QuickLinkItem("সূরা আল মূলক", 67, 1),
-    QuickLinkItem("সূরা আল ওয়াকিয়া", 56, 1)
+    QuickLinkItem("আয়াতুল কুরসী", 2, 255, 42),
+    QuickLinkItem("সূরা ইয়াসীন", 36, 1, 440),
+    QuickLinkItem("সূরা আল কাহফ", 18, 1, 293),
+    QuickLinkItem("সূরা আর-রহমান", 55, 1, 531),
+    QuickLinkItem("সূরা আল মূলক", 67, 1, 562),
+    QuickLinkItem("সূরা আল ওয়াকিয়া", 56, 1, 534)
 )
 
 private val paraNamesBangla = QuranData.paraNamesBangla
@@ -99,7 +101,8 @@ fun QuranIndexComponent(
     onPageClick: ((Int) -> Unit)? = null,
     onNavigateToSurahWithAyah: ((Int, Int) -> Unit)? = null,
     recentReads: List<RecentReadItem>? = null,
-    onRetryClick: () -> Unit = {}
+    onRetryClick: () -> Unit = {},
+    headerContent: (@Composable () -> Unit)? = null
 ) {
     // Dynamic Dark/Light detection based on current App background luminance
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -128,13 +131,15 @@ fun QuranIndexComponent(
             val info = surahInfoList.find { it.first == number }?.second
             val isMadani = isSurahMadani(number)
             val cleanArabic = getCleanArabicSurahName(number)
+            val startPage = QuranData.surahStartPages.getOrNull(number - 1) ?: 1
             SurahItemData(
                 number = number,
                 banglaName = pair.first,
                 meaning = pair.second,
                 arabicName = cleanArabic,
                 ayahCount = info?.ayahCount ?: 0,
-                isMadani = isMadani
+                isMadani = isMadani,
+                pageNumber = startPage
             )
         }
     }
@@ -151,7 +156,9 @@ fun QuranIndexComponent(
                 item.meaning.contains(trimmed, ignoreCase = true) ||
                 item.arabicName.replace(diacriticsRegex, "").contains(normalizedQuery, ignoreCase = true) ||
                 item.number.toString().contains(trimmed) ||
-                item.number.toBengaliNumerals().contains(trimmed)
+                item.number.toBengaliNumerals().contains(trimmed) ||
+                item.pageNumber.toString().contains(trimmed) ||
+                item.pageNumber.toBengaliNumerals().contains(trimmed)
             }
         }
     }
@@ -162,11 +169,16 @@ fun QuranIndexComponent(
             val bName = paraNamesBangla[juzNum - 1]
             val aName = paraNamesArabic[juzNum - 1]
             val range = paraSurahRange[juzNum - 1]
+            val sPage = QuranData.juzList.getOrNull(juzNum - 1)?.third ?: 1
+            val len = HafeziQuranData.getParaLength(juzNum)
+            val ePage = sPage + len - 1
             ParaItemData(
                 number = juzNum,
                 banglaName = bName,
                 arabicName = aName,
-                surahRange = range
+                surahRange = range,
+                startPage = sPage,
+                endPage = ePage
             )
         }.filter {
             trimmed.isEmpty() ||
@@ -174,7 +186,9 @@ fun QuranIndexComponent(
             it.arabicName.contains(trimmed, ignoreCase = true) ||
             it.surahRange.contains(trimmed, ignoreCase = true) ||
             it.number.toString().contains(trimmed) ||
-            it.number.toBengaliNumerals().contains(trimmed)
+            it.number.toBengaliNumerals().contains(trimmed) ||
+            it.startPage.toString().contains(trimmed) ||
+            it.startPage.toBengaliNumerals().contains(trimmed)
         }
     }
 
@@ -310,8 +324,13 @@ fun QuranIndexComponent(
                                     .background(chipBg)
                                     .border(1.dp, chipBorder, RoundedCornerShape(100.dp))
                                     .clickable {
-                                        onNavigateToSurahWithAyah?.invoke(qLink.surahNumber, qLink.ayahNumber)
-                                            ?: onSurahClick(qLink.surahNumber)
+                                        if (onPageClick != null && qLink.pageNumber != null) {
+                                            onPageClick(qLink.pageNumber)
+                                        } else if (onNavigateToSurahWithAyah != null) {
+                                            onNavigateToSurahWithAyah(qLink.surahNumber, qLink.ayahNumber)
+                                        } else {
+                                            onSurahClick(qLink.surahNumber)
+                                        }
                                     }
                                     .padding(horizontal = 14.dp, vertical = 8.dp),
                                 contentAlignment = Alignment.Center
@@ -326,6 +345,13 @@ fun QuranIndexComponent(
                         }
                     }
                 }
+            }
+        }
+
+        // Optional Header / Quick Jump content
+        if (headerContent != null) {
+            item(key = "header_custom_content") {
+                headerContent()
             }
         }
 
@@ -459,14 +485,17 @@ data class SurahItemData(
     val meaning: String,
     val arabicName: String,
     val ayahCount: Int,
-    val isMadani: Boolean
+    val isMadani: Boolean,
+    val pageNumber: Int
 )
 
 data class ParaItemData(
     val number: Int,
     val banglaName: String,
     val arabicName: String,
-    val surahRange: String
+    val surahRange: String,
+    val startPage: Int,
+    val endPage: Int
 )
 
 @Composable
@@ -500,7 +529,7 @@ fun SurahIndexRow(
 
         Spacer(modifier = Modifier.width(14.dp))
 
-        // Middle: Surah Bangla Name and Type/Ayahs
+        // Middle: Surah Bangla Name and Type/Ayahs/Page Number
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center
@@ -541,6 +570,19 @@ fun SurahIndexRow(
                     text = "${item.ayahCount.toBengaliNumerals()} আয়াত",
                     fontSize = 11.5.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "•",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "পৃষ্ঠা ${item.pageNumber.toBengaliNumerals()}",
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = emeraldAccent
                 )
             }
         }
@@ -591,7 +633,7 @@ fun ParaIndexRow(
 
         Spacer(modifier = Modifier.width(14.dp))
 
-        // Middle: Para Bangla Name & Range
+        // Middle: Para Bangla Name & Range & Page
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center
@@ -607,13 +649,29 @@ fun ParaIndexRow(
 
             Spacer(modifier = Modifier.height(3.dp))
 
-            Text(
-                text = item.surahRange,
-                fontSize = 11.5.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = item.surahRange,
+                    fontSize = 11.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "•",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "পৃষ্ঠা ${item.startPage.toBengaliNumerals()}-${item.endPage.toBengaliNumerals()}",
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = emeraldAccent
+                )
+            }
         }
 
         Spacer(modifier = Modifier.width(12.dp))
