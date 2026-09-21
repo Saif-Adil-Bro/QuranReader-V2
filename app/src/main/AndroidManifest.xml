@@ -46,6 +46,9 @@
             android:exported="false"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
+            android:showForAllUsers="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.example.alarm"
             android:excludeFromRecents="true"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.MyApplication" />

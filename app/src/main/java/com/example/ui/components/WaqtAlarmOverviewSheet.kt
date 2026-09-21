@@ -241,6 +241,10 @@ fun WaqtAlarmOverviewSheet(
                                 }
                                 isMasterEnabled = true
                                 PrayerNotificationHelper.setMasterEnabled(context, true)
+                                // If battery optimization is not ignored, prompt or notify
+                                if (!com.example.utils.DeviceSettingsHelper.isBatteryOptimizationIgnored(context)) {
+                                    com.example.utils.DeviceSettingsHelper.openBatteryOptimizationSettings(context)
+                                }
                             } else {
                                 isMasterEnabled = false
                                 PrayerNotificationHelper.setMasterEnabled(context, false)
@@ -253,6 +257,95 @@ fun WaqtAlarmOverviewSheet(
                             uncheckedTrackColor = Color(0xFF475569)
                         )
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Battery & Lock-Screen Permission Helper Card
+            val isBatteryIgnored = remember(isMasterEnabled) { com.example.utils.DeviceSettingsHelper.isBatteryOptimizationIgnored(context) }
+            val canScheduleExact = remember(isMasterEnabled) { com.example.utils.DeviceSettingsHelper.canScheduleExactAlarms(context) }
+
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = Color(0xFF0F2B48),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E4976)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Tune,
+                                contentDescription = null,
+                                tint = Color(0xFF38BDF8),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "সঠিক সময়ে বাজার প্রয়োজনীয় সেটিংস",
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFE2E8F0)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = com.example.utils.DeviceSettingsHelper.getDeviceBrandTip(),
+                        fontSize = 11.5.sp,
+                        lineHeight = 16.sp,
+                        color = Color(0xFF94A3B8)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                com.example.utils.DeviceSettingsHelper.openBatteryOptimizationSettings(context)
+                            },
+                            modifier = Modifier.weight(1f).height(34.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isBatteryIgnored) Color(0xFF1E3A5F) else Color(0xFF0284C7),
+                                contentColor = Color.White
+                            ),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) {
+                            Text(
+                                text = if (isBatteryIgnored) "✓ ব্যাটারি আনরেস্ট্রিক্টেড" else "⚡ ব্যাটারি সেভার অফ করুন",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                com.example.utils.DeviceSettingsHelper.openAppDetailsSettings(context)
+                            },
+                            modifier = Modifier.weight(1f).height(34.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF0D9488),
+                                contentColor = Color.White
+                            ),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) {
+                            Text(
+                                text = "🔒 লক স্ক্রিন পারমিশন",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
                 }
             }
 

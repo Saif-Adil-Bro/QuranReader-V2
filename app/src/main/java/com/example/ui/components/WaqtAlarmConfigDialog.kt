@@ -614,6 +614,9 @@ fun WaqtAlarmConfigDialog(
                         isVibrationEnabled = isVibrationEnabled
                     )
                     PrayerNotificationHelper.savePrayerAlarmConfig(context, newConfig)
+                    if (isAlarmEnabled && !com.example.utils.DeviceSettingsHelper.isBatteryOptimizationIgnored(context)) {
+                        com.example.utils.DeviceSettingsHelper.openBatteryOptimizationSettings(context)
+                    }
                     Toast.makeText(context, "${prayerName.nameBn} অ্যালার্ম সেটিংস সংরক্ষিত হয়েছে", Toast.LENGTH_SHORT).show()
                     onDismiss()
                 },

@@ -281,6 +281,25 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
 
             notificationManager.notify(notifId, builder.build())
 
+            // On locked screen or waking up, directly launch the full screen alarm activity for custom alarm tones
+            if (isCustomAlarmTone) {
+                try {
+                    val activityIntent = Intent(context, com.example.ui.screens.alarm.PrayerAlarmActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                                Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        putExtra("prayer_name", prayerName.name)
+                        putExtra("title", title)
+                        putExtra("message", message)
+                        putExtra("notif_id", notifId)
+                    }
+                    context.startActivity(activityIntent)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
             // Reschedule subsequent prayer alarms
             PrayerNotificationHelper.scheduleNextPrayerAlarms(context)
         }

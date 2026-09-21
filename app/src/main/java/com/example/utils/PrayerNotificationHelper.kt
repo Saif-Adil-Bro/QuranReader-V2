@@ -406,7 +406,22 @@ object PrayerNotificationHelper {
         )
 
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                val showIntent = Intent(context, com.example.ui.screens.alarm.PrayerAlarmActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra("prayer_name", prayer.name.name)
+                    putExtra("prayer_time_formatted", prayer.timeFormatted)
+                    putExtra("district_name_bn", district.nameBn)
+                }
+                val showPendingIntent = PendingIntent.getActivity(
+                    context,
+                    requestCode + 500,
+                    showIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                val alarmClockInfo = AlarmManager.AlarmClockInfo(triggerMillis, showPendingIntent)
+                alarmManager.setAlarmClock(alarmClockInfo, pendingIntent)
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     triggerMillis,
@@ -420,11 +435,27 @@ object PrayerNotificationHelper {
                 )
             }
         } catch (e: SecurityException) {
-            alarmManager.set(
-                AlarmManager.RTC_WAKEUP,
-                triggerMillis,
-                pendingIntent
-            )
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerMillis,
+                        pendingIntent
+                    )
+                } else {
+                    alarmManager.set(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerMillis,
+                        pendingIntent
+                    )
+                }
+            } catch (ex: Exception) {
+                alarmManager.set(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerMillis,
+                    pendingIntent
+                )
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -545,11 +576,28 @@ object PrayerNotificationHelper {
         )
 
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                val showIntent = Intent(context, com.example.ui.screens.alarm.PrayerAlarmActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra("prayer_name", prayerName.name)
+                }
+                val showPendingIntent = PendingIntent.getActivity(
+                    context,
+                    requestCode + 500,
+                    showIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                val alarmClockInfo = AlarmManager.AlarmClockInfo(snoozeMillis, showPendingIntent)
+                alarmManager.setAlarmClock(alarmClockInfo, pendingIntent)
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, snoozeMillis, pendingIntent)
             } else {
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, snoozeMillis, pendingIntent)
             }
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+            try {
+                alarmManager.set(AlarmManager.RTC_WAKEUP, snoozeMillis, pendingIntent)
+            } catch (_: Exception) {}
+        }
     }
 }
