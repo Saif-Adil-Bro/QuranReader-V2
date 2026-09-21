@@ -203,8 +203,25 @@ object PrayerSoundManager {
     ) {
         stopAll()
 
+        val isAlarmTone = soundType == PrayerAlarmSoundType.AZAN_MECCA ||
+                soundType == PrayerAlarmSoundType.AZAN_MADINA ||
+                soundType == PrayerAlarmSoundType.BEEP ||
+                soundType == PrayerAlarmSoundType.RING ||
+                soundType == PrayerAlarmSoundType.VOICE_NAME
+
         if (enableVibration) {
-            triggerVibration(context)
+            triggerVibration(context, isRepeating = isAlarmTone)
+        }
+
+        if (soundType == PrayerAlarmSoundType.SILENT) {
+            return
+        }
+
+        if (soundType == PrayerAlarmSoundType.NOTIFICATION) {
+            // For standard notification, system notification sound / channel handles it,
+            // but we can also play the short notification chime
+            playSystemNotificationSound(context)
+            return
         }
 
         val rawResId = getRawResourceId(context, soundType, prayerName)
@@ -213,47 +230,44 @@ object PrayerSoundManager {
             if (played) return
         }
 
-        when (soundType) {
-            PrayerAlarmSoundType.SILENT -> {
-                // Do not play audio
-            }
-            PrayerAlarmSoundType.BEEP -> {
-                CoroutineScope(Dispatchers.IO).launch {
-                    repeat(3) {
-                        playSynthesizedBeep()
-                        delay(800)
+        currentlyPlayingType = soundType
+        playbackJob = CoroutineScope(Dispatchers.IO).launch {
+            try {
+                when (soundType) {
+                    PrayerAlarmSoundType.SILENT -> {}
+                    PrayerAlarmSoundType.BEEP -> {
+                        repeat(5) {
+                            playSynthesizedBeep()
+                            delay(1000)
+                        }
+                    }
+                    PrayerAlarmSoundType.RING -> {
+                        repeat(4) {
+                            playSynthesizedMelody()
+                            delay(800)
+                        }
+                    }
+                    PrayerAlarmSoundType.VOICE_NAME -> {
+                        val announcement = getVoiceAnnouncementText(prayerName)
+                        speakText(context, announcement)
+                    }
+                    PrayerAlarmSoundType.NOTIFICATION -> {}
+                    PrayerAlarmSoundType.AZAN_MECCA -> {
+                        playSynthesizedAzanMecca()
+                    }
+                    PrayerAlarmSoundType.AZAN_MADINA -> {
+                        playSynthesizedAzanMadina()
                     }
                 }
-            }
-            PrayerAlarmSoundType.RING -> {
-                CoroutineScope(Dispatchers.IO).launch {
-                    repeat(2) {
-                        playSynthesizedMelody()
-                        delay(600)
-                    }
-                }
-            }
-            PrayerAlarmSoundType.VOICE_NAME -> {
-                val announcement = getVoiceAnnouncementText(prayerName)
-                speakText(context, announcement)
-            }
-            PrayerAlarmSoundType.NOTIFICATION -> {
-                playSystemNotificationSound(context)
-            }
-            PrayerAlarmSoundType.AZAN_MECCA -> {
-                CoroutineScope(Dispatchers.IO).launch {
-                    playSynthesizedAzanMecca()
-                }
-            }
-            PrayerAlarmSoundType.AZAN_MADINA -> {
-                CoroutineScope(Dispatchers.IO).launch {
-                    playSynthesizedAzanMadina()
-                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                currentlyPlayingType = null
             }
         }
     }
 
-    fun triggerVibration(context: Context) {
+    fun triggerVibration(context: Context, isRepeating: Boolean = false) {
         try {
             val vib = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
@@ -269,23 +283,35 @@ object PrayerSoundManager {
                 return
             }
 
-            val pattern = longArrayOf(0, 600, 300, 600, 300, 800)
+            val pattern = if (isRepeating) {
+                longArrayOf(0, 800, 400, 800, 400, 800, 400, 1000)
+            } else {
+                longArrayOf(0, 350, 200, 350)
+            }
+            val repeatIndex = if (isRepeating) 0 else -1
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                val effect = VibrationEffect.createWaveform(pattern, -1)
+                val effect = VibrationEffect.createWaveform(pattern, repeatIndex)
+                val usageType = if (isRepeating) {
+                    android.os.VibrationAttributes.USAGE_ALARM
+                } else {
+                    android.os.VibrationAttributes.USAGE_NOTIFICATION
+                }
                 val attributes = android.os.VibrationAttributes.Builder()
-                    .setUsage(android.os.VibrationAttributes.USAGE_ALARM)
+                    .setUsage(usageType)
                     .build()
                 vib.vibrate(effect, attributes)
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val effect = VibrationEffect.createWaveform(pattern, -1)
+                val effect = VibrationEffect.createWaveform(pattern, repeatIndex)
+                val usageType = if (isRepeating) AudioAttributes.USAGE_ALARM else AudioAttributes.USAGE_NOTIFICATION
                 val audioAttributes = AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setUsage(usageType)
                     .build()
                 vib.vibrate(effect, audioAttributes)
             } else {
                 @Suppress("DEPRECATION")
-                vib.vibrate(pattern, -1)
+                vib.vibrate(pattern, repeatIndex)
             }
         } catch (e: Exception) {
             e.printStackTrace()

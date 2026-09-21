@@ -497,6 +497,9 @@ fun WaqtAlarmConfigDialog(
                                                     previewPlayingSoundType = null
                                                 } else {
                                                     previewPlayingSoundType = soundType
+                                                    if (isVibrationEnabled) {
+                                                        PrayerSoundManager.triggerVibration(context, isRepeating = false)
+                                                    }
                                                     PrayerSoundManager.playPreview(
                                                         context = context,
                                                         soundType = soundType,
@@ -565,14 +568,14 @@ fun WaqtAlarmConfigDialog(
 
                         Column {
                             Text(
-                                text = "Vibration",
+                                text = "ভাইব্রেশন",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Vibrate with alarm",
+                                text = "অ্যালার্মের সাথে ভাইব্রেশন হবে",
                                 fontSize = 12.5.sp,
                                 color = Color.LightGray.copy(alpha = 0.7f)
                             )

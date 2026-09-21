@@ -55,6 +55,13 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
         }
 
         if (action == "com.example.ACTION_PRAYER_NOTIFICATION") {
+            val powerManager = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+            val wakeLock = powerManager?.newWakeLock(
+                android.os.PowerManager.PARTIAL_WAKE_LOCK or android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                "quran:prayer_notification_wakelock"
+            )
+            wakeLock?.acquire(45_000L) // 45 seconds wake lock timeout
+
             val prayerNameStr = intent.getStringExtra("prayer_name") ?: return
             val prayerName = try {
                 PrayerName.valueOf(prayerNameStr)
@@ -92,8 +99,16 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             val prayerTimeFormatted = intent.getStringExtra("prayer_time_formatted") ?: ""
             val districtNameBn = intent.getStringExtra("district_name_bn") ?: "ঢাকা"
 
-            // Trigger alarm audio & vibration according to config
             val isSoundEnabled = PrayerNotificationHelper.isSoundEnabled(context)
+            val isCustomAlarmTone = isSoundEnabled && (
+                config.soundType == PrayerAlarmSoundType.AZAN_MECCA ||
+                config.soundType == PrayerAlarmSoundType.AZAN_MADINA ||
+                config.soundType == PrayerAlarmSoundType.BEEP ||
+                config.soundType == PrayerAlarmSoundType.RING ||
+                config.soundType == PrayerAlarmSoundType.VOICE_NAME
+            )
+
+            // Trigger alarm audio & vibration according to config
             val soundTypeToPlay = if (isSoundEnabled) config.soundType else PrayerAlarmSoundType.SILENT
             PrayerSoundManager.triggerAlarmSoundAndVibrate(
                 context = context,
@@ -201,30 +216,67 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             val iconRes = R.mipmap.ic_launcher
             val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
-            val builder = NotificationCompat.Builder(context, PrayerNotificationHelper.PRAYER_NOTIFICATION_CHANNEL_ID)
+            val channelId = if (isCustomAlarmTone) {
+                PrayerNotificationHelper.PRAYER_ALARM_CHANNEL_ID
+            } else {
+                PrayerNotificationHelper.PRAYER_NOTIFICATION_CHANNEL_ID
+            }
+
+            val builder = NotificationCompat.Builder(context, channelId)
                 .setSmallIcon(iconRes)
                 .setContentTitle(title)
                 .setContentText(message)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(message))
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setCategory(NotificationCompat.CATEGORY_ALARM)
-                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "বন্ধ করুন", stopPendingIntent)
-                .addAction(android.R.drawable.ic_lock_idle_alarm, "১০ মিনিট পর", snoozePendingIntent)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
-            if (config.isVibrationEnabled) {
-                builder.setVibrate(PrayerNotificationHelper.VIBRATION_PATTERN)
-            } else {
-                builder.setVibrate(longArrayOf(0))
-            }
+            if (isCustomAlarmTone) {
+                // Full-Screen Alarm Intent for Locked / Unlocked screen
+                val fullScreenIntent = Intent(context, com.example.ui.screens.alarm.PrayerAlarmActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                            Intent.FLAG_ACTIVITY_NO_USER_ACTION
+                    putExtra("prayer_name", prayerName.name)
+                    putExtra("title", title)
+                    putExtra("message", message)
+                    putExtra("notif_id", notifId)
+                }
+                val fullScreenPendingIntent = PendingIntent.getActivity(
+                    context,
+                    notifId + 800,
+                    fullScreenIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
 
-            if (isSoundEnabled && config.soundType != PrayerAlarmSoundType.SILENT) {
-                builder.setSound(defaultSoundUri)
-                builder.setDefaults(NotificationCompat.DEFAULT_LIGHTS)
+                builder.setFullScreenIntent(fullScreenPendingIntent, true)
+                builder.setPriority(NotificationCompat.PRIORITY_MAX)
+                builder.setCategory(NotificationCompat.CATEGORY_ALARM)
+                builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "বন্ধ করুন", stopPendingIntent)
+                builder.addAction(android.R.drawable.ic_lock_idle_alarm, "১০ মিনিট পর (স্নুজ)", snoozePendingIntent)
+
+                if (config.isVibrationEnabled) {
+                    builder.setVibrate(PrayerNotificationHelper.ALARM_VIBRATION_PATTERN)
+                } else {
+                    builder.setVibrate(longArrayOf(0))
+                }
             } else {
-                builder.setSound(null)
-                builder.setDefaults(NotificationCompat.DEFAULT_LIGHTS)
+                // Gentle standard notification
+                builder.setPriority(NotificationCompat.PRIORITY_HIGH)
+                builder.setCategory(NotificationCompat.CATEGORY_EVENT)
+                builder.addAction(android.R.drawable.ic_menu_view, "সময়সূচি দেখুন", pendingIntent)
+
+                if (config.isVibrationEnabled) {
+                    builder.setVibrate(PrayerNotificationHelper.VIBRATION_PATTERN)
+                } else {
+                    builder.setVibrate(longArrayOf(0))
+                }
+
+                if (isSoundEnabled && config.soundType == PrayerAlarmSoundType.NOTIFICATION) {
+                    builder.setSound(defaultSoundUri)
+                } else {
+                    builder.setSound(null)
+                }
             }
 
             notificationManager.notify(notifId, builder.build())

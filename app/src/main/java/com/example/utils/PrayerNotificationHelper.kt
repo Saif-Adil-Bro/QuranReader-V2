@@ -27,7 +27,8 @@ import java.time.ZoneId
 object PrayerNotificationHelper {
 
     private const val PREFS_NAME = "prayer_notification_prefs"
-    const val PRAYER_NOTIFICATION_CHANNEL_ID = "prayer_times_notification_channel_v3"
+    const val PRAYER_NOTIFICATION_CHANNEL_ID = "prayer_times_notification_v4"
+    const val PRAYER_ALARM_CHANNEL_ID = "prayer_times_alarm_v4"
     const val KEY_MASTER_ENABLED = "prayer_notif_master_enabled"
     const val KEY_NOTIF_SOUND = "prayer_notif_sound"
 
@@ -42,7 +43,8 @@ object PrayerNotificationHelper {
     const val KEY_NOTIF_SUNRISE = "prayer_notif_sunrise"
     const val KEY_NOTIF_TAHAJJUD = "prayer_notif_tahajjud"
 
-    val VIBRATION_PATTERN = longArrayOf(0, 500, 250, 500)
+    val VIBRATION_PATTERN = longArrayOf(0, 350, 200, 350)
+    val ALARM_VIBRATION_PATTERN = longArrayOf(0, 800, 400, 800, 400, 800, 400, 1000)
 
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -51,28 +53,48 @@ object PrayerNotificationHelper {
             try {
                 notificationManager.deleteNotificationChannel("prayer_times_notification_channel")
                 notificationManager.deleteNotificationChannel("prayer_times_notification_channel_v2")
+                notificationManager.deleteNotificationChannel("prayer_times_notification_channel_v3")
             } catch (_: Exception) {}
 
-            val audioAttributes = AudioAttributes.Builder()
+            val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+            // 1. Standard Gentle Notification Channel
+            val notifAudioAttributes = AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .setUsage(AudioAttributes.USAGE_NOTIFICATION)
                 .build()
 
-            val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-
-            val channel = NotificationChannel(
+            val notifChannel = NotificationChannel(
                 PRAYER_NOTIFICATION_CHANNEL_ID,
-                "ওয়াক্ত ও সালাত অ্যালার্ম",
+                "ওয়াক্ত ও নামাজের নোটিফিকেশন",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "প্রতিটি ওয়াক্তের সালাত, সাহরি, ইফতার ও তাহাজ্জুদ অ্যালার্ম এবং স্মরণ"
+                description = "ওয়াক্তের সময় সাধারণ স্ট্যাটাস বার নোটিফিকেশন"
                 enableVibration(true)
                 vibrationPattern = VIBRATION_PATTERN
                 enableLights(true)
                 lightColor = android.graphics.Color.GREEN
-                setSound(defaultSoundUri, audioAttributes)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+                setSound(defaultSoundUri, notifAudioAttributes)
             }
-            notificationManager.createNotificationChannel(channel)
+            notificationManager.createNotificationChannel(notifChannel)
+
+            // 2. High-Priority Full Alarm & Azan Channel
+            val alarmChannel = NotificationChannel(
+                PRAYER_ALARM_CHANNEL_ID,
+                "ওয়াক্তের আযান ও ফুল অ্যালার্ম",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "ওয়াক্তের আযান, অ্যালার্ম ও ফুল-স্ক্রিন ইন্টারফেস"
+                enableVibration(true)
+                vibrationPattern = ALARM_VIBRATION_PATTERN
+                enableLights(true)
+                lightColor = android.graphics.Color.GREEN
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+                // Keep channel sound null or silent because PrayerSoundManager plays azan/melody via STREAM_ALARM
+                setSound(null, null)
+            }
+            notificationManager.createNotificationChannel(alarmChannel)
         }
     }
 
