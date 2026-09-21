@@ -28,4 +28,10 @@ interface OfflineQuranDao {
 
     @Query("SELECT * FROM ayah WHERE surahNumber = :surahNumber AND numberInSurah BETWEEN :startVerse AND :endVerse ORDER BY numberInSurah ASC")
     suspend fun getAyahsBySurahRange(surahNumber: Int, startVerse: Int, endVerse: Int): List<AyahEntity>
+
+    @Query("SELECT * FROM ayah WHERE bengaliText LIKE '%' || :query || '%' ORDER BY globalNumber ASC LIMIT :limit")
+    suspend fun searchAyahsByBengali(query: String, limit: Int = 100): List<AyahEntity>
+
+    @Query("SELECT * FROM ayah WHERE arabicText LIKE '%' || :query || '%' ORDER BY globalNumber ASC LIMIT :limit")
+    suspend fun searchAyahsByArabic(query: String, limit: Int = 100): List<AyahEntity>
 }

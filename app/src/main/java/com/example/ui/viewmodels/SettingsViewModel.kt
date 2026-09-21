@@ -807,7 +807,7 @@ class SettingsViewModel(
                 }
                 
                 if (generatedQuestions.isEmpty()) {
-                    _gameErrorMessage.value = "গেম শুরু করা যাচ্ছে না। অনুগ্রহ করে নিশ্চিত করুন যে আপনি ইন্টারনেটে যুক্ত আছেন বা অফলাইন ডাটা ডাউনলোড করেছেন।"
+                    _gameErrorMessage.value = "গেমের প্রশ্ন তৈরি করা যায়নি। অনুগ্রহ করে অন্য সুরা নির্বাচন করুন।"
                     _gamePhase.value = GamePhase.SETUP
                     return@launch
                 }

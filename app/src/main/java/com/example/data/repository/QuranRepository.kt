@@ -28,6 +28,7 @@ class QuranRepository(
     private val quranComApi: QuranComApi,
     private val settingsRepository: SettingsRepository,
     private val offlineDao: com.example.data.local.offline.OfflineQuranDao,
+    private val quranWbwDao: com.example.data.local.offline.QuranWbwDao,
     val context: Context
 ) {
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -612,7 +613,22 @@ class QuranRepository(
 
     suspend fun getSurahWords(surahNumber: Int): List<com.example.data.model.QuranComWord> {
         return try {
-            quranComApi.getSurahVerses(surahNumber).verses.flatMap { it.words }
+            val dbWords = quranWbwDao.getWordsBySurah(surahNumber)
+            if (dbWords.isNotEmpty()) {
+                dbWords.map { entity ->
+                    com.example.data.model.QuranComWord(
+                        id = entity.id,
+                        position = entity.position,
+                        charTypeName = entity.charTypeName ?: "word",
+                        textUthmani = entity.textUthmani,
+                        translation = com.example.data.model.QuranComWordTranslation(text = entity.translationBengali),
+                        transliteration = null,
+                        audioUrl = entity.audioUrl
+                    )
+                }
+            } else {
+                quranComApi.getSurahVerses(surahNumber).verses.flatMap { it.words }
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             val cached = getSurahDetailsCombined(surahNumber).flatMap { it.words }
@@ -757,19 +773,34 @@ class QuranRepository(
             // 1. Fetch immediately from pre-packaged offline SQLite database (zero delay)
             try {
                 val offlineAyahs = offlineDao.getAyahsBySurah(surahNumber)
+                val offlineWords = quranWbwDao.getWordsBySurah(surahNumber)
+                val wordsByAyah = offlineWords.groupBy { it.ayahNumber }
+
                 if (offlineAyahs.isNotEmpty()) {
-                    rawList = offlineAyahs.map {
+                    rawList = offlineAyahs.map { ayahEntity ->
+                        val ayahWords = wordsByAyah[ayahEntity.numberInSurah]?.map { w ->
+                            com.example.data.model.QuranComWord(
+                                id = w.id,
+                                position = w.position,
+                                charTypeName = w.charTypeName ?: "word",
+                                textUthmani = w.textUthmani,
+                                translation = com.example.data.model.QuranComWordTranslation(text = w.translationBengali),
+                                transliteration = null,
+                                audioUrl = w.audioUrl
+                            )
+                        } ?: emptyList()
+
                         CombinedAyah(
-                            number = it.globalNumber,
-                            numberInSurah = it.numberInSurah,
-                            page = it.page,
-                            juz = it.juz,
+                            number = ayahEntity.globalNumber,
+                            numberInSurah = ayahEntity.numberInSurah,
+                            page = ayahEntity.page,
+                            juz = ayahEntity.juz,
                             surahNumber = surahNumber,
-                            arabicText = it.arabicText,
-                            bengaliText = it.bengaliText,
+                            arabicText = ayahEntity.arabicText,
+                            bengaliText = ayahEntity.bengaliText,
                             tafsirText = null,
                             audioUrl = null,
-                            words = emptyList(),
+                            words = ayahWords,
                             textUthmaniTajweed = null
                         )
                     }
@@ -1012,6 +1043,169 @@ class QuranRepository(
             }
         }
     }
+    /**
+     * Searches the Quran by a keyword (Supports Offline-First with local SQLite database)
+     */
+    suspend fun searchQuranOffline(query: String, isArabic: Boolean): List<com.example.data.model.SearchMatch> {
+        return withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val surahs = getSurahs()
+            val surahMap = surahs.associateBy { it.number }
+
+            if (isArabic) {
+                val cleanedQuery = cleanArabicTextForSearch(query)
+                val ayahMatches = offlineDao.searchAyahsByArabic(cleanedQuery, limit = 80)
+                val wordMatches = quranWbwDao.searchWordsByArabic(cleanedQuery, limit = 80)
+
+                val matchedKeys = mutableSetOf<Pair<Int, Int>>()
+                val resultList = mutableListOf<com.example.data.model.SearchMatch>()
+
+                ayahMatches.forEach { entity ->
+                    val key = Pair(entity.surahNumber, entity.numberInSurah)
+                    if (matchedKeys.add(key)) {
+                        val surah = surahMap[entity.surahNumber] ?: Surah(
+                            number = entity.surahNumber,
+                            name = "",
+                            englishName = "Surah ${entity.surahNumber}",
+                            englishNameTranslation = "",
+                            numberOfAyahs = 0,
+                            revelationType = ""
+                        )
+                        resultList.add(
+                            com.example.data.model.SearchMatch(
+                                number = entity.globalNumber,
+                                text = entity.bengaliText,
+                                edition = com.example.data.model.Edition(
+                                    identifier = "bn.bengali",
+                                    language = "bn",
+                                    name = "Bengali",
+                                    englishName = "Bengali",
+                                    format = "text",
+                                    type = "translation"
+                                ),
+                                surah = surah,
+                                numberInSurah = entity.numberInSurah
+                            )
+                        )
+                    }
+                }
+
+                // If fewer results from ayah text, check word-by-word database matches
+                if (resultList.size < 50) {
+                    for (w in wordMatches) {
+                        val key = Pair(w.surahNumber, w.ayahNumber)
+                        if (matchedKeys.add(key)) {
+                            val entity = offlineDao.getAyahBySurahAndNumber(w.surahNumber, w.ayahNumber)
+                            if (entity != null) {
+                                val surah = surahMap[entity.surahNumber] ?: Surah(
+                                    number = entity.surahNumber,
+                                    name = "",
+                                    englishName = "Surah ${entity.surahNumber}",
+                                    englishNameTranslation = "",
+                                    numberOfAyahs = 0,
+                                    revelationType = ""
+                                )
+                                resultList.add(
+                                    com.example.data.model.SearchMatch(
+                                        number = entity.globalNumber,
+                                        text = entity.bengaliText,
+                                        edition = com.example.data.model.Edition(
+                                            identifier = "bn.bengali",
+                                            language = "bn",
+                                            name = "Bengali",
+                                            englishName = "Bengali",
+                                            format = "text",
+                                            type = "translation"
+                                        ),
+                                        surah = surah,
+                                        numberInSurah = entity.numberInSurah
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+                resultList
+            } else {
+                val cleanQuery = query.trim()
+                val ayahMatches = offlineDao.searchAyahsByBengali(cleanQuery, limit = 100)
+                val wordMatches = quranWbwDao.searchWordsByBengali(cleanQuery, limit = 100)
+
+                val matchedKeys = mutableSetOf<Pair<Int, Int>>()
+                val resultList = mutableListOf<com.example.data.model.SearchMatch>()
+
+                ayahMatches.forEach { entity ->
+                    val key = Pair(entity.surahNumber, entity.numberInSurah)
+                    if (matchedKeys.add(key)) {
+                        val surah = surahMap[entity.surahNumber] ?: Surah(
+                            number = entity.surahNumber,
+                            name = "",
+                            englishName = "Surah ${entity.surahNumber}",
+                            englishNameTranslation = "",
+                            numberOfAyahs = 0,
+                            revelationType = ""
+                        )
+                        resultList.add(
+                            com.example.data.model.SearchMatch(
+                                number = entity.globalNumber,
+                                text = entity.bengaliText,
+                                edition = com.example.data.model.Edition(
+                                    identifier = "bn.bengali",
+                                    language = "bn",
+                                    name = "Bengali",
+                                    englishName = "Bengali",
+                                    format = "text",
+                                    type = "translation"
+                                ),
+                                surah = surah,
+                                numberInSurah = entity.numberInSurah
+                            )
+                        )
+                    }
+                }
+
+                // Add matches from Word by Word translations
+                for (w in wordMatches) {
+                    val key = Pair(w.surahNumber, w.ayahNumber)
+                    if (matchedKeys.add(key)) {
+                        val entity = offlineDao.getAyahBySurahAndNumber(w.surahNumber, w.ayahNumber)
+                        if (entity != null) {
+                            val surah = surahMap[entity.surahNumber] ?: Surah(
+                                number = entity.surahNumber,
+                                name = "",
+                                englishName = "Surah ${entity.surahNumber}",
+                                englishNameTranslation = "",
+                                numberOfAyahs = 0,
+                                revelationType = ""
+                            )
+                            resultList.add(
+                                com.example.data.model.SearchMatch(
+                                    number = entity.globalNumber,
+                                    text = entity.bengaliText,
+                                    edition = com.example.data.model.Edition(
+                                        identifier = "bn.bengali",
+                                        language = "bn",
+                                        name = "Bengali",
+                                        englishName = "Bengali",
+                                        format = "text",
+                                        type = "translation"
+                                    ),
+                                    surah = surah,
+                                    numberInSurah = entity.numberInSurah
+                                )
+                            )
+                        }
+                    }
+                }
+                resultList
+            }
+        }
+    }
+
+    private fun cleanArabicTextForSearch(text: String): String {
+        val diacriticsRegex = Regex("[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]")
+        return text.replace(diacriticsRegex, "")
+    }
+
     /**
      * Searches the Quran by a keyword
      */

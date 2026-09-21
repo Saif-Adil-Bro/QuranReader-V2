@@ -109,8 +109,19 @@ class AppContainer(private val context: Context) {
         com.example.data.local.offline.OfflineQuranDatabase.getDatabase(context)
     }
 
+    val quranWbwDatabase: com.example.data.local.offline.QuranWbwDatabase by lazy {
+        com.example.data.local.offline.QuranWbwDatabase.getDatabase(context)
+    }
+
     val quranRepository: QuranRepository by lazy {
-        QuranRepository(quranApi, quranComApi, settingsRepository, offlineQuranDatabase.offlineQuranDao(), context)
+        QuranRepository(
+            quranApi,
+            quranComApi,
+            settingsRepository,
+            offlineQuranDatabase.offlineQuranDao(),
+            quranWbwDatabase.quranWbwDao(),
+            context
+        )
     }
 
     val settingsRepository: SettingsRepository by lazy {

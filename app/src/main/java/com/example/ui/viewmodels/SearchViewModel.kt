@@ -254,28 +254,37 @@ class SearchViewModel(
                         }
                     }
 
-                    // 3. Search verses via API for text matching
+                    // 3. Search verses via 100% Offline SQLite database first!
                     try {
-                        val tanzilStyle = settingsRepository.tanzilTextStyleFlow.first()
                         val isArabicQuery = containsArabic(query)
-                        val response = if (isArabicQuery) {
-                            val cleanedQuery = cleanArabicText(query)
-                            repository.searchQuran(cleanedQuery, "quran-simple-clean")
+                        val offlineMatches = repository.searchQuranOffline(query, isArabicQuery)
+                        
+                        if (offlineMatches.isNotEmpty()) {
+                            offlineMatches.forEach { match ->
+                                results.add(SearchResultItemType.AyahItem(
+                                    match = match,
+                                    arabicText = if (isArabicQuery) match.text else null,
+                                    banglaText = match.text
+                                ))
+                            }
                         } else {
-                            repository.searchQuran(query)
-                        }
-
-                        // For better performance, we don't load the full combined surah details for search results.
-                        response.matches.forEach { match ->
-                            results.add(SearchResultItemType.AyahItem(
-                                match = match,
-                                arabicText = if (isArabicQuery) match.text else null,
-                                banglaText = if (!isArabicQuery) match.text else null
-                            ))
+                            // Fallback to online API only if offline returned 0 results and network is available
+                            val cleanedQuery = if (isArabicQuery) cleanArabicText(query) else query
+                            val edition = if (isArabicQuery) "quran-simple-clean" else "bn.bengali"
+                            val response = repository.searchQuran(cleanedQuery, edition)
+                            response.matches.forEach { match ->
+                                results.add(SearchResultItemType.AyahItem(
+                                    match = match,
+                                    arabicText = if (isArabicQuery) match.text else null,
+                                    banglaText = if (!isArabicQuery) match.text else null
+                                ))
+                            }
                         }
                     } catch (e: Exception) {
+                        // If network fails or search completes locally, avoid blanking out existing surah/ayah results
                         if (results.isEmpty()) {
-                            throw e
+                            _uiState.value = UiState.Success(emptyList())
+                            return@launch
                         }
                     }
                 }

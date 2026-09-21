@@ -3903,7 +3903,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Word by Word & Tajweed Card
+        // Word by Word & Quran Text Status Card (100% Built-in Offline)
         Card(
             modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -3931,13 +3931,13 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "শব্দে শব্দে অর্থ (WbW) ও তাজবীদ ডাটা",
+                            text = "কুরআন টেক্সট ও শব্দে শব্দে অর্থ (WbW)",
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "১১৪টি সুরার শব্দে শব্দে বাংলা অর্থ, অনুবাদ ও তাজবীদ অফলাইন ডাটা",
+                            text = "১১৪টি সুরার প্রতিটি শব্দের বাংলা অর্থ সম্পূর্ণ অফলাইন সক্রিয়",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -3951,145 +3951,41 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                 
                 androidx.compose.animation.AnimatedVisibility(visible = expandedSection == 0) {
                     Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
-                Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                // Download Status UI
-                val statusText: String
-                val statusColor: Color
-                val statusIcon: ImageVector
-
-                if (downloadedCount == 114) {
-                    statusText = "সম্পূর্ণ অফলাইন ডাউনলোড করা হয়েছে (১১৪টি সুরা WbW)"
-                    statusColor = PrimaryGreen
-                    statusIcon = Icons.Default.CheckCircle
-                } else if (downloadedCount > 0) {
-                    statusText = "আংশিক ডাউনলোড হয়েছে (${com.example.utils.DateUtil.toBengaliNumerals(downloadedCount)}/১১৪ সুরা)"
-                    statusColor = Color(0xFFF59E0B)
-                    statusIcon = Icons.Default.Warning
-                } else {
-                    statusText = "কোনো অফলাইন ডাটা নেই"
-                    statusColor = Color.Red
-                    statusIcon = Icons.Default.Info
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(statusColor.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp, vertical = 10.dp)
-                ) {
-                    Icon(
-                        imageVector = statusIcon,
-                        contentDescription = null,
-                        tint = statusColor,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = statusText,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = statusColor
-                    )
-                }
-
-                if (isDownloading) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Column(modifier = Modifier.fillMaxWidth()) {
                         Row(
-                             modifier = Modifier.fillMaxWidth(),
-                             horizontalArrangement = Arrangement.SpaceBetween,
-                             verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(PrimaryGreen.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 12.dp, vertical = 10.dp)
                         ) {
-                            Text(
-                                text = "সুরা ডাউনলোড হচ্ছে...",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurface
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = PrimaryGreen,
+                                modifier = Modifier.size(18.dp)
                             )
                             Text(
-                                text = "${com.example.utils.DateUtil.toBengaliNumerals(progress)} / ১১৪",
+                                text = "১০০% সম্পূর্ণ অফলাইন প্রস্তুত (১১৪টি সুরা)",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = PrimaryGreen
                             )
                         }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        val progressPct = progress.toFloat() / 114f
-                        LinearProgressIndicator(
-                            progress = { progressPct },
-                            modifier = Modifier.fillMaxWidth(),
-                            color = PrimaryGreen,
-                            trackColor = Color.LightGray
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "পুরো কুরআনের প্রতিটি আয়াতের আরবি, বাংলা অনুবাদ এবং ৮৩,০০০+ শব্দের শব্দার্থ লোকাল ডাটাবেজে সংরক্ষিত রয়েছে। কোনো অতিরিক্ত ডাউনলোডের প্রয়োজন নেই।",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 16.sp
                         )
-                    }
-                }
-
-                error?.let { err ->
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "ত্রুটি: $err",
-                        color = Color.Red,
-                        fontSize = 12.sp
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    if (isDownloading) {
-                        Button(
-                            onClick = { viewModel.stopQuranDownload() },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp),
-                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
-                        ) {
-                            Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("ডাউনলোড বন্ধ করুন", color = Color.White, fontSize = 12.sp, maxLines = 1)
-                        }
-                    } else {
-                        if (downloadedCount < 114) {
-                            Button(
-                                onClick = { viewModel.downloadAllQuranData() },
-                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(48.dp),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
-                            ) {
-                                Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("ডাউনলোড শুরু করুন", color = Color.White, fontSize = 12.sp, maxLines = 1)
-                            }
-                        }
-
-                        if (downloadedCount > 0) {
-                            OutlinedButton(
-                                onClick = { viewModel.deleteDownloadedQuranData() },
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
-                                border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.5f)),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(48.dp),
-                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
-                            ) {
-                                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("মুছে ফেলুন", fontSize = 12.sp, color = Color.Red, maxLines = 1)
-                            }
-                        }
                     }
                 }
             }
         }
-    }
-}
 
         // 2. Audio Cache Card
         Card(
@@ -4676,7 +4572,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
 
                 val offlineFeatures = listOf(
                     Triple(Icons.Default.MenuBook, "কুরআন টেক্সট ও অনুবাদ", "১১৪টি সুরার সুপাঠ্য আরবি টেক্সট, বাংলা অনুবাদ ও তাজবীদ কালার সম্পূর্ণ অফলাইনে দেখতে ও পড়তে পারবেন।"),
-                    Triple(Icons.Default.Translate, "শব্দে শব্দে অর্থ (Word by Word)", "একবার লোড বা ডাউনলোড করে নিলে প্রতিটি সুরার শব্দে শব্দে অর্থ ও উচ্চারণ অফলাইনে দেখতে পাবেন।"),
+                    Triple(Icons.Default.Translate, "শব্দে শব্দে অর্থ (Word by Word)", "১১৪টি সুরার প্রতিটি শব্দের বাংলা অর্থ সম্পূর্ণ অফলাইনে দেওয়া রয়েছে, ইন্টারনেট ছাড়াই তৎক্ষণাৎ দেখা যাবে।"),
                     Triple(Icons.Default.Headphones, "অডিও তিলাওয়াত", "পূর্বে ব্যাকগ্রাউন্ডে ক্যাশ হওয়া বা আগে থেকে ডাউনলোড করা সুরার অডিও ইন্টারনেট ছাড়াই অফলাইনে শুনতে পারবেন।"),
                     Triple(Icons.Default.LibraryBooks, "তাফসীর ও বিষয়ভিত্তিক কুরআন", "ডাউনলোড করে রাখা তাফসীর এবং বিষয়ভিত্তিক কুরআনের সকল ক্যাটাগরি ও আয়াত অফলাইনে পড়তে পারবেন।"),
                     Triple(Icons.Default.Favorite, "দুআ, বুকমার্ক ও হিফজ ট্র্যাকার", "কুরআনিক দুআ, দৈনিক মাসনুন দুআ, প্রিয় আয়াত বুকমার্ক ও হিফজ ট্র্যাকিং অফলাইনে ব্যবহার করতে পারবেন।"),
