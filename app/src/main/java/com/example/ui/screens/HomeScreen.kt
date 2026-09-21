@@ -615,27 +615,29 @@ fun HomeScreen(
                         onNavigateToSurahWithAyah = onNavigateToSurahWithAyah
                     )
                 }
-                item {
-                    Spacer(modifier = Modifier.height(24.dp))
-                    BookmarksAndLastReadSection(
-                        lastReadSurah = lastReadSurah,
-                        lastReadPage = lastReadPage,
-                        lastReadMode = lastReadMode,
-                        lastReadMushafId = lastReadMushafId,
-                        lastReadMushafPage = lastReadMushafPage,
-                        lastReadMushafName = viewModel.getMushafStyle(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)?.nameBengali ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId),
-                        defaultMushafId = defaultMushafId,
-                        bookmarks = bookmarks,
-                        lastReadAyah = lastReadAyah,
-                        recentReads = recentReads,
-                        onSurahClick = onNavigateToSurah,
-                        onNavigateToHafeziMode = onNavigateToHafeziMode,
-                        onNavigateToReadingMode = onNavigateToReadingMode,
-                        onNavigateToTajweedMode = onNavigateToTajweedMode,
-                        onNavigateToMushafPage = onNavigateToMushafPage,
-                        onNavigateToSurahWithAyah = onNavigateToSurahWithAyah,
-                        onDeleteBookmark = { viewModel.deleteBookmark(it) }
-                    )
+                if (recentReads.isNotEmpty() || bookmarks.isNotEmpty()) {
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        BookmarksAndLastReadSection(
+                            lastReadSurah = lastReadSurah,
+                            lastReadPage = lastReadPage,
+                            lastReadMode = lastReadMode,
+                            lastReadMushafId = lastReadMushafId,
+                            lastReadMushafPage = lastReadMushafPage,
+                            lastReadMushafName = viewModel.getMushafStyle(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)?.nameBengali ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId),
+                            defaultMushafId = defaultMushafId,
+                            bookmarks = bookmarks,
+                            lastReadAyah = lastReadAyah,
+                            recentReads = recentReads,
+                            onSurahClick = onNavigateToSurah,
+                            onNavigateToHafeziMode = onNavigateToHafeziMode,
+                            onNavigateToReadingMode = onNavigateToReadingMode,
+                            onNavigateToTajweedMode = onNavigateToTajweedMode,
+                            onNavigateToMushafPage = onNavigateToMushafPage,
+                            onNavigateToSurahWithAyah = onNavigateToSurahWithAyah,
+                            onDeleteBookmark = { viewModel.deleteBookmark(it) }
+                        )
+                    }
                 }
                 item {
                     Spacer(modifier = Modifier.height(24.dp))
@@ -1838,46 +1840,46 @@ fun BookmarksAndLastReadSection(
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
-        // Section Header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.History,
-                    contentDescription = null,
-                    tint = PrimaryGreen,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "সর্বশেষ পঠিত",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-            if (displayRecentReads.size > 1) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                ) {
+        if (displayRecentReads.isNotEmpty()) {
+            // Section Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Outlined.History,
+                        contentDescription = null,
+                        tint = PrimaryGreen,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "${com.example.utils.DateUtil.toBengaliNumerals(displayRecentReads.size)}টি সাম্প্রতিক",
-                        fontSize = 11.sp,
+                        text = "সর্বশেষ পঠিত",
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PrimaryGreen,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 }
+                if (displayRecentReads.size > 1) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                    ) {
+                        Text(
+                            text = "${com.example.utils.DateUtil.toBengaliNumerals(displayRecentReads.size)}টি সাম্প্রতিক",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryGreen,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
             }
-        }
 
-        if (displayRecentReads.isNotEmpty()) {
             if (displayRecentReads.size == 1) {
                 val track = displayRecentReads.first()
                 RecentReadCardItem(
@@ -1907,94 +1909,6 @@ fun BookmarksAndLastReadSection(
                             onNavigateToSurahWithAyah = onNavigateToSurahWithAyah
                         )
                     }
-                }
-            }
-        } else {
-            // Fallback to default single last read card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            when (lastReadMode) {
-                                "HAFEZI" -> onNavigateToHafeziMode(lastReadPage)
-                                "READING" -> onNavigateToReadingMode(lastReadSurah)
-                                "TAJWEED" -> onNavigateToTajweedMode(lastReadPage)
-                                "MUSHAF" -> {
-                                    val targetMushafId = lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId
-                                    onNavigateToMushafPage(targetMushafId, lastReadMushafPage, false)
-                                }
-                                "DETAIL" -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
-                                else -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
-                            }
-                        }
-                        .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.MenuBook,
-                            contentDescription = null,
-                            tint = PrimaryGreen,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        val cardTitleText = when (lastReadMode) {
-                            "HAFEZI", "TAJWEED", "MUSHAF" -> "সর্বশেষ পঠিত মুসহাফ"
-                            "READING" -> "সর্বশেষ পঠিত রিডিং মোড"
-                            else -> "সর্বশেষ পঠিত সূরা"
-                        }
-                        val cardMainText = when (lastReadMode) {
-                            "HAFEZI" -> "হাফেজী কুরআন (১৫ লাইন)"
-                            "TAJWEED" -> "রঙিন তাজবীদ কুরআন"
-                            "MUSHAF" -> lastReadMushafName
-                            else -> lastReadSurahName
-                        }
-                        val cardSubtitleText = when (lastReadMode) {
-                            "HAFEZI" -> "পৃষ্ঠা: ${lastReadPage.toBengaliNumerals()}"
-                            "TAJWEED" -> "পৃষ্ঠা: ${lastReadPage.toBengaliNumerals()} • সূরা: $lastReadSurahName"
-                            "MUSHAF" -> "পৃষ্ঠা: ${lastReadMushafPage.toBengaliNumerals()}"
-                            "READING" -> "সূরা: $lastReadSurahName"
-                            else -> "সর্বশেষ বিস্তারিত: $lastReadSurahName"
-                        }
-                        Text(
-                            text = cardTitleText,
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = cardMainText,
-                            fontSize = 15.sp,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = cardSubtitleText,
-                            fontSize = 11.sp,
-                            color = PrimaryGreen,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = null,
-                        tint = GrayText
-                    )
                 }
             }
         }
