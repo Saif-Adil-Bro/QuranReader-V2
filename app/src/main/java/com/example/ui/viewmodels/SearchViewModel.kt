@@ -74,7 +74,7 @@ class SearchViewModel(
     private fun setupSearch() {
         viewModelScope.launch {
             _searchQuery
-                .debounce(500)
+                .debounce(200)
                 .distinctUntilChanged()
                 .filter { it.isNotBlank() }
                 .collect { query ->
@@ -260,11 +260,11 @@ class SearchViewModel(
                         val offlineMatches = repository.searchQuranOffline(query, isArabicQuery)
                         
                         if (offlineMatches.isNotEmpty()) {
-                            offlineMatches.forEach { match ->
+                            for (match in offlineMatches) {
                                 results.add(SearchResultItemType.AyahItem(
-                                    match = match,
-                                    arabicText = if (isArabicQuery) match.text else null,
-                                    banglaText = match.text
+                                    match = match.match,
+                                    arabicText = match.arabicText,
+                                    banglaText = match.bengaliText
                                 ))
                             }
                         } else {

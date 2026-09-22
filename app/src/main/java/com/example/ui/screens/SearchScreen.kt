@@ -524,7 +524,7 @@ fun SearchResultItem(
 
             // Arabic Text Section (if available)
             if (!arabicText.isNullOrBlank()) {
-                val highlightedArabic = highlightText(
+                val highlightedArabic = highlightArabicText(
                     text = arabicText,
                     query = searchQuery,
                     highlightColor = if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706)
@@ -547,7 +547,7 @@ fun SearchResultItem(
             // Bengali Translation Section with Keyword Highlighting!
             val displayText = banglaText ?: if (arabicText.isNullOrBlank()) match.text else ""
             if (displayText.isNotBlank()) {
-                val highlightedText = highlightText(
+                val highlightedText = highlightBengaliText(
                     text = displayText,
                     query = searchQuery,
                     highlightColor = if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706) // Soft warm gold/amber accent for high readability
@@ -566,39 +566,322 @@ fun SearchResultItem(
 }
 
 /**
- * Builds an AnnotatedString that highlights matches of the query string in the text.
+ * Normalizes Arabic text for matching diacritic-free user queries
  */
-fun highlightText(text: String, query: String, highlightColor: Color): AnnotatedString {
+private fun normalizeArabicChar(c: Char): String {
+    val block = Character.UnicodeBlock.of(c)
+    if (block != Character.UnicodeBlock.ARABIC &&
+        block != Character.UnicodeBlock.ARABIC_PRESENTATION_FORMS_A &&
+        block != Character.UnicodeBlock.ARABIC_PRESENTATION_FORMS_B &&
+        block != Character.UnicodeBlock.ARABIC_SUPPLEMENT) {
+        return c.toString()
+    }
+    // Filter out tashkeel / Quranic signs
+    val code = c.code
+    if (code in 0x064B..0x065F || code == 0x0670 || code in 0x06D6..0x06ED || code in 0x0610..0x061A || code in 0x08F0..0x08FF || code in 0xFD3E..0xFD3F) {
+        return ""
+    }
+    return when (c) {
+        'أ', 'إ', 'آ', 'ٱ', 'ٲ', 'ٳ' -> "ا"
+        'ى', 'ي', 'ئ', 'ۍ', 'ێ' -> "ي"
+        'ة' -> "ه"
+        'ؤ' -> "و"
+        'ـ' -> ""
+        else -> c.toString()
+    }
+}
+
+private fun normalizeArabicString(text: String): String {
+    val sb = StringBuilder()
+    for (ch in text) {
+        sb.append(normalizeArabicChar(ch))
+    }
+    return sb.toString().trim()
+}
+
+/**
+ * Builds an AnnotatedString that highlights Arabic matches considering tashkeel and orthography differences
+ */
+fun highlightArabicText(text: String, query: String, highlightColor: Color): AnnotatedString {
     if (query.isBlank()) return AnnotatedString(text)
     
-    return buildAnnotatedString {
-        var startIdx = 0
-        val lowerText = text.lowercase()
-        val lowerQuery = query.lowercase()
-        
-        while (true) {
-            val idx = lowerText.indexOf(lowerQuery, startIdx)
-            if (idx == -1) {
-                append(text.substring(startIdx))
-                break
+    val normQuery = normalizeArabicString(query)
+    if (normQuery.isBlank()) return AnnotatedString(text)
+
+    // Map each character in normalized string to index range in original text
+    val normBuilder = StringBuilder()
+    val charMap = mutableListOf<Int>()
+    for (i in text.indices) {
+        val normCh = normalizeArabicChar(text[i])
+        for (c in normCh) {
+            normBuilder.append(c)
+            charMap.add(i)
+        }
+    }
+    val normText = normBuilder.toString()
+    
+    // Find all occurrences of normQuery (and common Quranic variants)
+    val queryVariants = mutableSetOf(normQuery)
+    if (normQuery.contains("لاه")) queryVariants.add(normQuery.replace("لاه", "لوه"))
+    if (normQuery.contains("كاه")) queryVariants.add(normQuery.replace("كاه", "كوه"))
+    if (normQuery.contains("ياه")) queryVariants.add(normQuery.replace("ياه", "يوه"))
+    if (normQuery.contains("لا")) queryVariants.add(normQuery.replace("لا", "لو"))
+    if (normQuery.contains("الربا")) queryVariants.add(normQuery.replace("الربا", "الربوا"))
+
+    val matchedRanges = mutableListOf<Pair<Int, Int>>()
+    for (variant in queryVariants) {
+        var start = 0
+        while (start < normText.length) {
+            val idx = normText.indexOf(variant, start)
+            if (idx == -1) break
+            val origStart = charMap[idx]
+            val origEnd = if (idx + variant.length - 1 < charMap.size) {
+                charMap[idx + variant.length - 1] + 1
+            } else {
+                text.length
             }
-            
-            // Append the plain text before match
-            append(text.substring(startIdx, idx))
-            
-            // Append the highlighted matched substring
+            matchedRanges.add(Pair(origStart, origEnd))
+            start = idx + variant.length
+        }
+    }
+
+    if (matchedRanges.isEmpty()) return AnnotatedString(text)
+
+    // Merge overlapping ranges and sort
+    val sortedRanges = matchedRanges.sortedBy { it.first }
+    val mergedRanges = mutableListOf<Pair<Int, Int>>()
+    for (range in sortedRanges) {
+        if (mergedRanges.isEmpty()) {
+            mergedRanges.add(range)
+        } else {
+            val last = mergedRanges.last()
+            if (range.first <= last.second) {
+                mergedRanges[mergedRanges.size - 1] = Pair(last.first, maxOf(last.second, range.second))
+            } else {
+                mergedRanges.add(range)
+            }
+        }
+    }
+
+    return buildAnnotatedString {
+        var currentIndex = 0
+        for ((start, end) in mergedRanges) {
+            if (start > currentIndex) {
+                append(text.substring(currentIndex, minOf(start, text.length)))
+            }
             withStyle(
                 style = SpanStyle(
-                    color = highlightColor, 
+                    color = highlightColor,
                     fontWeight = FontWeight.Bold
                 )
             ) {
-                append(text.substring(idx, idx + query.length))
+                append(text.substring(minOf(start, text.length), minOf(end, text.length)))
             }
-            
-            startIdx = idx + query.length
+            currentIndex = maxOf(currentIndex, end)
+        }
+        if (currentIndex < text.length) {
+            append(text.substring(currentIndex))
         }
     }
+}
+
+private fun normalizeBengaliForHighlight(s: String): Pair<String, List<Pair<Int, Int>>> {
+    val res = StringBuilder()
+    val charMap = mutableListOf<Pair<Int, Int>>()
+    var i = 0
+    while (i < s.length) {
+        if (i + 1 < s.length && s[i + 1] == '\u09BC') {
+            when (s[i]) {
+                '\u09AF' -> {
+                    res.append('\u09DF')
+                    charMap.add(Pair(i, i + 2))
+                    i += 2
+                    continue
+                }
+                '\u09A1' -> {
+                    res.append('\u09DC')
+                    charMap.add(Pair(i, i + 2))
+                    i += 2
+                    continue
+                }
+                '\u09A2' -> {
+                    res.append('\u09DD')
+                    charMap.add(Pair(i, i + 2))
+                    i += 2
+                    continue
+                }
+            }
+        }
+        val ch = s[i]
+        when (ch) {
+            '\u09CB' -> { // ো -> ে + া
+                res.append("\u09C7\u09BE")
+                charMap.add(Pair(i, i + 1))
+                charMap.add(Pair(i, i + 1))
+            }
+            '\u09CC' -> { // ৌ -> ে + ৗ
+                res.append("\u09C7\u09D7")
+                charMap.add(Pair(i, i + 1))
+                charMap.add(Pair(i, i + 1))
+            }
+            else -> {
+                res.append(ch)
+                charMap.add(Pair(i, i + 1))
+            }
+        }
+        i++
+    }
+    return Pair(res.toString(), charMap)
+}
+
+/**
+ * Builds an AnnotatedString that highlights Bengali queries and synonyms in the text.
+ */
+fun highlightBengaliText(text: String, query: String, highlightColor: Color): AnnotatedString {
+    if (query.isBlank()) return AnnotatedString(text)
+    
+    val synonymsMap = mapOf(
+        "নামাজ" to listOf("নামাজ", "নামায", "সালাত", "সোলাত", "নামাযের", "সালাতের"),
+        "নামায" to listOf("নামায", "নামাজ", "সালাত", "সোলাত", "নামাযের", "সালাতের"),
+        "সালাত" to listOf("সালাত", "নামায", "নামাজ", "সোলাত", "সালাতের", "নামাযের"),
+        "রোজা" to listOf("রোজা", "রোযা", "রোজা", "রোযা", "সিয়াম", "সিয়াম", "সাওম", "রোজার", "রোযার"),
+        "রোযা" to listOf("রোযা", "রোজা", "রোযা", "রোজা", "সিয়াম", "সিয়াম", "সাওম", "রোজার", "রোযার"),
+        "রোজা" to listOf("রোজা", "রোযা", "রোজা", "রোযা", "সিয়াম", "সিয়াম", "সাওম", "রোজার", "রোযার"),
+        "রোযা" to listOf("রোযা", "রোজা", "রোযা", "রোজা", "সিয়াম", "সিয়াম", "সাওম", "রোজার", "রোযার"),
+        "সিয়াম" to listOf("সিয়াম", "সিয়াম", "রোজা", "রোযা", "রোজা", "রোযা"),
+        "সিয়াম" to listOf("সিয়াম", "সিয়াম", "রোজা", "রোযা", "রোজা", "রোযা"),
+        "যাকাত" to listOf("যাকাত", "জাকাত", "যাকাতের", "জাকাতের"),
+        "জাকাত" to listOf("জাকাত", "যাকাত", "জাকাতের", "যাকাতের"),
+        "হজ" to listOf("হজ", "হজ্জ", "হজের", "হজ্জের"),
+        "হজ্জ" to listOf("হজ্জ", "হজ", "হজ্জের", "হজের"),
+        "জান্নাত" to listOf("জান্নাত", "বেহেশত", "জান্নাতের", "উদ্যান", "বাগ-বাগিচা"),
+        "বেহেশত" to listOf("বেহেশত", "জান্নাত", "জান্নাতের"),
+        "জাহান্নাম" to listOf("জাহান্নাম", "দোযখ", "দোজখ", "জাহান্নামের", "আগুন", "শাস্তি"),
+        "দোযখ" to listOf("দোযখ", "দোজখ", "জাহান্নাম", "জাহান্নামের"),
+        "দোজখ" to listOf("দোজখ", "দোযখ", "জাহান্নাম", "জাহান্নামের"),
+        "ইব্রাহিম" to listOf("ইব্রাহীম", "ইব্রাহিম", "ইব্রাহীমের", "ইব্রাহিমের"),
+        "ইব্রাহীম" to listOf("ইব্রাহীম", "ইব্রাহিম", "ইব্রাহীমের", "ইব্রাহিমের"),
+        "মুসা" to listOf("মূসা", "মুসা", "মূসার", "মুসার"),
+        "মূসা" to listOf("মূসা", "মুসা", "মূসার", "মুসার"),
+        "ঈসা" to listOf("ঈসা", "ঈসার", "মসীহ"),
+        "দাউদ" to listOf("দাউদ", "দাঊদ"),
+        "দাঊদ" to listOf("দাঊদ", "দাউদ"),
+        "ইউনুস" to listOf("ইউনুস", "ইউনূস"),
+        "ইউনূস" to listOf("ইউনূস", "ইউনুস"),
+        "ইউসুফ" to listOf("ইউসুফ", "ইউসূফ"),
+        "ইউসূফ" to listOf("ইউসূফ", "ইউসুফ"),
+        "সোলায়মান" to listOf("সোলায়মান", "সোলায়মান", "সোলায়মান", "সুলাইমান"),
+        "সোলায়মান" to listOf("সোলায়মান", "সোলায়মান", "সোলায়মান", "সুলাইমান"),
+        "সুলাইমান" to listOf("সোলায়মান", "সুলাইমান", "সোলায়মান"),
+        "হারুন" to listOf("হারুন", "হারূন"),
+        "হারূন" to listOf("হারূন", "হারুন"),
+        "লুত" to listOf("লূত", "লুত"),
+        "লূত" to listOf("লূত", "লুত"),
+        "ইয়াকুব" to listOf("ইয়াকুব", "ইয়াকূব", "ইয়াকুব"),
+        "ইয়াকুব" to listOf("ইয়াকুব", "ইয়াকূব", "ইয়াকুব"),
+        "ইসমাইল" to listOf("ইসমাঈল", "ইসমাইল"),
+        "ইসমাঈল" to listOf("ইসমাঈল", "ইসমাইল"),
+        "শয়তান" to listOf("শয়তান", "শয়তান", "শয়তানের", "ইবলিস"),
+        "শয়তান" to listOf("শয়তান", "শয়তান", "শয়তানের", "ইবলিস"),
+        "ফেরাউন" to listOf("ফেরাউন", "ফেরআউন", "ফেরাউনের", "ফেরআউনের"),
+        "ফেরআউন" to listOf("ফেরআউন", "ফেরাউন", "ফেরআউনের", "ফেরাউনের"),
+        "কেয়ামত" to listOf("কেয়ামত", "কেয়ামত", "কিয়ামত", "কিয়ামাত", "কেয়ামতের", "কিয়ামতের"),
+        "কেয়ামত" to listOf("কেয়ামত", "কেয়ামত", "কিয়ামত", "কিয়ামাত", "কেয়ামতের", "কিয়ামতের"),
+        "কিয়ামত" to listOf("কেয়ামত", "কেয়ামত", "কিয়ামত", "কিয়ামাত", "কেয়ামতের", "কিয়ামতের"),
+        "কুরআন" to listOf("কুরআন", "কোরআন", "কুরআনের", "কোরআনের", "কিতাব"),
+        "কোরআন" to listOf("কোরআন", "কুরআন", "কুরআনের", "কোরআনের", "কিতাব"),
+        "দয়ালু" to listOf("দয়ালু", "দয়ালু"),
+        "দয়ালু" to listOf("দয়ালু", "দয়ালু"),
+        "করুণাময়" to listOf("করুণাময়", "করুণাময়"),
+        "করুণাময়" to listOf("করুণাময়", "করুণাময়")
+    )
+    
+    val q = query.trim()
+    val (normQuery, _) = normalizeBengaliForHighlight(q)
+    val tokens = mutableSetOf(q, normQuery)
+    
+    for ((key, synList) in synonymsMap) {
+        val (normKey, _) = normalizeBengaliForHighlight(key)
+        if (normKey == normQuery || key == q) {
+            for (s in synList) {
+                tokens.add(s)
+                val (ns, _) = normalizeBengaliForHighlight(s)
+                tokens.add(ns)
+            }
+        }
+    }
+    
+    val currentTokens = tokens.toList()
+    for (tok in currentTokens) {
+        tokens.add(tok.replace('ি', 'ী'))
+        tokens.add(tok.replace('ী', 'ি'))
+        tokens.add(tok.replace('ু', 'ূ'))
+        tokens.add(tok.replace('ূ', 'ু'))
+    }
+    
+    val (normText, charMap) = normalizeBengaliForHighlight(text)
+    val matchedRanges = mutableListOf<Pair<Int, Int>>()
+    
+    for (tok in tokens) {
+        val (normTok, _) = normalizeBengaliForHighlight(tok)
+        if (normTok.isBlank()) continue
+        var start = 0
+        while (start < normText.length) {
+            val idx = normText.indexOf(normTok, start, ignoreCase = true)
+            if (idx == -1) break
+            if (idx < charMap.size) {
+                val origStart = charMap[idx].first
+                val endIdx = minOf(idx + normTok.length - 1, charMap.size - 1)
+                val origEnd = charMap[endIdx].second
+                matchedRanges.add(Pair(origStart, origEnd))
+            }
+            start = idx + normTok.length
+        }
+    }
+
+    if (matchedRanges.isEmpty()) return AnnotatedString(text)
+
+    val mergedRanges = mutableListOf<Pair<Int, Int>>()
+    for (range in matchedRanges.sortedBy { it.first }) {
+        if (mergedRanges.isEmpty()) {
+            mergedRanges.add(range)
+        } else {
+            val last = mergedRanges.last()
+            if (range.first <= last.second) {
+                mergedRanges[mergedRanges.size - 1] = Pair(last.first, maxOf(last.second, range.second))
+            } else {
+                mergedRanges.add(range)
+            }
+        }
+    }
+
+    return buildAnnotatedString {
+        var currentIndex = 0
+        for ((start, end) in mergedRanges) {
+            if (start > currentIndex) {
+                append(text.substring(currentIndex, minOf(start, text.length)))
+            }
+            withStyle(
+                style = SpanStyle(
+                    color = highlightColor,
+                    fontWeight = FontWeight.Bold
+                )
+            ) {
+                append(text.substring(minOf(start, text.length), minOf(end, text.length)))
+            }
+            currentIndex = maxOf(currentIndex, end)
+        }
+        if (currentIndex < text.length) {
+            append(text.substring(currentIndex))
+        }
+    }
+}
+
+/**
+ * Builds an AnnotatedString that highlights matches of the query string in the text.
+ */
+fun highlightText(text: String, query: String, highlightColor: Color): AnnotatedString {
+    return highlightBengaliText(text, query, highlightColor)
 }
 
 @Composable

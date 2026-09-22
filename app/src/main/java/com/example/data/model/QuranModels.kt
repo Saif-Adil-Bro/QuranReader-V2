@@ -120,6 +120,12 @@ data class SearchMatch(
     @SerializedName("numberInSurah") val numberInSurah: Int
 )
 
+data class OfflineAyahSearchResult(
+    val match: SearchMatch,
+    val arabicText: String,
+    val bengaliText: String
+)
+
 /**
  * Models for Quran.com API v4 (Word by Word)
  */

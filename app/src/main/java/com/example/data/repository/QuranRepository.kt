@@ -1098,71 +1098,65 @@ class QuranRepository(
             }
         }
     }
+    private data class CachedAyahSearchItem(
+        val entity: com.example.data.local.offline.AyahEntity,
+        val normArabic: String,
+        val normBengali: String
+    )
+
+    private var cachedAyahSearchItems: List<CachedAyahSearchItem>? = null
+
+    private suspend fun getCachedAyahSearchItems(): List<CachedAyahSearchItem> {
+        cachedAyahSearchItems?.let { return it }
+        val allAyahs = try {
+            offlineDao.getAllAyahs()
+        } catch (e: Exception) {
+            emptyList()
+        }
+        val items = allAyahs.map {
+            CachedAyahSearchItem(
+                entity = it,
+                normArabic = normalizeArabicText(it.arabicText),
+                normBengali = normalizeBengaliText(it.bengaliText)
+            )
+        }
+        cachedAyahSearchItems = items
+        return items
+    }
+
     /**
-     * Searches the Quran by a keyword (Supports Offline-First with local SQLite database)
+     * Searches the Quran by a keyword (Supports Offline-First with fast cached local SQLite database)
      */
-    suspend fun searchQuranOffline(query: String, isArabic: Boolean): List<com.example.data.model.SearchMatch> {
+    suspend fun searchQuranOffline(query: String, isArabic: Boolean): List<com.example.data.model.OfflineAyahSearchResult> {
         return withContext(kotlinx.coroutines.Dispatchers.IO) {
             val surahs = getSurahs()
             val surahMap = surahs.associateBy { it.number }
+            val searchItems = getCachedAyahSearchItems()
+
+            val matchedKeys = mutableSetOf<Pair<Int, Int>>()
+            val resultList = mutableListOf<com.example.data.model.OfflineAyahSearchResult>()
 
             if (isArabic) {
-                val cleanedQuery = cleanArabicTextForSearch(query)
-                val ayahMatches = offlineDao.searchAyahsByArabic(cleanedQuery, limit = 80)
-                val wordMatches = quranWbwDao.searchWordsByArabic(cleanedQuery, limit = 80)
+                val searchVariants = getArabicSearchVariants(query)
 
-                val matchedKeys = mutableSetOf<Pair<Int, Int>>()
-                val resultList = mutableListOf<com.example.data.model.SearchMatch>()
-
-                ayahMatches.forEach { entity ->
-                    val key = Pair(entity.surahNumber, entity.numberInSurah)
-                    if (matchedKeys.add(key)) {
-                        val surah = surahMap[entity.surahNumber] ?: Surah(
-                            number = entity.surahNumber,
-                            name = "",
-                            englishName = "Surah ${entity.surahNumber}",
-                            englishNameTranslation = "",
-                            numberOfAyahs = 0,
-                            revelationType = ""
-                        )
-                        resultList.add(
-                            com.example.data.model.SearchMatch(
-                                number = entity.globalNumber,
-                                text = entity.bengaliText,
-                                edition = com.example.data.model.Edition(
-                                    identifier = "bn.bengali",
-                                    language = "bn",
-                                    name = "Bengali",
-                                    englishName = "Bengali",
-                                    format = "text",
-                                    type = "translation"
-                                ),
-                                surah = surah,
-                                numberInSurah = entity.numberInSurah
-                            )
-                        )
-                    }
-                }
-
-                // If fewer results from ayah text, check word-by-word database matches
-                if (resultList.size < 50) {
-                    for (w in wordMatches) {
-                        val key = Pair(w.surahNumber, w.ayahNumber)
+                // 1. Search against normalized full Quran verses in memory
+                for (item in searchItems) {
+                    if (searchVariants.any { v -> item.normArabic.contains(v) }) {
+                        val key = Pair(item.entity.surahNumber, item.entity.numberInSurah)
                         if (matchedKeys.add(key)) {
-                            val entity = offlineDao.getAyahBySurahAndNumber(w.surahNumber, w.ayahNumber)
-                            if (entity != null) {
-                                val surah = surahMap[entity.surahNumber] ?: Surah(
-                                    number = entity.surahNumber,
-                                    name = "",
-                                    englishName = "Surah ${entity.surahNumber}",
-                                    englishNameTranslation = "",
-                                    numberOfAyahs = 0,
-                                    revelationType = ""
-                                )
-                                resultList.add(
-                                    com.example.data.model.SearchMatch(
-                                        number = entity.globalNumber,
-                                        text = entity.bengaliText,
+                            val surah = surahMap[item.entity.surahNumber] ?: Surah(
+                                number = item.entity.surahNumber,
+                                name = "",
+                                englishName = "Surah ${item.entity.surahNumber}",
+                                englishNameTranslation = "",
+                                numberOfAyahs = 0,
+                                revelationType = ""
+                            )
+                            resultList.add(
+                                com.example.data.model.OfflineAyahSearchResult(
+                                    match = com.example.data.model.SearchMatch(
+                                        number = item.entity.globalNumber,
+                                        text = item.entity.bengaliText,
                                         edition = com.example.data.model.Edition(
                                             identifier = "bn.bengali",
                                             language = "bn",
@@ -1172,82 +1166,138 @@ class QuranRepository(
                                             type = "translation"
                                         ),
                                         surah = surah,
-                                        numberInSurah = entity.numberInSurah
-                                    )
+                                        numberInSurah = item.entity.numberInSurah
+                                    ),
+                                    arabicText = item.entity.arabicText,
+                                    bengaliText = item.entity.bengaliText
                                 )
+                            )
+                        }
+                    }
+                }
+
+                // 2. Also search Word-by-Word table for rare word forms if results are low
+                if (resultList.size < 50) {
+                    for (v in searchVariants) {
+                        val wordMatches = quranWbwDao.searchWordsByArabic(v, limit = 50)
+                        for (w in wordMatches) {
+                            val key = Pair(w.surahNumber, w.ayahNumber)
+                            if (matchedKeys.add(key)) {
+                                val entity = offlineDao.getAyahBySurahAndNumber(w.surahNumber, w.ayahNumber)
+                                if (entity != null) {
+                                    val surah = surahMap[entity.surahNumber] ?: Surah(
+                                        number = entity.surahNumber,
+                                        name = "",
+                                        englishName = "Surah ${entity.surahNumber}",
+                                        englishNameTranslation = "",
+                                        numberOfAyahs = 0,
+                                        revelationType = ""
+                                    )
+                                    resultList.add(
+                                        com.example.data.model.OfflineAyahSearchResult(
+                                            match = com.example.data.model.SearchMatch(
+                                                number = entity.globalNumber,
+                                                text = entity.bengaliText,
+                                                edition = com.example.data.model.Edition(
+                                                    identifier = "bn.bengali",
+                                                    language = "bn",
+                                                    name = "Bengali",
+                                                    englishName = "Bengali",
+                                                    format = "text",
+                                                    type = "translation"
+                                                ),
+                                                surah = surah,
+                                                numberInSurah = entity.numberInSurah
+                                            ),
+                                            arabicText = entity.arabicText,
+                                            bengaliText = entity.bengaliText
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
                 }
                 resultList
             } else {
-                val cleanQuery = query.trim()
-                val ayahMatches = offlineDao.searchAyahsByBengali(cleanQuery, limit = 100)
-                val wordMatches = quranWbwDao.searchWordsByBengali(cleanQuery, limit = 100)
+                val searchVariants = getBengaliSearchVariants(query)
 
-                val matchedKeys = mutableSetOf<Pair<Int, Int>>()
-                val resultList = mutableListOf<com.example.data.model.SearchMatch>()
-
-                ayahMatches.forEach { entity ->
-                    val key = Pair(entity.surahNumber, entity.numberInSurah)
-                    if (matchedKeys.add(key)) {
-                        val surah = surahMap[entity.surahNumber] ?: Surah(
-                            number = entity.surahNumber,
-                            name = "",
-                            englishName = "Surah ${entity.surahNumber}",
-                            englishNameTranslation = "",
-                            numberOfAyahs = 0,
-                            revelationType = ""
-                        )
-                        resultList.add(
-                            com.example.data.model.SearchMatch(
-                                number = entity.globalNumber,
-                                text = entity.bengaliText,
-                                edition = com.example.data.model.Edition(
-                                    identifier = "bn.bengali",
-                                    language = "bn",
-                                    name = "Bengali",
-                                    englishName = "Bengali",
-                                    format = "text",
-                                    type = "translation"
-                                ),
-                                surah = surah,
-                                numberInSurah = entity.numberInSurah
-                            )
-                        )
-                    }
-                }
-
-                // Add matches from Word by Word translations
-                for (w in wordMatches) {
-                    val key = Pair(w.surahNumber, w.ayahNumber)
-                    if (matchedKeys.add(key)) {
-                        val entity = offlineDao.getAyahBySurahAndNumber(w.surahNumber, w.ayahNumber)
-                        if (entity != null) {
-                            val surah = surahMap[entity.surahNumber] ?: Surah(
-                                number = entity.surahNumber,
+                // 1. Fast in-memory search on pre-normalized Bengali Quran translation
+                for (item in searchItems) {
+                    if (searchVariants.any { v -> item.normBengali.contains(v) }) {
+                        val key = Pair(item.entity.surahNumber, item.entity.numberInSurah)
+                        if (matchedKeys.add(key)) {
+                            val surah = surahMap[item.entity.surahNumber] ?: Surah(
+                                number = item.entity.surahNumber,
                                 name = "",
-                                englishName = "Surah ${entity.surahNumber}",
+                                englishName = "Surah ${item.entity.surahNumber}",
                                 englishNameTranslation = "",
                                 numberOfAyahs = 0,
                                 revelationType = ""
                             )
                             resultList.add(
-                                com.example.data.model.SearchMatch(
-                                    number = entity.globalNumber,
-                                    text = entity.bengaliText,
-                                    edition = com.example.data.model.Edition(
-                                        identifier = "bn.bengali",
-                                        language = "bn",
-                                        name = "Bengali",
-                                        englishName = "Bengali",
-                                        format = "text",
-                                        type = "translation"
+                                com.example.data.model.OfflineAyahSearchResult(
+                                    match = com.example.data.model.SearchMatch(
+                                        number = item.entity.globalNumber,
+                                        text = item.entity.bengaliText,
+                                        edition = com.example.data.model.Edition(
+                                            identifier = "bn.bengali",
+                                            language = "bn",
+                                            name = "Bengali",
+                                            englishName = "Bengali",
+                                            format = "text",
+                                            type = "translation"
+                                        ),
+                                        surah = surah,
+                                        numberInSurah = item.entity.numberInSurah
                                     ),
-                                    surah = surah,
-                                    numberInSurah = entity.numberInSurah
+                                    arabicText = item.entity.arabicText,
+                                    bengaliText = item.entity.bengaliText
                                 )
                             )
+                        }
+                    }
+                }
+
+                // 2. Also search Word-by-Word Bengali table if results are small
+                if (resultList.size < 50) {
+                    for (token in searchVariants) {
+                        val wordMatches = quranWbwDao.searchWordsByBengali(token, limit = 50)
+                        for (w in wordMatches) {
+                            val key = Pair(w.surahNumber, w.ayahNumber)
+                            if (matchedKeys.add(key)) {
+                                val entity = offlineDao.getAyahBySurahAndNumber(w.surahNumber, w.ayahNumber)
+                                if (entity != null) {
+                                    val surah = surahMap[entity.surahNumber] ?: Surah(
+                                        number = entity.surahNumber,
+                                        name = "",
+                                        englishName = "Surah ${entity.surahNumber}",
+                                        englishNameTranslation = "",
+                                        numberOfAyahs = 0,
+                                        revelationType = ""
+                                    )
+                                    resultList.add(
+                                        com.example.data.model.OfflineAyahSearchResult(
+                                            match = com.example.data.model.SearchMatch(
+                                                number = entity.globalNumber,
+                                                text = entity.bengaliText,
+                                                edition = com.example.data.model.Edition(
+                                                    identifier = "bn.bengali",
+                                                    language = "bn",
+                                                    name = "Bengali",
+                                                    englishName = "Bengali",
+                                                    format = "text",
+                                                    type = "translation"
+                                                ),
+                                                surah = surah,
+                                                numberInSurah = entity.numberInSurah
+                                            ),
+                                            arabicText = entity.arabicText,
+                                            bengaliText = entity.bengaliText
+                                        )
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -1256,9 +1306,122 @@ class QuranRepository(
         }
     }
 
-    private fun cleanArabicTextForSearch(text: String): String {
-        val diacriticsRegex = Regex("[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]")
-        return text.replace(diacriticsRegex, "")
+    private fun normalizeArabicText(text: String): String {
+        if (text.isEmpty()) return ""
+        val withoutDiacritics = text.replace(Regex("[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u0610-\\u061A\\u08F0-\\u08FF\\uFD3E\\uFD3F\\u200B-\\u200F\\uFEFF]"), "")
+        return withoutDiacritics
+            .replace(Regex("[أإآٱٲٳ]"), "ا")
+            .replace(Regex("[ىيئۍێ]"), "ي")
+            .replace("ة", "ه")
+            .replace("ؤ", "و")
+            .replace("ـ", "")
+            .trim()
+    }
+
+    private fun getArabicSearchVariants(query: String): List<String> {
+        val norm = normalizeArabicText(query)
+        if (norm.isEmpty()) return emptyList()
+        val variants = mutableSetOf(norm)
+        
+        if (norm.contains("لاه")) variants.add(norm.replace("لاه", "لوه"))
+        if (norm.contains("كاه")) variants.add(norm.replace("كاه", "كوه"))
+        if (norm.contains("ياه")) variants.add(norm.replace("ياه", "يوه"))
+        if (norm.contains("لا")) variants.add(norm.replace("لا", "لو"))
+        if (norm.contains("الربا")) variants.add(norm.replace("الربا", "الربوا"))
+        
+        return variants.toList()
+    }
+
+    fun normalizeBengaliText(text: String): String {
+        if (text.isEmpty()) return ""
+        var t = text
+        t = t.replace("\u09CB", "\u09C7\u09BE") // ো -> ে + া
+        t = t.replace("\u09CC", "\u09C7\u09D7") // ৌ -> ে + ৗ
+        t = t.replace("\u09AF\u09BC", "\u09DF") // য+় -> য়
+        t = t.replace("\u09A1\u09BC", "\u09DC") // ড+় -> ড়
+        t = t.replace("\u09A2\u09BC", "\u09DD") // ঢ+় -> ঢ়
+        return t.trim()
+    }
+
+    fun getBengaliSearchVariants(query: String): List<String> {
+        val q = query.trim()
+        val normQ = normalizeBengaliText(q)
+        val variants = mutableSetOf(normQ, q)
+
+        val synonymsMap = mapOf(
+            "নামাজ" to listOf("নামাজ", "নামায", "সালাত", "সোলাত", "নামাযের", "সালাতের"),
+            "নামায" to listOf("নামায", "নামাজ", "সালাত", "সোলাত", "নামাযের", "সালাতের"),
+            "সালাত" to listOf("সালাত", "নামায", "নামাজ", "সোলাত", "সালাতের", "নামাযের"),
+            "রোজা" to listOf("রোজা", "রোযা", "রোজা", "রোযা", "সিয়াম", "সিয়াম", "সাওম", "রোজার", "রোযার"),
+            "রোযা" to listOf("রোযা", "রোজা", "রোযা", "রোজা", "সিয়াম", "সিয়াম", "সাওম", "রোজার", "রোযার"),
+            "রোজা" to listOf("রোজা", "রোযা", "রোজা", "রোযা", "সিয়াম", "সিয়াম", "সাওম", "রোজার", "রোযার"),
+            "রোযা" to listOf("রোযা", "রোজা", "রোযা", "রোজা", "সিয়াম", "সিয়াম", "সাওম", "রোজার", "রোযার"),
+            "সিয়াম" to listOf("সিয়াম", "সিয়াম", "রোজা", "রোযা", "রোজা", "রোযা"),
+            "সিয়াম" to listOf("সিয়াম", "সিয়াম", "রোজা", "রোযা", "রোজা", "রোযা"),
+            "যাকাত" to listOf("যাকাত", "জাকাত", "যাকাতের", "জাকাতের"),
+            "জাকাত" to listOf("জাকাত", "যাকাত", "জাকাতের", "যাকাতের"),
+            "হজ" to listOf("হজ", "হজ্জ", "হজের", "হজ্জের"),
+            "হজ্জ" to listOf("হজ্জ", "হজ", "হজ্জের", "হজের"),
+            "জান্নাত" to listOf("জান্নাত", "বেহেশত", "জান্নাতের", "উদ্যান", "বাগ-বাগিচা"),
+            "বেহেশত" to listOf("বেহেশত", "জান্নাত", "জান্নাতের"),
+            "জাহান্নাম" to listOf("জাহান্নাম", "দোযখ", "দোজখ", "জাহান্নামের", "আগুন", "শাস্তি"),
+            "দোযখ" to listOf("দোযখ", "দোজখ", "জাহান্নাম", "জাহান্নামের"),
+            "দোজখ" to listOf("দোজখ", "দোযখ", "জাহান্নাম", "জাহান্নামের"),
+            "ইব্রাহিম" to listOf("ইব্রাহীম", "ইব্রাহিম", "ইব্রাহীমের", "ইব্রাহিমের"),
+            "ইব্রাহীম" to listOf("ইব্রাহীম", "ইব্রাহিম", "ইব্রাহীমের", "ইব্রাহিমের"),
+            "মুসা" to listOf("মূসা", "মুসা", "মূসার", "মুসার"),
+            "মূসা" to listOf("মূসা", "মুসা", "মূসার", "মুসার"),
+            "ঈসা" to listOf("ঈসা", "ঈসার", "মসীহ"),
+            "দাউদ" to listOf("দাউদ", "দাঊদ"),
+            "দাঊদ" to listOf("দাঊদ", "দাউদ"),
+            "ইউনুস" to listOf("ইউনুস", "ইউনূস"),
+            "ইউনূস" to listOf("ইউনূস", "ইউনুস"),
+            "ইউসুফ" to listOf("ইউসুফ", "ইউসূফ"),
+            "ইউসূফ" to listOf("ইউসূফ", "ইউসুফ"),
+            "সোলায়মান" to listOf("সোলায়মান", "সোলায়মান", "সোলায়মান", "সুলাইমান"),
+            "সোলায়মান" to listOf("সোলায়মান", "সোলায়মান", "সোলায়মান", "সুলাইমান"),
+            "সুলাইমান" to listOf("সোলায়মান", "সুলাইমান", "সোলায়মান"),
+            "হারুন" to listOf("হারুন", "হারূন"),
+            "হারূন" to listOf("হারূন", "হারুন"),
+            "লুত" to listOf("লূত", "লুত"),
+            "লূত" to listOf("লূত", "লুত"),
+            "ইয়াকুব" to listOf("ইয়াকুব", "ইয়াকূব", "ইয়াকুব"),
+            "ইয়াকুব" to listOf("ইয়াকুব", "ইয়াকূব", "ইয়াকুব"),
+            "ইসমাইল" to listOf("ইসমাঈল", "ইসমাইল"),
+            "ইসমাঈল" to listOf("ইসমাঈল", "ইসমাইল"),
+            "শয়তান" to listOf("শয়তান", "শয়তান", "শয়তানের", "ইবলিস"),
+            "শয়তান" to listOf("শয়তান", "শয়তান", "শয়তানের", "ইবলিস"),
+            "ফেরাউন" to listOf("ফেরাউন", "ফেরআউন", "ফেরাউনের", "ফেরআউনের"),
+            "ফেরআউন" to listOf("ফেরআউন", "ফেরাউন", "ফেরআউনের", "ফেরাউনের"),
+            "কেয়ামত" to listOf("কেয়ামত", "কেয়ামত", "কিয়ামত", "কিয়ামাত", "কেয়ামতের", "কিয়ামতের"),
+            "কেয়ামত" to listOf("কেয়ামত", "কেয়ামত", "কিয়ামত", "কিয়ামাত", "কেয়ামতের", "কিয়ামতের"),
+            "কিয়ামত" to listOf("কেয়ামত", "কেয়ামত", "কিয়ামত", "কিয়ামাত", "কেয়ামতের", "কিয়ামতের"),
+            "কুরআন" to listOf("কুরআন", "কোরআন", "কুরআনের", "কোরআনের", "কিতাব"),
+            "কোরআন" to listOf("কোরআন", "কুরআন", "কুরআনের", "কোরআনের", "কিতাব"),
+            "দয়ালু" to listOf("দয়ালু", "দয়ালু", "পরম দয়ালু"),
+            "দয়ালু" to listOf("দয়ালু", "দয়ালু", "পরম দয়ালু"),
+            "করুণাময়" to listOf("করুণাময়", "করুণাময়", "পরম করুণাময়"),
+            "করুণাময়" to listOf("করুণাময়", "করুণাময়", "পরম করুণাময়")
+        )
+
+        for ((key, list) in synonymsMap) {
+            if (normalizeBengaliText(key) == normQ || key == q) {
+                for (item in list) {
+                    variants.add(normalizeBengaliText(item))
+                    variants.add(item)
+                }
+            }
+        }
+
+        val currentVariants = variants.toList()
+        for (v in currentVariants) {
+            variants.add(v.replace('ি', 'ী'))
+            variants.add(v.replace('ী', 'ি'))
+            variants.add(v.replace('ু', 'ূ'))
+            variants.add(v.replace('ূ', 'ু'))
+        }
+
+        return variants.map { normalizeBengaliText(it) }.filter { it.isNotBlank() }.distinct()
     }
 
     /**
