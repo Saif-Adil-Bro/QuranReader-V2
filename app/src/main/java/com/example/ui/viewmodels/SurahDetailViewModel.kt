@@ -449,13 +449,19 @@ class SurahDetailViewModel(
         currentLoadedSurahNumber = surahNumber
         currentLoadedJuzNumber = null
         lastVisibleAyahNumber = 1
-        viewModelScope.launch {
-            _uiState.value = UiState.Loading
+        viewModelScope.launch(Dispatchers.IO) {
+            val currentState = _uiState.value
+            val isCurrentSurah = (currentState as? UiState.Success)?.data?.firstOrNull()?.surahNumber == surahNumber
+            if (!isCurrentSurah) {
+                _uiState.value = UiState.Loading
+            }
             try {
                 val combinedAyahs = repository.getSurahDetailsCombined(surahNumber, tanzilTextStyle.value)
                 _uiState.value = UiState.Success(combinedAyahs)
             } catch (e: Exception) {
-                _uiState.value = UiState.Error(e.message ?: "Failed to load Surah details")
+                if (!isCurrentSurah) {
+                    _uiState.value = UiState.Error(e.message ?: "Failed to load Surah details")
+                }
             }
         }
     }

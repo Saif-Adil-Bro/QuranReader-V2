@@ -611,11 +611,16 @@ class QuranRepository(
         }
     }
 
+    private val cachedSurahWords = java.util.concurrent.ConcurrentHashMap<Int, List<com.example.data.model.QuranComWord>>()
+
     suspend fun getSurahWords(surahNumber: Int): List<com.example.data.model.QuranComWord> {
+        val inMem = cachedSurahWords[surahNumber]
+        if (inMem != null && inMem.isNotEmpty()) return inMem
+
         return try {
             val dbWords = quranWbwDao.getWordsBySurah(surahNumber)
             if (dbWords.isNotEmpty()) {
-                dbWords.map { entity ->
+                val words = dbWords.map { entity ->
                     com.example.data.model.QuranComWord(
                         id = entity.id,
                         position = entity.position,
@@ -626,8 +631,12 @@ class QuranRepository(
                         audioUrl = entity.audioUrl
                     )
                 }
+                cachedSurahWords[surahNumber] = words
+                words
             } else {
-                quranComApi.getSurahVerses(surahNumber).verses.flatMap { it.words }
+                val words = quranComApi.getSurahVerses(surahNumber).verses.flatMap { it.words }
+                cachedSurahWords[surahNumber] = words
+                words
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -773,10 +782,20 @@ class QuranRepository(
             // 1. Fetch immediately from pre-packaged offline SQLite database (zero delay)
             try {
                 val offlineAyahs = offlineDao.getAyahsBySurah(surahNumber)
-                val offlineWords = quranWbwDao.getWordsBySurah(surahNumber)
-                val wordsByAyah = offlineWords.groupBy { it.ayahNumber }
-
                 if (offlineAyahs.isNotEmpty()) {
+                    val totalAyahs = offlineAyahs.size
+                    // Fast Progressive Loading: For large surahs (e.g. Al-Baqarah), instantly load the first chunk (30 ayahs)
+                    // and progressively load remaining words asynchronously in background.
+                    val isLargeSurah = totalAyahs > 40
+                    val initialChunkSize = if (isLargeSurah) 30 else totalAyahs
+
+                    val initialWords = if (isLargeSurah) {
+                        quranWbwDao.getWordsBySurahRange(surahNumber, 1, initialChunkSize)
+                    } else {
+                        quranWbwDao.getWordsBySurah(surahNumber)
+                    }
+                    val wordsByAyah = initialWords.groupBy { it.ayahNumber }
+
                     rawList = offlineAyahs.map { ayahEntity ->
                         val ayahWords = wordsByAyah[ayahEntity.numberInSurah]?.map { w ->
                             com.example.data.model.QuranComWord(
@@ -804,6 +823,43 @@ class QuranRepository(
                             textUthmaniTajweed = null
                         )
                     }
+
+                    // For large surahs, lazily stream and populate the rest of the words in background chunks
+                    if (isLargeSurah) {
+                        repositoryScope.launch(Dispatchers.IO) {
+                            try {
+                                val remainingWords = quranWbwDao.getWordsBySurahRange(surahNumber, initialChunkSize + 1, totalAyahs)
+                                if (remainingWords.isNotEmpty()) {
+                                    val fullWordsByAyah = (initialWords + remainingWords).groupBy { it.ayahNumber }
+                                    val currentCached = cachedSurahDetails[cacheKey] ?: rawList
+                                    val fullyPopulated = currentCached?.map { ayah ->
+                                        if (ayah.words.isEmpty()) {
+                                            val wList = fullWordsByAyah[ayah.numberInSurah]?.map { w ->
+                                                com.example.data.model.QuranComWord(
+                                                    id = w.id,
+                                                    position = w.position,
+                                                    charTypeName = w.charTypeName ?: "word",
+                                                    textUthmani = w.textUthmani,
+                                                    translation = com.example.data.model.QuranComWordTranslation(text = w.translationBengali),
+                                                    transliteration = null,
+                                                    audioUrl = w.audioUrl
+                                                )
+                                            } ?: emptyList()
+                                            ayah.copy(words = wList)
+                                        } else {
+                                            ayah
+                                        }
+                                    }
+                                    if (fullyPopulated != null) {
+                                        cachedSurahDetails[cacheKey] = fullyPopulated
+                                        surahDataUpdated.tryEmit(surahNumber)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -829,16 +885,15 @@ class QuranRepository(
                 val enriched = enrichAyahsWithLocalTranslationsAndTafsirs(cleaned, tafsirIdsStr, translationIdsStr)
                 cachedSurahDetails[cacheKey] = enriched
 
-                try {
-                    cacheFile.parentFile?.mkdirs()
-                    cacheFile.writeText(Gson().toJson(enriched))
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-
-                // If online, sync missing Tafsir/Translation in the background independently without blocking UI
-                if (com.example.util.NetworkUtils.isNetworkAvailable(context)) {
-                    repositoryScope.launch {
+                // Fast non-blocking background disk cache write and sync
+                repositoryScope.launch {
+                    try {
+                        cacheFile.parentFile?.mkdirs()
+                        cacheFile.writeText(Gson().toJson(enriched))
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                    if (com.example.util.NetworkUtils.isNetworkAvailable(context)) {
                         try {
                             syncSurahTafsirAndTranslationInBackground(
                                 surahNumber = surahNumber,
@@ -1227,80 +1282,116 @@ class QuranRepository(
     private fun getTafsirsCacheFile() = java.io.File(context.filesDir, "tafsirs_meta_cache.json")
 
     suspend fun getAvailableTranslations(language: String = "bn"): List<com.example.data.model.TranslationResourceDto> {
-        if (cachedTranslations != null) return cachedTranslations!!
+        if (cachedTranslations != null && cachedTranslations!!.isNotEmpty()) return cachedTranslations!!
         val cacheFile = getTranslationsCacheFile()
-        return try {
-            val response = quranComApi.getAvailableTranslations(language)
-            val filtered = response.translations.filter { item ->
-                val langMatch = item.languageName.equals("bengali", ignoreCase = true) ||
-                        item.languageName.equals("english", ignoreCase = true) ||
-                        item.languageName.equals("urdu", ignoreCase = true)
-                val nameLower = (item.name ?: "").lowercase()
-                val transNameLower = (item.translatedName?.name ?: "").lowercase()
-                val isTafsirOrCommentary = nameLower.contains("tafsir") || nameLower.contains("tafseer") ||
-                        nameLower.contains("tafhim") || nameLower.contains("tafheem") ||
-                        nameLower.contains("commentary") || nameLower.contains("transliteration") ||
-                        nameLower.contains("zilal") || nameLower.contains("bayan-ul-quran") ||
-                        transNameLower.contains("tafsir") || transNameLower.contains("tafseer") ||
-                        transNameLower.contains("tafhim") || transNameLower.contains("tafheem") ||
-                        transNameLower.contains("commentary") || transNameLower.contains("transliteration")
-                langMatch && !isTafsirOrCommentary
-            }
-            cachedTranslations = filtered
+
+        // Fast local check from disk cache first
+        if (cacheFile.exists() && cacheFile.length() > 0) {
             try {
-                cacheFile.writeText(com.google.gson.Gson().toJson(filtered))
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            filtered
-        } catch (e: Exception) {
-            e.printStackTrace()
-            try {
-                if (cacheFile.exists()) {
-                    val type = object : com.google.gson.reflect.TypeToken<List<com.example.data.model.TranslationResourceDto>>() {}.type
-                    val list: List<com.example.data.model.TranslationResourceDto> = com.google.gson.Gson().fromJson(cacheFile.readText(), type)
+                val type = object : com.google.gson.reflect.TypeToken<List<com.example.data.model.TranslationResourceDto>>() {}.type
+                val list: List<com.example.data.model.TranslationResourceDto> = com.google.gson.Gson().fromJson(cacheFile.readText(), type)
+                if (!list.isNullOrEmpty()) {
                     cachedTranslations = list
                     return list
                 }
-            } catch (ex: Exception) {
-                ex.printStackTrace()
-            }
-            emptyList()
-        }
-    }
-
-    suspend fun getAvailableTafsirs(language: String = "bn"): List<com.example.data.model.TafsirResourceDto> {
-        if (cachedTafsirs != null) return cachedTafsirs!!
-        val cacheFile = getTafsirsCacheFile()
-        return try {
-            val response = quranComApi.getAvailableTafsirs(language)
-            val filtered = response.tafsirs.filter {
-                it.languageName.equals("bengali", ignoreCase = true) ||
-                        it.languageName.equals("english", ignoreCase = true) ||
-                        it.languageName.equals("urdu", ignoreCase = true) ||
-                        it.languageName.equals("arabic", ignoreCase = true)
-            }
-            cachedTafsirs = filtered
-            try {
-                cacheFile.writeText(com.google.gson.Gson().toJson(filtered))
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-            filtered
-        } catch (e: Exception) {
-            e.printStackTrace()
+        }
+
+        // Return instant default list if network is slow or offline
+        cachedTranslations = defaultBengaliTranslations
+
+        // Asynchronously update from network in background if available
+        if (com.example.util.NetworkUtils.isNetworkAvailable(context)) {
+            repositoryScope.launch {
+                try {
+                    val response = quranComApi.getAvailableTranslations(language)
+                    val filtered = response.translations.filter { item ->
+                        val langMatch = item.languageName.equals("bengali", ignoreCase = true) ||
+                                item.languageName.equals("english", ignoreCase = true) ||
+                                item.languageName.equals("urdu", ignoreCase = true)
+                        val nameLower = (item.name ?: "").lowercase()
+                        val transNameLower = (item.translatedName?.name ?: "").lowercase()
+                        val isTafsirOrCommentary = nameLower.contains("tafsir") || nameLower.contains("tafseer") ||
+                                nameLower.contains("tafhim") || nameLower.contains("tafheem") ||
+                                nameLower.contains("commentary") || nameLower.contains("transliteration") ||
+                                nameLower.contains("zilal") || nameLower.contains("bayan-ul-quran") ||
+                                transNameLower.contains("tafsir") || transNameLower.contains("tafseer") ||
+                                transNameLower.contains("tafhim") || transNameLower.contains("tafheem") ||
+                                transNameLower.contains("commentary") || transNameLower.contains("transliteration")
+                        langMatch && !isTafsirOrCommentary
+                    }
+                    if (filtered.isNotEmpty()) {
+                        cachedTranslations = filtered
+                        cacheFile.writeText(com.google.gson.Gson().toJson(filtered))
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+        return defaultBengaliTranslations
+    }
+
+    private val defaultBengaliTafsirs = listOf(
+        com.example.data.model.TafsirResourceDto(id = 164, name = "তাফসীর আল-মুয়াসসার", authorName = "কিং ফাহাদ কুরআন কমপ্লেক্স", languageName = "bengali"),
+        com.example.data.model.TafsirResourceDto(id = 166, name = "তাফসীর আল-জালালাইন", authorName = "জালালুদ্দিন সুয়ূতী ও মাহাল্লী", languageName = "bengali"),
+        com.example.data.model.TafsirResourceDto(id = 168, name = "তাফসীর আহসানুল বয়ান", authorName = "সালাহুদ্দীন ইউসুফ", languageName = "bengali"),
+        com.example.data.model.TafsirResourceDto(id = 169, name = "তাফসীর আবু বকর জাকারিয়া", authorName = "ড. আবু বকর মুহাম্মাদ যাকারিয়া", languageName = "bengali"),
+        com.example.data.model.TafsirResourceDto(id = 171, name = "তাফসীর ইবনে কাসীর", authorName = "হাফেজ ইবনে কাসীর", languageName = "bengali"),
+        com.example.data.model.TafsirResourceDto(id = 165, name = "তাফসীর ইবনে কাসীর (আরবি)", authorName = "হাফেজ ইবনে কাসীর", languageName = "arabic")
+    )
+
+    private val defaultBengaliTranslations = listOf(
+        com.example.data.model.TranslationResourceDto(id = 161, name = "তাওহীদ পাবলিকেশন্স", authorName = "তাওহীদ পাবলিকেশন্স", languageName = "bengali"),
+        com.example.data.model.TranslationResourceDto(id = 163, name = "আবু বকর যাকারিয়া", authorName = "ড. আবু বকর মুহাম্মাদ যাকারিয়া", languageName = "bengali"),
+        com.example.data.model.TranslationResourceDto(id = 20, name = "Saheeh International", authorName = "Saheeh International", languageName = "english"),
+        com.example.data.model.TranslationResourceDto(id = 234, name = "মুফতি ত্বকী উসমানী", authorName = "মুফতি তকী উসমানী", languageName = "urdu")
+    )
+
+    suspend fun getAvailableTafsirs(language: String = "bn"): List<com.example.data.model.TafsirResourceDto> {
+        if (cachedTafsirs != null && cachedTafsirs!!.isNotEmpty()) return cachedTafsirs!!
+        val cacheFile = getTafsirsCacheFile()
+        
+        // Fast local check from disk cache first
+        if (cacheFile.exists() && cacheFile.length() > 0) {
             try {
-                if (cacheFile.exists()) {
-                    val type = object : com.google.gson.reflect.TypeToken<List<com.example.data.model.TafsirResourceDto>>() {}.type
-                    val list: List<com.example.data.model.TafsirResourceDto> = com.google.gson.Gson().fromJson(cacheFile.readText(), type)
+                val type = object : com.google.gson.reflect.TypeToken<List<com.example.data.model.TafsirResourceDto>>() {}.type
+                val list: List<com.example.data.model.TafsirResourceDto> = com.google.gson.Gson().fromJson(cacheFile.readText(), type)
+                if (!list.isNullOrEmpty()) {
                     cachedTafsirs = list
                     return list
                 }
-            } catch (ex: Exception) {
-                ex.printStackTrace()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            emptyList()
         }
+
+        // Return instant default list if network is slow or offline
+        cachedTafsirs = defaultBengaliTafsirs
+        
+        // Asynchronously update from network in background if available
+        if (com.example.util.NetworkUtils.isNetworkAvailable(context)) {
+            repositoryScope.launch {
+                try {
+                    val response = quranComApi.getAvailableTafsirs(language)
+                    val filtered = response.tafsirs.filter {
+                        it.languageName.equals("bengali", ignoreCase = true) ||
+                                it.languageName.equals("english", ignoreCase = true) ||
+                                it.languageName.equals("urdu", ignoreCase = true) ||
+                                it.languageName.equals("arabic", ignoreCase = true)
+                    }
+                    if (filtered.isNotEmpty()) {
+                        cachedTafsirs = filtered
+                        cacheFile.writeText(com.google.gson.Gson().toJson(filtered))
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+        return defaultBengaliTafsirs
     }
 
     private suspend fun fetchAndCacheSurahFromNetwork(

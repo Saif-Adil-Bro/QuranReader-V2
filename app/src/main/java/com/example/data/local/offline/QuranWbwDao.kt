@@ -8,6 +8,9 @@ interface QuranWbwDao {
     @Query("SELECT * FROM quran_words WHERE surahNumber = :surahNumber ORDER BY ayahNumber ASC, position ASC")
     suspend fun getWordsBySurah(surahNumber: Int): List<QuranWordEntity>
 
+    @Query("SELECT * FROM quran_words WHERE surahNumber = :surahNumber AND ayahNumber BETWEEN :startAyah AND :endAyah ORDER BY ayahNumber ASC, position ASC")
+    suspend fun getWordsBySurahRange(surahNumber: Int, startAyah: Int, endAyah: Int): List<QuranWordEntity>
+
     @Query("SELECT * FROM quran_words WHERE surahNumber = :surahNumber AND ayahNumber = :ayahNumber ORDER BY position ASC")
     suspend fun getWordsBySurahAndAyah(surahNumber: Int, ayahNumber: Int): List<QuranWordEntity>
 
