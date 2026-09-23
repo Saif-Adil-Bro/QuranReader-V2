@@ -96,7 +96,8 @@ fun SettingsScreen(
     onNavigateToMushafPage: (String, Int) -> Unit = { _, _ -> },
     initialSubScreen: String? = null,
     initialDuaId: Int? = null,
-    highlightHijriAdjustment: Boolean = false
+    highlightHijriAdjustment: Boolean = false,
+    initialCategoryName: String? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1013,7 +1014,8 @@ fun SettingsScreen(
             onNavigateToJuz = onNavigateToJuz,
             onNavigateToAyah = onNavigateToAyah,
             onNavigateToMushafPage = onNavigateToMushafPage,
-            initialDuaId = if (activeDialog == "dua" || activeDialog == "morning_evening_dua") initialDuaId else null
+            initialDuaId = if (activeDialog == "dua" || activeDialog == "morning_evening_dua") initialDuaId else null,
+            initialCategoryName = if (activeDialog == "subjectwise") initialCategoryName else null
         )
     }
 }
@@ -1028,7 +1030,8 @@ fun MenuDetailDialog(
     onNavigateToJuz: (Int) -> Unit = {},
     onNavigateToAyah: (Int, Int) -> Unit = { _, _ -> },
     onNavigateToMushafPage: (String, Int) -> Unit = { _, _ -> },
-    initialDuaId: Int? = null
+    initialDuaId: Int? = null,
+    initialCategoryName: String? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1055,9 +1058,12 @@ fun MenuDetailDialog(
     
     var subjectwiseBackAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     var subjectwiseManzilInfoAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var activeDhikrType by remember { mutableStateOf<com.example.utils.DhikrType?>(null) }
 
     val handleBack: () -> Unit = {
-        if ((type == "dua" || type == "morning_evening_dua") && selectedDuaForDuaTab != null) {
+        if (activeDhikrType != null) {
+            activeDhikrType = null
+        } else if ((type == "dua" || type == "morning_evening_dua") && selectedDuaForDuaTab != null) {
             selectedDuaForDuaTab = null
         } else if ((type == "subjectwise" || type == "manzil") && subjectwiseBackAction != null) {
             subjectwiseBackAction?.invoke()
@@ -1070,31 +1076,37 @@ fun MenuDetailDialog(
         onDismissRequest = handleBack,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        val isDark = androidx.compose.material3.MaterialTheme.colorScheme.background.luminance() < 0.5f
-        val bgGradient = if (isDark) {
-            androidx.compose.ui.graphics.Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFF1E2A22),
-                    Color(0xFF15201A),
-                    Color(0xFF0F1713)
-                )
+        if (type == "notifications" && activeDhikrType != null) {
+            DhikrReminderScreen(
+                type = activeDhikrType!!,
+                onBackClick = { activeDhikrType = null }
             )
         } else {
-            androidx.compose.ui.graphics.Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFFE8F5E9),
-                    Color(0xFFEEF7F0),
-                    Color(0xFFDAECE0)
+            val isDark = androidx.compose.material3.MaterialTheme.colorScheme.background.luminance() < 0.5f
+            val bgGradient = if (isDark) {
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF1E2A22),
+                        Color(0xFF15201A),
+                        Color(0xFF0F1713)
+                    )
                 )
-            )
-        }
-        
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .let { if (type == "qibla") it.background(bgGradient) else it.background(MaterialTheme.colorScheme.background) },
-            color = if (type == "qibla") Color.Transparent else MaterialTheme.colorScheme.background
-        ) {
+            } else {
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFE8F5E9),
+                        Color(0xFFEEF7F0),
+                        Color(0xFFDAECE0)
+                    )
+                )
+            }
+            
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .let { if (type == "qibla") it.background(bgGradient) else it.background(MaterialTheme.colorScheme.background) },
+                color = if (type == "qibla") Color.Transparent else MaterialTheme.colorScheme.background
+            ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 // Dialog Header
                 val title = when (type) {
@@ -1192,6 +1204,7 @@ fun MenuDetailDialog(
                         "planner" -> PlannerDialogContent(viewModel)
                         "subjectwise" -> SubjectwiseDialogContent(
                             viewModel = viewModel,
+                            initialCategoryName = initialCategoryName,
                             onDismiss = onDismiss,
                             onRegisterBackAction = { subjectwiseBackAction = it },
                             onRegisterManzilInfoAction = { subjectwiseManzilInfoAction = it }
@@ -1226,7 +1239,10 @@ fun MenuDetailDialog(
                         "offline_sync" -> OfflineSyncDialogContent(viewModel)
                         "font_settings" -> FontSettingsContent(viewModel = viewModel, onDismiss = onDismiss)
                         "backup" -> BackupDialogContent()
-                        "notifications" -> NotificationDialogContent(viewModel)
+                        "notifications" -> NotificationDialogContent(
+                            viewModel = viewModel,
+                            onOpenDhikr = { activeDhikrType = it }
+                        )
                         "theme" -> ThemeDialogContent(viewModel)
                         "about" -> AboutDialogContent()
                         "contact" -> ContactDialogContent()
@@ -1235,6 +1251,7 @@ fun MenuDetailDialog(
             }
         }
     }
+}
 }
 
 // --- 1. PROFILE DIALOG ---
@@ -1946,10 +1963,11 @@ fun SubjectwiseDialogContent(
     val handleInternalBack = {
         if (showManzilInfo) {
             showManzilInfo = false
-        } else if (selectedTopic != null && initialCategoryName == null) {
+        } else if (selectedTopic != null && (selectedCategory?.topics?.size ?: 0) > 1) {
             selectedTopic = null
-        } else if (selectedCategory != null && initialCategoryName == null) {
+        } else if (selectedCategory != null && initialCategoryName.isNullOrEmpty()) {
             selectedCategory = null
+            selectedTopic = null
         } else {
             onDismiss()
         }
@@ -1973,10 +1991,16 @@ fun SubjectwiseDialogContent(
         allCategories = loaded
         isLoading = false
         if (!initialCategoryName.isNullOrEmpty() && selectedCategory == null) {
-            val matchedCategory = loaded.find { it.categoryNameBn == "মানযিল" }
+            val target = initialCategoryName.trim()
+            val matchedCategory = loaded.find { cat ->
+                cat.categoryNameBn.trim().equals(target, ignoreCase = true) ||
+                cat.categoryNameBn.contains(target) ||
+                target.contains(cat.categoryNameBn.trim()) ||
+                cat.categoryId.toString() == target
+            }
             if (matchedCategory != null) {
                 selectedCategory = matchedCategory
-                if (matchedCategory.topics.isNotEmpty()) {
+                if (matchedCategory.topics.size == 1) {
                     selectedTopic = matchedCategory.topics[0]
                 }
             }
@@ -5228,17 +5252,10 @@ fun ThemeOption(title: String, isSelected: Boolean, onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotificationDialogContent(viewModel: SettingsViewModel) {
-    var activeDhikrType by remember { mutableStateOf<com.example.utils.DhikrType?>(null) }
-
-    if (activeDhikrType != null) {
-        DhikrReminderScreen(
-            type = activeDhikrType!!,
-            onBackClick = { activeDhikrType = null }
-        )
-        return
-    }
-
+fun NotificationDialogContent(
+    viewModel: SettingsViewModel,
+    onOpenDhikr: (com.example.utils.DhikrType) -> Unit = {}
+) {
     val dailyEnabled by viewModel.dailyMessageEnabled.collectAsState()
     val dailyHour by viewModel.dailyMessageHour.collectAsState()
     val dailyMinute by viewModel.dailyMessageMinute.collectAsState()
@@ -5432,13 +5449,13 @@ fun NotificationDialogContent(viewModel: SettingsViewModel) {
             }
         }
 
-        // দরূদ রিমাইন্ডার কার্ড
-        val duroodConfig = remember(activeDhikrType) { com.example.utils.DhikrReminderManager.getConfig(context, com.example.utils.DhikrType.DUROOD) }
+        // দুরুদ রিমাইন্ডার কার্ড
+        val duroodConfig = remember { com.example.utils.DhikrReminderManager.getConfig(context, com.example.utils.DhikrType.DUROOD) }
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
-                .clickable { activeDhikrType = com.example.utils.DhikrType.DUROOD },
+                .clickable { onOpenDhikr(com.example.utils.DhikrType.DUROOD) },
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
             border = BorderStroke(1.dp, if (duroodConfig.isEnabled) PrimaryGreen.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
@@ -5459,7 +5476,7 @@ fun NotificationDialogContent(viewModel: SettingsViewModel) {
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "দরূদ রিমাইন্ডার",
+                            text = "দুরুদ রিমাইন্ডার",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -5481,13 +5498,13 @@ fun NotificationDialogContent(viewModel: SettingsViewModel) {
             }
         }
 
-        // ইস্তেগফার রিমাইন্ডার কার্ড
-        val istighfarConfig = remember(activeDhikrType) { com.example.utils.DhikrReminderManager.getConfig(context, com.example.utils.DhikrType.ISTIGHFAR) }
+        // ইস্তিগফার রিমাইন্ডার কার্ড
+        val istighfarConfig = remember { com.example.utils.DhikrReminderManager.getConfig(context, com.example.utils.DhikrType.ISTIGHFAR) }
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
-                .clickable { activeDhikrType = com.example.utils.DhikrType.ISTIGHFAR },
+                .clickable { onOpenDhikr(com.example.utils.DhikrType.ISTIGHFAR) },
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
             border = BorderStroke(1.dp, if (istighfarConfig.isEnabled) PrimaryGreen.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
@@ -5508,7 +5525,7 @@ fun NotificationDialogContent(viewModel: SettingsViewModel) {
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "ইস্তেগফার রিমাইন্ডার",
+                            text = "ইস্তিগফার রিমাইন্ডার",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface

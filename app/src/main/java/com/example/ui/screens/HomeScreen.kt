@@ -62,6 +62,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import com.example.data.model.BlogPost
 
 fun String.toArabicNumerals(): String {
     val englishNumerals = "0123456789"
@@ -155,6 +158,13 @@ fun HomeScreen(
     onNavigateToPosts: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToCalendar: () -> Unit = {},
+    onNavigateToDhikrReminder: (com.example.utils.DhikrType) -> Unit = {},
+    onNavigateToDua: (Int?) -> Unit = {},
+    onNavigateToManzil: () -> Unit = {},
+    onNavigateToPlanner: () -> Unit = {},
+    onNavigateToSubjectwise: (String?) -> Unit = {},
+    onNavigateToQibla: () -> Unit = {},
+    onNavigateToVideoCreator: () -> Unit = {},
     postsViewModel: com.example.ui.viewmodels.PostsViewModel? = null
 ) {
     val context = LocalContext.current
@@ -615,6 +625,71 @@ fun HomeScreen(
                         onNavigateToSurahWithAyah = onNavigateToSurahWithAyah
                     )
                 }
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    ModesGridSection(
+                        isHafeziDownloaded = viewModel.isMushafDownloaded(defaultMushafId),
+                        isDark = isDark,
+                        onHafeziPdfClick = {
+                            onNavigateToMushafPoriciti()
+                        },
+                        onTajweedClick = onNavigateToTajweedIndex,
+                        onTranslationClick = onNavigateToNormalMode,
+                        onPlayerClick = onNavigateToPlayer,
+                        onPostsClick = onNavigateToPosts
+                    )
+                }
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    TopFeaturesGridSection(
+                        isDark = isDark,
+                        onQiblaClick = onNavigateToQibla,
+                        onDuaClick = { onNavigateToDua(null) },
+                        onManzilClick = onNavigateToManzil,
+                        onPlannerClick = onNavigateToPlanner,
+                        onCalendarClick = onNavigateToCalendar,
+                        onVideoCreatorClick = onNavigateToVideoCreator,
+                        onSubjectwiseClick = { onNavigateToSubjectwise(null) },
+                        onTasbihClick = { onNavigateToDhikrReminder(com.example.utils.DhikrType.DUROOD) },
+                        onMoreClick = onSettingsClick
+                    )
+                }
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    DailyDuaFeaturedSection(
+                        isDark = isDark,
+                        arabicFontName = arabicFontName,
+                        onReadDua = { duaItem -> selectedDuaForDetail = duaItem },
+                        onViewAllDuas = { onNavigateToDua(null) }
+                    )
+                }
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    DhikrHabitSection(
+                        isDark = isDark,
+                        onNavigateToDhikrReminder = onNavigateToDhikrReminder
+                    )
+                }
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    SubjectwiseTopCategoriesSection(
+                        isDark = isDark,
+                        onCategoryClick = { categoryName -> onNavigateToSubjectwise(categoryName) },
+                        onViewAllClick = { onNavigateToSubjectwise(null) }
+                    )
+                }
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    FeaturedIslamicMediaSection(
+                        isDark = isDark,
+                        blogPosts = rawBlogPosts.filter { it.category != "নোটিফিকেশন" && it.category != "নোটিশ" },
+                        onPostClick = { post ->
+                            postsViewModel?.setPendingBlogPost(post)
+                            onNavigateToPosts()
+                        },
+                        onViewAllClick = onNavigateToPosts
+                    )
+                }
                 if (recentReads.isNotEmpty() || bookmarks.isNotEmpty()) {
                     item {
                         Spacer(modifier = Modifier.height(24.dp))
@@ -638,20 +713,6 @@ fun HomeScreen(
                             onDeleteBookmark = { viewModel.deleteBookmark(it) }
                         )
                     }
-                }
-                item {
-                    Spacer(modifier = Modifier.height(24.dp))
-                    ModesGridSection(
-                        isHafeziDownloaded = viewModel.isMushafDownloaded(defaultMushafId),
-                        isDark = isDark,
-                        onHafeziPdfClick = {
-                            onNavigateToMushafPoriciti()
-                        },
-                        onTajweedClick = onNavigateToTajweedIndex,
-                        onTranslationClick = onNavigateToNormalMode,
-                        onPlayerClick = onNavigateToPlayer,
-                        onPostsClick = onNavigateToPosts
-                    )
                 }
             }
         }
@@ -2170,6 +2231,1402 @@ fun ModesGridSection(
                 onClick = onPlayerClick,
                 modifier = Modifier.weight(1f)
             )
+        }
+    }
+}
+
+@Composable
+fun DhikrHabitSection(
+    isDark: Boolean,
+    onNavigateToDhikrReminder: (com.example.utils.DhikrType) -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val duroodConfig = remember { com.example.utils.DhikrReminderManager.getConfig(context, com.example.utils.DhikrType.DUROOD) }
+    val istighfarConfig = remember { com.example.utils.DhikrReminderManager.getConfig(context, com.example.utils.DhikrType.ISTIGHFAR) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "দৈনিক আমল ও অভ্যাস রিমাইন্ডার",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Surface(
+                color = if (isDark) Color(0xFF064E3B).copy(alpha = 0.5f) else Color(0xFFECFDF5),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.3f))
+            ) {
+                Text(
+                    text = "আমলের অভ্যাস",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF10B981),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Card 1: দুরুদ শরীফ পড়ার অভ্যাস
+        DhikrHabitCard(
+            title = "দুরুদ শরীফ পড়ার অভ্যাস করুন",
+            subtitle = "সারাদিন নবীজী (ﷺ)-এর ওপর নিয়মিত দুরুদ পাঠের সওয়াব অর্জনে রিমাইন্ডার চালু রাখুন।",
+            iconEmoji = "📿",
+            iconBg = if (isDark) Color(0xFF064E3B).copy(alpha = 0.45f) else Color(0xFFECFDF5),
+            badgeColor = Color(0xFF10B981),
+            isEnabled = duroodConfig.isEnabled,
+            intervalMinutes = duroodConfig.intervalMinutes,
+            inactiveActionText = "অভ্যাস গড়তে দুরুদ শরীফ রিমাইন্ডার ফিচার চালু করুন",
+            isDark = isDark,
+            onClick = { onNavigateToDhikrReminder(com.example.utils.DhikrType.DUROOD) }
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Card 2: ইস্তিগফারের অভ্যাস
+        DhikrHabitCard(
+            title = "ইস্তিগফারের অভ্যাস করুন",
+            subtitle = "সারাদিন মহান আল্লাহর কাছে ক্ষমা প্রার্থনার অভ্যাস গড়ে তুলতে নিয়মিত রিমাইন্ডার চালু রাখুন।",
+            iconEmoji = "🤲",
+            iconBg = if (isDark) Color(0xFF1E3A8A).copy(alpha = 0.45f) else Color(0xFFEFF6FF),
+            badgeColor = Color(0xFF3B82F6),
+            isEnabled = istighfarConfig.isEnabled,
+            intervalMinutes = istighfarConfig.intervalMinutes,
+            inactiveActionText = "অভ্যাস গড়তে ইস্তিগফার রিমাইন্ডার চালু করুন",
+            isDark = isDark,
+            onClick = { onNavigateToDhikrReminder(com.example.utils.DhikrType.ISTIGHFAR) }
+        )
+    }
+}
+
+@Composable
+fun DhikrHabitCard(
+    title: String,
+    subtitle: String,
+    iconEmoji: String,
+    iconBg: Color,
+    badgeColor: Color,
+    isEnabled: Boolean,
+    intervalMinutes: Int,
+    inactiveActionText: String,
+    isDark: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(
+            1.dp,
+            if (isEnabled) badgeColor.copy(alpha = 0.4f) else if (isDark) Color(0xFF2E3842) else Color(0xFFE2E8F0)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Icon emoji box
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(iconBg),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(text = iconEmoji, fontSize = 20.sp)
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                // Status tag
+                if (isEnabled) {
+                    Surface(
+                        color = badgeColor.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(badgeColor)
+                            )
+                            Text(
+                                text = "চালু আছে",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = badgeColor
+                            )
+                        }
+                    }
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = subtitle,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                lineHeight = 17.sp,
+                modifier = Modifier.padding(start = 2.dp)
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Action banner
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = if (isEnabled) badgeColor.copy(alpha = 0.08f) else if (isDark) Color(0xFF1E262F) else Color(0xFFF1F5F9),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = if (isEnabled) Icons.Default.CheckCircle else Icons.Default.NotificationsActive,
+                            contentDescription = null,
+                            tint = if (isEnabled) badgeColor else PrimaryGreen,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = if (isEnabled) "প্রতি $intervalMinutes মিনিট পরপর রিমাইন্ডার আসবে" else inactiveActionText,
+                            fontSize = 12.sp,
+                            fontWeight = if (isEnabled) FontWeight.SemiBold else FontWeight.Medium,
+                            color = if (isEnabled) badgeColor else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Icon(
+                        imageVector = Icons.Default.ArrowForward,
+                        contentDescription = null,
+                        tint = if (isEnabled) badgeColor else PrimaryGreen,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TopFeaturesGridSection(
+    isDark: Boolean,
+    onQiblaClick: () -> Unit,
+    onDuaClick: () -> Unit,
+    onManzilClick: () -> Unit,
+    onPlannerClick: () -> Unit,
+    onCalendarClick: () -> Unit,
+    onVideoCreatorClick: () -> Unit,
+    onSubjectwiseClick: () -> Unit,
+    onTasbihClick: () -> Unit,
+    onMoreClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isDark) Color(0xFF1E252B) else Color(0xFFFFFFFF)
+        ),
+        border = BorderStroke(
+            1.dp,
+            if (isDark) Color(0xFF2E3842) else Color(0xFFE2E8F0)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp, horizontal = 10.dp)
+        ) {
+            // Header Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .background(PrimaryGreen.copy(alpha = 0.12f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.WorkspacePremium,
+                            contentDescription = null,
+                            tint = PrimaryGreen,
+                            modifier = Modifier.size(17.dp)
+                        )
+                    }
+                    Text(
+                        text = "টপ ফিচার",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Surface(
+                    onClick = onMoreClick,
+                    shape = RoundedCornerShape(12.dp),
+                    color = PrimaryGreen.copy(alpha = 0.08f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "আরও দেখুন",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PrimaryGreen
+                        )
+                        Icon(
+                            imageVector = Icons.Default.ArrowForward,
+                            contentDescription = null,
+                            tint = PrimaryGreen,
+                            modifier = Modifier.size(13.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 2 Rows of 4 Circular Tool Buttons
+            // Row 1
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                TopFeatureCircleButton(
+                    title = "কিবলা",
+                    icon = Icons.Default.Explore,
+                    isDark = isDark,
+                    bgColor = if (isDark) Color(0xFF0F3826) else Color(0xFFE8F5E9),
+                    iconTint = if (isDark) Color(0xFF34D399) else Color(0xFF10B981),
+                    onClick = onQiblaClick
+                )
+                TopFeatureCircleButton(
+                    title = "মাসনূন দুআ",
+                    icon = Icons.Default.VolunteerActivism,
+                    isDark = isDark,
+                    bgColor = if (isDark) Color(0xFF0C334D) else Color(0xFFE0F2FE),
+                    iconTint = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7),
+                    onClick = onDuaClick
+                )
+                TopFeatureCircleButton(
+                    title = "মানযিল",
+                    icon = Icons.Default.Security,
+                    isDark = isDark,
+                    bgColor = if (isDark) Color(0xFF064E3B) else Color(0xFFD1FAE5),
+                    iconTint = if (isDark) Color(0xFF10B981) else Color(0xFF059669),
+                    onClick = onManzilClick
+                )
+                TopFeatureCircleButton(
+                    title = "প্ল্যানার",
+                    icon = Icons.Default.TrackChanges,
+                    isDark = isDark,
+                    bgColor = if (isDark) Color(0xFF4C0519) else Color(0xFFFFE4E6),
+                    iconTint = if (isDark) Color(0xFFFB7185) else Color(0xFFE11D48),
+                    onClick = onPlannerClick
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Row 2
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                TopFeatureCircleButton(
+                    title = "ক্যালেন্ডার",
+                    icon = Icons.Default.CalendarMonth,
+                    isDark = isDark,
+                    bgColor = if (isDark) Color(0xFF451A03) else Color(0xFFFEF3C7),
+                    iconTint = if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706),
+                    onClick = onCalendarClick
+                )
+                TopFeatureCircleButton(
+                    title = "ভিডিও মেকার",
+                    icon = Icons.Default.Videocam,
+                    isDark = isDark,
+                    bgColor = if (isDark) Color(0xFF3B0764) else Color(0xFFF3E8FF),
+                    iconTint = if (isDark) Color(0xFFC084FC) else Color(0xFF9333EA),
+                    onClick = onVideoCreatorClick
+                )
+                TopFeatureCircleButton(
+                    title = "বিষয়ভিত্তিক",
+                    icon = Icons.Default.AutoStories,
+                    isDark = isDark,
+                    bgColor = if (isDark) Color(0xFF1E1B4B) else Color(0xFFE0E7FF),
+                    iconTint = if (isDark) Color(0xFF818CF8) else Color(0xFF4F46E5),
+                    onClick = onSubjectwiseClick
+                )
+                TopFeatureCircleButton(
+                    title = "তাসবিহ ও জিকির",
+                    icon = Icons.Default.NotificationsActive,
+                    isDark = isDark,
+                    bgColor = if (isDark) Color(0xFF134E4A) else Color(0xFFCCFBF1),
+                    iconTint = if (isDark) Color(0xFF2DD4BF) else Color(0xFF0D9488),
+                    onClick = onTasbihClick
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TopFeatureCircleButton(
+    title: String,
+    icon: ImageVector,
+    isDark: Boolean,
+    bgColor: Color,
+    iconTint: Color,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .width(76.dp)
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(52.dp)
+                .background(bgColor, CircleShape)
+                .border(
+                    1.dp,
+                    if (isDark) iconTint.copy(alpha = 0.25f) else iconTint.copy(alpha = 0.15f),
+                    CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = iconTint,
+                modifier = Modifier.size(26.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(7.dp))
+
+        Text(
+            text = title,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+fun DailyDuaFeaturedSection(
+    isDark: Boolean,
+    arabicFontName: String = "kfgqpc",
+    onReadDua: (com.example.data.DuaItem) -> Unit,
+    onViewAllDuas: () -> Unit
+) {
+    val context = LocalContext.current
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+    
+    // Ensure DuaData is initialized
+    LaunchedEffect(Unit) {
+        com.example.data.DuaData.initialize(context)
+    }
+
+    val allDuas = com.example.data.DuaData.richDuas
+    val featuredDua = remember(allDuas) {
+        if (allDuas.isNotEmpty()) {
+            val dayOfYear = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+            allDuas[dayOfYear % allDuas.size]
+        } else null
+    }
+
+    if (featuredDua == null) return
+
+    val firstSegment = featuredDua.segments.firstOrNull()
+    val arabic = firstSegment?.arabic ?: ""
+    val transliteration = firstSegment?.transliteration ?: ""
+    val translation = firstSegment?.translation ?: ""
+    val reference = firstSegment?.reference?.ifEmpty { firstSegment.bottom } ?: ""
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isDark) Color(0xFF192520) else Color(0xFFF4FBF7)
+        ),
+        border = BorderStroke(
+            1.dp,
+            if (isDark) Color(0xFF224233) else Color(0xFFD1EAD9)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp)
+        ) {
+            // Header Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .background(Color(0xFFEAB308).copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = Color(0xFFEAB308),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    Text(
+                        text = "আজকের নির্বাচিত দুআ",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Surface(
+                    onClick = onViewAllDuas,
+                    shape = RoundedCornerShape(12.dp),
+                    color = PrimaryGreen.copy(alpha = 0.1f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Text(
+                            text = "সব দুআ",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = PrimaryGreen
+                        )
+                        Icon(
+                            imageVector = Icons.Default.ArrowForward,
+                            contentDescription = null,
+                            tint = PrimaryGreen,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Title
+            Text(
+                text = featuredDua.title,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = PrimaryGreen
+            )
+
+            // Arabic text
+            if (arabic.isNotEmpty() && arabic != "null") {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = arabic,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = com.example.ui.theme.getArabicFont(arabicFontName),
+                    color = if (isDark) Color(0xFFE6F4EA) else Color(0xFF134E34),
+                    textAlign = TextAlign.Right,
+                    lineHeight = 34.sp,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // Transliteration
+            if (transliteration.isNotEmpty() && transliteration != "null") {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "উচ্চারণ: $transliteration",
+                    fontSize = 12.5.sp,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 18.sp
+                )
+            }
+
+            // Translation
+            if (translation.isNotEmpty() && translation != "null") {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "অর্থ: $translation",
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 20.sp
+                )
+            }
+
+            // Reference
+            if (reference.isNotEmpty() && reference != "null") {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "— $reference",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = PrimaryGreen.copy(alpha = 0.85f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Actions Bottom Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Button(
+                    onClick = { onReadDua(featuredDua) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryGreen,
+                        contentColor = Color.White
+                    ),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MenuBook,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "সম্পূর্ণ দুআ পড়ুন",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    IconButton(
+                        onClick = {
+                            val copyText = buildString {
+                                append(featuredDua.title).append("\n\n")
+                                if (arabic.isNotEmpty() && arabic != "null") append(arabic).append("\n\n")
+                                if (transliteration.isNotEmpty() && transliteration != "null") append("উচ্চারণ: ").append(transliteration).append("\n\n")
+                                if (translation.isNotEmpty() && translation != "null") append("অর্থ: ").append(translation).append("\n")
+                                if (reference.isNotEmpty() && reference != "null") append("— ").append(reference)
+                            }
+                            clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(copyText))
+                            Toast.makeText(context, "দুআটি কপি করা হয়েছে", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(
+                                if (isDark) Color(0xFF23362B) else Color(0xFFE2F3E9),
+                                CircleShape
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "কপি করুন",
+                            tint = PrimaryGreen,
+                            modifier = Modifier.size(17.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            val shareText = buildString {
+                                append("✨ ").append(featuredDua.title).append("\n\n")
+                                if (arabic.isNotEmpty() && arabic != "null") append(arabic).append("\n\n")
+                                if (transliteration.isNotEmpty() && transliteration != "null") append("উচ্চারণ: ").append(transliteration).append("\n\n")
+                                if (translation.isNotEmpty() && translation != "null") append("অর্থ: ").append(translation).append("\n\n")
+                                if (reference.isNotEmpty() && reference != "null") append("— ").append(reference).append("\n\n")
+                                append("আল-কুরআন ও ইসলামিক অ্যাপ")
+                            }
+                            val sendIntent = android.content.Intent().apply {
+                                action = android.content.Intent.ACTION_SEND
+                                putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                                type = "text/plain"
+                            }
+                            context.startActivity(android.content.Intent.createChooser(sendIntent, "দুআটি শেয়ার করুন"))
+                        },
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(
+                                if (isDark) Color(0xFF23362B) else Color(0xFFE2F3E9),
+                                CircleShape
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "শেয়ার করুন",
+                            tint = PrimaryGreen,
+                            modifier = Modifier.size(17.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SubjectwiseTopCategoriesSection(
+    isDark: Boolean,
+    onCategoryClick: (String) -> Unit,
+    onViewAllClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        // Section Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(Color(0xFF4F46E5).copy(alpha = 0.12f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AutoStories,
+                        contentDescription = null,
+                        tint = Color(0xFF6366F1),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                Text(
+                    text = "বিষয়ভিত্তিক কুরআন",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Surface(
+                onClick = onViewAllClick,
+                shape = RoundedCornerShape(12.dp),
+                color = PrimaryGreen.copy(alpha = 0.08f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "সব বিষয়",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = PrimaryGreen
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowForward,
+                        contentDescription = null,
+                        tint = PrimaryGreen,
+                        modifier = Modifier.size(13.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Horizontal scrolling categories
+        val subjectCategories = listOf(
+            Triple("ঈমান ও আকীদা", "তাওহীদ, রিসালাত ও আসমাউল হুসনা • ১০+ বিষয়", Color(0xFFF59E0B)),
+            Triple("ইবাদত ও আমল", "সালাত, সিয়াম, হজ ও জাকাত • ৮+ বিষয়", Color(0xFF10B981)),
+            Triple("পরকাল, কিয়ামত ও আখিরাত", "মৃত্যু, কবর, হাশর ও জান্নাত • ১১+ বিষয়", Color(0xFF8B5CF6)),
+            Triple("আখলাক, চরিত্র ও শিষ্টাচার", "সততা, উত্তম আচরণ ও শিষ্টাচার • ৮+ বিষয়", Color(0xFF0284C7)),
+            Triple("পারিবারিক ও সামাজিক জীবন", "পিতা-মাতা, আত্মীয় ও প্রতিবেশীর হক • ৭+ বিষয়", Color(0xFFF43F5E)),
+            Triple("দোয়া ও জিকির", "কুরআনের দোয়া ও আল্লাহর জিকির • ৬+ বিষয়", Color(0xFF14B8A6)),
+            Triple("মানযিল", "কুরআনের বিশেষ শেফা ও সুরক্ষার আয়াত • ৩৩ আয়াত", Color(0xFF059669))
+        )
+
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(subjectCategories) { (title, subtitle, accentColor) ->
+                SubjectwiseCategoryCard(
+                    title = title,
+                    subtitle = subtitle,
+                    accentColor = accentColor,
+                    isDark = isDark,
+                    onClick = { onCategoryClick(title) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SubjectwiseCategoryCard(
+    title: String,
+    subtitle: String,
+    accentColor: Color,
+    isDark: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isDark) Color(0xFF1C2229) else Color(0xFFFFFFFF)
+        ),
+        border = BorderStroke(
+            1.dp,
+            if (isDark) accentColor.copy(alpha = 0.25f) else accentColor.copy(alpha = 0.18f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 2.dp),
+        modifier = Modifier
+            .width(190.dp)
+            .height(105.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(accentColor.copy(alpha = 0.15f), RoundedCornerShape(8.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Category,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Text(
+                    text = title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Text(
+                text = subtitle,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Normal,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                lineHeight = 15.sp,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+fun formatPostTimeAgo(timestamp: Long): String {
+    if (timestamp <= 0L) return "এইমাত্র"
+    val diffMillis = System.currentTimeMillis() - timestamp
+    if (diffMillis < 0) return "এইমাত্র"
+    val seconds = diffMillis / 1000
+    val minutes = seconds / 60
+    val hours = minutes / 60
+    val days = hours / 24
+
+    fun String.toBanglaDigits(): String {
+        val banglaDigits = mapOf(
+            '0' to '০', '1' to '১', '2' to '২', '3' to '৩', '4' to '৪',
+            '5' to '৫', '6' to '৬', '7' to '৭', '8' to '৮', '9' to '৯'
+        )
+        return this.map { banglaDigits[it] ?: it }.joinToString("")
+    }
+
+    return when {
+        minutes < 1 -> "এইমাত্র"
+        minutes < 60 -> "${minutes.toString().toBanglaDigits()} মিনিট আগে"
+        hours < 24 -> "${hours.toString().toBanglaDigits()} ঘণ্টা আগে"
+        days < 2 -> "গতকাল"
+        days < 7 -> "${days.toString().toBanglaDigits()} দিন আগে"
+        days < 8 -> "১ সপ্তাহ আগে"
+        else -> {
+            try {
+                val cal = java.util.Calendar.getInstance().apply { timeInMillis = timestamp }
+                val d = cal.get(java.util.Calendar.DAY_OF_MONTH)
+                val m = cal.get(java.util.Calendar.MONTH)
+                val y = cal.get(java.util.Calendar.YEAR)
+                val englishMonthsBengali = listOf("জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর")
+                val monthName = if (m in englishMonthsBengali.indices) englishMonthsBengali[m] else ""
+                "${d.toString().toBanglaDigits()} $monthName ${y.toString().toBanglaDigits()}"
+            } catch (e: Exception) {
+                try {
+                    val sdf = java.text.SimpleDateFormat("d MMMM yyyy", java.util.Locale("bn", "BD"))
+                    sdf.format(java.util.Date(timestamp))
+                } catch (ex: Exception) {
+                    "সম্প্রতি"
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FeaturedIslamicMediaSection(
+    isDark: Boolean,
+    blogPosts: List<BlogPost> = emptyList(),
+    onPostClick: (BlogPost) -> Unit = {},
+    onViewAllClick: () -> Unit = {}
+) {
+    val fallbackBlogPosts = remember {
+        listOf(
+            BlogPost(
+                id = "featured_1",
+                title = "কুরআন নিয়মিত তিলাওয়াতের আত্মিক প্রশান্তি ও ফজিলত",
+                content = "পবিত্র কুরআন মুমিনের অন্তরের শেফা এবং হেদায়েতের আলোকবর্তিকা। দৈনন্দিন জীবনে নিয়মিত তিলাওয়াত মানুষের মন থেকে সকল দুশ্চিন্তা ও পেরেশানি দূর করে আত্মিক শান্তি এনে দেয়।",
+                author = "মাওলানা আব্দুল্লাহ",
+                category = "কুরআনের আলো",
+                imageUrl = "",
+                readTime = "৪ মিনিট",
+                timestamp = System.currentTimeMillis() - 25 * 60 * 1000L
+            ),
+            BlogPost(
+                id = "featured_2",
+                title = "দৈনন্দিন জীবনে দুআ ও ইস্তিগফারের অলৌকিক বরকত",
+                content = "যে ব্যক্তি বেশি বেশি ইস্তিগফার করে, আল্লাহ তায়ালা তার সকল সংকটে মুক্তির পথ তৈরি করেন এবং এমন উৎস থেকে রিজিকের ব্যবস্থা করেন যা সে কল্পনাও করেনি।",
+                author = "মুফতি মাহমুদ হাসান",
+                category = "আমল ও দুআ",
+                imageUrl = "",
+                readTime = "৩ মিনিট",
+                timestamp = System.currentTimeMillis() - 2 * 3600 * 1000L
+            ),
+            BlogPost(
+                id = "featured_3",
+                title = "তাহাজ্জুদ নামাজ ও আল্লাহর নৈকট্য অর্জনের পথ",
+                content = "রাতের শেষ তৃতীয়াংশে যখন মহান আল্লাহ প্রথম আসমানে নেমে আসেন, তখন বান্দার প্রতিটি আন্তরিক মুনাজাত ও চোখের পানি সরাসরি আল্লাহর দরবারে কবুল হয়।",
+                author = "শাইখ আহমাদুল্লাহ",
+                category = "নফল ইবাদত",
+                imageUrl = "",
+                readTime = "৫ মিনিট",
+                timestamp = System.currentTimeMillis() - 5 * 3600 * 1000L
+            ),
+            BlogPost(
+                id = "featured_4",
+                title = "উত্তম চরিত্র ও সুন্দর ব্যবহারের অপরিসীম গুরুত্ব",
+                content = "ইসলামের অন্যতম প্রধান সৌন্দর্য হলো সদ্ব্যবহার ও সদাচার। মানুষের সাথে সুন্দর আচরণ, সহমর্মিতা ও ক্ষমাশীলতার মাধ্যমে পরিপূর্ণ মুমিনের পরিচয় ফুটে ওঠে।",
+                author = "ড. আব্দুল্লাহ জাহাঙ্গীর",
+                category = "আখলাক ও শিষ্টাচার",
+                imageUrl = "",
+                readTime = "৪ মিনিট",
+                timestamp = System.currentTimeMillis() - 24 * 3600 * 1000L
+            ),
+            BlogPost(
+                id = "featured_5",
+                title = "রিজিকে বরকত বৃদ্ধির কুরআন ও সুন্নাহ নির্দেশিত আমল",
+                content = "তাকওয়া অবলম্বন, পিতা-মাতার সেবা, আত্মীয়তার সম্পর্ক বজায় রাখা ও বেশি বেশি দান-সদকার মাধ্যমে আল্লাহ রাব্বুল আলামিন রিজিকে অভাবনীয় বরকত দান করেন।",
+                author = "মুফতি তারিক জামিল",
+                category = "জীবন বিধান",
+                imageUrl = "",
+                readTime = "৩ মিনিট",
+                timestamp = System.currentTimeMillis() - 48 * 3600 * 1000L
+            )
+        )
+    }
+
+    val displayPosts = remember(blogPosts) {
+        if (blogPosts.isNotEmpty()) blogPosts.take(6) else fallbackBlogPosts
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        // Section Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(PrimaryGreen.copy(alpha = 0.12f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MenuBook,
+                        contentDescription = null,
+                        tint = PrimaryGreen,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                Text(
+                    text = "ইসলামিক আলোচনা ও ব্লগ পোস্ট",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            Surface(
+                onClick = onViewAllClick,
+                shape = RoundedCornerShape(12.dp),
+                color = PrimaryGreen.copy(alpha = 0.08f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "সবগুলো",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = PrimaryGreen
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowForward,
+                        contentDescription = null,
+                        tint = PrimaryGreen,
+                        modifier = Modifier.size(13.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            items(displayPosts, key = { it.id.ifEmpty { it.title } }) { post ->
+                DynamicBlogPostCard(
+                    post = post,
+                    isDark = isDark,
+                    onClick = { onPostClick(post) }
+                )
+            }
+            item {
+                ViewAllBlogsCard(
+                    isDark = isDark,
+                    totalPosts = if (blogPosts.isNotEmpty()) blogPosts.size else displayPosts.size,
+                    onClick = onViewAllClick
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DynamicBlogPostCard(
+    post: BlogPost,
+    isDark: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isDark) Color(0xFF1E262E) else Color(0xFFFFFFFF)
+        ),
+        border = BorderStroke(
+            1.dp,
+            if (isDark) Color(0xFF2D3845) else Color(0xFFE2E8F0)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 3.dp),
+        modifier = Modifier
+            .width(260.dp)
+            .height(240.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Visual Banner Area (Fixed 105dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(105.dp)
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFF0D3B2E),
+                                Color(0xFF14533D),
+                                Color(0xFF08261D)
+                            )
+                        )
+                    )
+            ) {
+                if (post.imageUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = post.imageUrl,
+                        contentDescription = post.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Black.copy(alpha = 0.2f),
+                                        Color.Black.copy(alpha = 0.65f)
+                                    )
+                                )
+                            )
+                    )
+                } else {
+                    // Decorative Canvas Art
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        drawCircle(
+                            color = Color(0xFF10B981).copy(alpha = 0.2f),
+                            radius = size.width * 0.45f,
+                            center = Offset(size.width * 0.85f, size.height * 0.2f)
+                        )
+                        drawCircle(
+                            color = Color(0xFFF59E0B).copy(alpha = 0.15f),
+                            radius = size.width * 0.35f,
+                            center = Offset(size.width * 0.15f, size.height * 0.85f)
+                        )
+                    }
+                    // Subtle Islamic icon in background
+                    Icon(
+                        imageVector = Icons.Default.AutoStories,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.08f),
+                        modifier = Modifier
+                            .size(68.dp)
+                            .align(Alignment.Center)
+                    )
+                }
+
+                // Category Tag Badge on top left
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = PrimaryGreen.copy(alpha = 0.92f),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = post.category.ifBlank { "ইসলামিক জ্ঞান" },
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
+                    )
+                }
+
+                // Dynamic Time Ago Badge on top right
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color.Black.copy(alpha = 0.68f),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccessTime,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.9f),
+                            modifier = Modifier.size(11.dp)
+                        )
+                        Text(
+                            text = formatPostTimeAgo(post.timestamp),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+
+            // Body Content Area (Uniform remaining height)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = post.title,
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        minLines = 2,
+                        lineHeight = 18.sp,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(modifier = Modifier.height(3.dp))
+
+                    Text(
+                        text = post.content.replace("\n", " ").trim(),
+                        fontSize = 11.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        minLines = 2,
+                        lineHeight = 15.sp,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // Footer with Author and Read CTA
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .background(PrimaryGreen.copy(alpha = 0.15f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = post.author.firstOrNull()?.toString() ?: "ই",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryGreen
+                            )
+                        }
+
+                        Text(
+                            text = post.author.ifBlank { "ইসলামিক স্কলার" },
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = PrimaryGreen.copy(alpha = 0.10f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                text = "পড়ুন",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryGreen
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ArrowForward,
+                                contentDescription = null,
+                                tint = PrimaryGreen,
+                                modifier = Modifier.size(12.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ViewAllBlogsCard(
+    isDark: Boolean,
+    totalPosts: Int,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isDark) Color(0xFF1E262E) else Color(0xFFFFFFFF)
+        ),
+        border = BorderStroke(
+            1.dp,
+            PrimaryGreen.copy(alpha = 0.25f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 2.dp),
+        modifier = Modifier
+            .width(150.dp)
+            .height(240.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            PrimaryGreen.copy(alpha = 0.05f),
+                            PrimaryGreen.copy(alpha = 0.15f)
+                        )
+                    )
+                )
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(PrimaryGreen.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Feed,
+                        contentDescription = null,
+                        tint = PrimaryGreen,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "সব ব্লগ দেখুন",
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "$totalPosts+ টি আলোচনা",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Surface(
+                    shape = CircleShape,
+                    color = PrimaryGreen,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowForward,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }

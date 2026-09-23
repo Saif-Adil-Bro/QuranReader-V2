@@ -165,6 +165,12 @@ fun SurahDetailScreen(
         pageCount = { 4 }
     )
 
+    var activeSurahNumber by remember(surahNumber, isJuz) {
+        androidx.compose.runtime.mutableIntStateOf(
+            if (isJuz) com.example.data.QuranData.getJuzStartSurah(surahNumber) else surahNumber
+        )
+    }
+
     LaunchedEffect(pagerState.targetPage) {
         val newMode = pageOrder[pagerState.targetPage]
         if (viewMode != newMode) {
@@ -177,8 +183,9 @@ fun SurahDetailScreen(
         }
     }
 
-    LaunchedEffect(viewMode) {
+    LaunchedEffect(viewMode, activeSurahNumber) {
         if (viewMode == ViewMode.TAFSIR) {
+            viewModel.ensureTafsirLoaded(activeSurahNumber)
             kotlinx.coroutines.delay(120)
             isTafsirSwitching = false
         } else {
@@ -192,12 +199,6 @@ fun SurahDetailScreen(
     val settingsSheetState = rememberModalBottomSheetState()
     
     val currentPlayingAyah = (uiState as? UiState.Success)?.data?.find { it.numberInSurah == currentPlayingAyahNumber }
-
-    var activeSurahNumber by remember(surahNumber, isJuz) {
-        androidx.compose.runtime.mutableIntStateOf(
-            if (isJuz) com.example.data.QuranData.getJuzStartSurah(surahNumber) else surahNumber
-        )
-    }
 
     LaunchedEffect(activeSurahNumber, tanzilTextStyle, selectedTafsirIds) {
         viewModel.loadSurah(activeSurahNumber)
@@ -330,16 +331,7 @@ fun SurahDetailScreen(
                     }
                     val displayedData = remember(rawDisplayedData, showWaqfSigns) {
                         if (showWaqfSigns) {
-                            rawDisplayedData.map { ayah ->
-                                ayah.copy(
-                                    arabicText = ayah.arabicText.formatWaqfSigns(),
-                                    words = ayah.words.map { word ->
-                                        word.copy(
-                                            textUthmani = word.textUthmani?.formatWaqfSigns()
-                                        )
-                                    }
-                                )
-                            }
+                            rawDisplayedData
                         } else {
                             rawDisplayedData.map { ayah ->
                                 ayah.copy(
@@ -594,7 +586,8 @@ fun SurahDetailScreen(
                                     onToggleBookmark = { viewModel.toggleBookmark(ayah, activeSurahNumber) },
                                     arabicLineSpacing = arabicLineSpacing,
                                     selectedTafsirNames = selectedTafsirNames,
-                                    isTafsirLoading = isTafsirSyncing
+                                    isTafsirLoading = isTafsirSyncing,
+                                    onRetryTafsir = { viewModel.retrySyncTafsir(activeSurahNumber) }
                                 )
                             }
                         }
@@ -1057,7 +1050,8 @@ fun AyahCard(
     onToggleBookmark: () -> Unit = {},
     arabicLineSpacing: Float = 2.0f,
     selectedTafsirNames: List<String> = emptyList(),
-    isTafsirLoading: Boolean = false
+    isTafsirLoading: Boolean = false,
+    onRetryTafsir: () -> Unit = {}
 ) {
     var showTafsirDialog by remember { mutableStateOf(false) }
     var showMoreMenu by remember { mutableStateOf(false) }
@@ -1067,14 +1061,23 @@ fun AyahCard(
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val bengaliFont = com.example.ui.theme.getBengaliFont(bengaliFontName)
+    val parsedBengaliText = remember(ayah.bengaliText) {
+        if (ayah.bengaliText.contains('<') || ayah.bengaliText.contains('&')) {
+            android.text.Html.fromHtml(ayah.bengaliText, android.text.Html.FROM_HTML_MODE_LEGACY).toString()
+        } else {
+            ayah.bengaliText
+        }
+    }
     
-    val shareText = buildString {
-        append(ayah.arabicText)
-        append("\n\n")
-        append(ayah.bengaliText)
-        if (!ayah.tafsirText.isNullOrEmpty()) {
-            append("\n\nতাফসীর:\n")
-            append(android.text.Html.fromHtml(ayah.tafsirText, android.text.Html.FROM_HTML_MODE_LEGACY).toString())
+    val shareText = remember(ayah.arabicText, ayah.bengaliText, ayah.tafsirText) {
+        buildString {
+            append(ayah.arabicText)
+            append("\n\n")
+            append(parsedBengaliText)
+            if (!ayah.tafsirText.isNullOrEmpty()) {
+                append("\n\nতাফসীর:\n")
+                append(android.text.Html.fromHtml(ayah.tafsirText, android.text.Html.FROM_HTML_MODE_LEGACY).toString())
+            }
         }
     }
     val arabicFont = com.example.ui.theme.getArabicFont(arabicFontName)
@@ -1129,11 +1132,13 @@ fun AyahCard(
                             )
                         } else if (!isOnline) {
                             com.example.ui.components.MinimalTafsirFallbackCard(
-                                type = com.example.ui.components.TafsirFallbackType.NO_INTERNET
+                                type = com.example.ui.components.TafsirFallbackType.NO_INTERNET,
+                                onAction = onRetryTafsir
                             )
                         } else {
                             com.example.ui.components.MinimalTafsirFallbackCard(
-                                type = com.example.ui.components.TafsirFallbackType.NOT_FOUND
+                                type = com.example.ui.components.TafsirFallbackType.NOT_FOUND,
+                                onAction = onRetryTafsir
                             )
                         }
                     }
@@ -1369,7 +1374,7 @@ fun AyahCard(
                         }
                     } else {
                         Text(
-                            text = android.text.Html.fromHtml(ayah.bengaliText, android.text.Html.FROM_HTML_MODE_LEGACY).toString(),
+                            text = parsedBengaliText,
                             fontSize = bengaliFontSize.sp,
                             fontFamily = bengaliFont,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1438,11 +1443,13 @@ fun AyahCard(
                         )
                     } else if (!isOnline) {
                         com.example.ui.components.MinimalTafsirFallbackCard(
-                            type = com.example.ui.components.TafsirFallbackType.NO_INTERNET
+                            type = com.example.ui.components.TafsirFallbackType.NO_INTERNET,
+                            onAction = onRetryTafsir
                         )
                     } else {
                         com.example.ui.components.MinimalTafsirFallbackCard(
-                            type = com.example.ui.components.TafsirFallbackType.NOT_FOUND
+                            type = com.example.ui.components.TafsirFallbackType.NOT_FOUND,
+                            onAction = onRetryTafsir
                         )
                     }
                 }

@@ -375,8 +375,8 @@ fun NotificationScreen(
                                                 val isManzilTarget = post.author == "মানযিল" || post.title.contains("মানযিল")
                                                 val isSubjectwiseTarget = post.author == "বিষয়ভিত্তিক কুরআন" || post.title.contains("বিষয়ভিত্তিক")
                                                 val isCalendarTarget = post.author == "ক্যালেন্ডার" || post.title.contains("ক্যালেন্ডার")
-                                                val isDuroodTarget = post.author == "দরূদ রিমাইন্ডার" || post.title.contains("দরূদ")
-                                                val isIstighfarTarget = post.author == "ইস্তেগফার রিমাইন্ডার" || post.title.contains("ইস্তেগফার")
+                                                val isDuroodTarget = post.author == "দুরুদ রিমাইন্ডার" || post.author == "দরূদ রিমাইন্ডার" || post.title.contains("দুরুদ") || post.title.contains("দরূদ")
+                                                val isIstighfarTarget = post.author == "ইস্তিগফার রিমাইন্ডার" || post.author == "ইস্তেগফার রিমাইন্ডার" || post.title.contains("ইস্তিগফার") || post.title.contains("ইস্তেগফার")
                                                 val isHijriAdjustmentTarget = post.author == "হিজরি তারিখ সমন্বয়" || post.title.contains("হিজরি") || post.content.contains("হিজরি তারিখ সমন্বয়")
                                                 
                                                 val isPrayerTimesTarget = post.author == "নামাজের সময়সূচি" || 

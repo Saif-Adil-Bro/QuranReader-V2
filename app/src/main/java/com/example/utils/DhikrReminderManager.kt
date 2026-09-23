@@ -14,8 +14,8 @@ import java.util.Calendar
 import java.util.Locale
 
 enum class DhikrType(val id: String, val title: String, val author: String) {
-    DUROOD("durood", "দরূদ রিমাইন্ডার", "দরূদ রিমাইন্ডার"),
-    ISTIGHFAR("istighfar", "ইস্তেগফার রিমাইন্ডার", "ইস্তেগফার রিমাইন্ডার")
+    DUROOD("durood", "দুরুদ রিমাইন্ডার", "দুরুদ রিমাইন্ডার"),
+    ISTIGHFAR("istighfar", "ইস্তিগফার রিমাইন্ডার", "ইস্তিগফার রিমাইন্ডার")
 }
 
 data class DhikrAudioOption(
@@ -46,9 +46,9 @@ object DhikrReminderManager {
         DhikrAudioOption(
             id = "bn",
             label = "বাংলা",
-            arabicText = "দরূদ পড়ুন",
-            phoneticText = "দরূদ পড়ুন",
-            translationText = "দরূদ পড়ুন",
+            arabicText = "দুরুদ পড়ুন",
+            phoneticText = "দুরুদ পড়ুন",
+            translationText = "দুরুদ পড়ুন",
             speechLocale = Locale("bn", "BD")
         ),
         DhikrAudioOption(
@@ -64,7 +64,7 @@ object DhikrReminderManager {
             label = "আরবি - ১",
             arabicText = "صَلِّ عَلَى النَّبِيْ",
             phoneticText = "সাল্লি আলান নাবিয়্য",
-            translationText = "নবী (ﷺ)-এর ওপর দরূদ পাঠ করুন।",
+            translationText = "নবী (ﷺ)-এর ওপর দুরুদ পাঠ করুন।",
             speechLocale = Locale("ar", "SA")
         ),
         DhikrAudioOption(
@@ -72,7 +72,7 @@ object DhikrReminderManager {
             label = "আরবি - ২",
             arabicText = "صَلِّ عَلَى مُحَمَّدْ",
             phoneticText = "সাল্লি আলা মুহাম্মদ",
-            translationText = "মুহাম্মদ (ﷺ)-এর ওপর দরূদ পাঠ করুন।",
+            translationText = "মুহাম্মদ (ﷺ)-এর ওপর দুরুদ পাঠ করুন।",
             speechLocale = Locale("ar", "SA")
         ),
         DhikrAudioOption(

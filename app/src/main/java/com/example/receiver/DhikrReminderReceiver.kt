@@ -77,9 +77,9 @@ class DhikrReminderReceiver : BroadcastReceiver() {
         val selectedOption = optionsList.find { it.id == audioId } ?: optionsList.first()
 
         val notifTitle = if (type == DhikrType.DUROOD) {
-            "দরূদ পাঠের স্মরণিকা ✨"
+            "দুরুদ পাঠের স্মরণিকা ✨"
         } else {
-            "ইস্তেগফারের স্মরণিকা 🤲"
+            "ইস্তিগফারের স্মরণিকা 🤲"
         }
 
         val notifContent = "${selectedOption.arabicText}\n${selectedOption.phoneticText}\n(${selectedOption.translationText})"

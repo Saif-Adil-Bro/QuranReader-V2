@@ -449,20 +449,42 @@ class SurahDetailViewModel(
         currentLoadedSurahNumber = surahNumber
         currentLoadedJuzNumber = null
         lastVisibleAyahNumber = 1
-        viewModelScope.launch(Dispatchers.IO) {
+
+        val inMemory = repository.getCachedSurahDetails(surahNumber, tanzilTextStyle.value)
+        if (inMemory != null && inMemory.isNotEmpty()) {
+            _uiState.value = UiState.Success(inMemory)
+        } else {
             val currentState = _uiState.value
             val isCurrentSurah = (currentState as? UiState.Success)?.data?.firstOrNull()?.surahNumber == surahNumber
             if (!isCurrentSurah) {
                 _uiState.value = UiState.Loading
             }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val combinedAyahs = repository.getSurahDetailsCombined(surahNumber, tanzilTextStyle.value)
                 _uiState.value = UiState.Success(combinedAyahs)
             } catch (e: Exception) {
-                if (!isCurrentSurah) {
+                if (_uiState.value !is UiState.Success) {
                     _uiState.value = UiState.Error(e.message ?: "Failed to load Surah details")
                 }
             }
+        }
+    }
+
+    fun ensureTafsirLoaded(surahNumber: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val currentData = (_uiState.value as? UiState.Success)?.data
+            if (currentData == null || currentData.any { it.tafsirText == null }) {
+                repository.forceSyncSurahTafsir(surahNumber)
+            }
+        }
+    }
+
+    fun retrySyncTafsir(surahNumber: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.forceSyncSurahTafsir(surahNumber)
         }
     }
 

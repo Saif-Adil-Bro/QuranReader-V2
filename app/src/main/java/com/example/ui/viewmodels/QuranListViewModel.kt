@@ -34,6 +34,7 @@ class QuranListViewModel(
                 val surahs = repository.getSurahs()
                 allSurahs = surahs
                 _uiState.value = UiState.Success(surahs)
+                repository.preloadPopularSurahs()
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "An unknown error occurred")
             }

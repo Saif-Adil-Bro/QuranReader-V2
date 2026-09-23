@@ -552,36 +552,7 @@ fun PostsScreen(
 }
 
 fun formatPostDate(timestamp: Long): String {
-    if (timestamp <= 0L) return "সম্প্রতি"
-    val diffMillis = System.currentTimeMillis() - timestamp
-    if (diffMillis < 0) return "সম্প্রতি"
-    val seconds = diffMillis / 1000
-    val minutes = seconds / 60
-    val hours = minutes / 60
-    val days = hours / 24
-
-    fun String.toBanglaDigits(): String {
-        val banglaDigits = mapOf(
-            '0' to '০', '1' to '১', '2' to '২', '3' to '৩', '4' to '৪',
-            '5' to '৫', '6' to '৬', '7' to '৭', '8' to '৮', '9' to '৯'
-        )
-        return this.map { banglaDigits[it] ?: it }.joinToString("")
-    }
-
-    return when {
-        minutes < 1 -> "এখনই"
-        minutes < 60 -> "${minutes.toString().toBanglaDigits()} মিনিট আগে"
-        hours < 24 -> "${hours.toString().toBanglaDigits()} ঘণ্টা আগে"
-        days < 7 -> "${days.toString().toBanglaDigits()} দিন আগে"
-        else -> {
-            try {
-                val sdf = java.text.SimpleDateFormat("d MMMM yyyy", java.util.Locale("bn", "BD"))
-                sdf.format(java.util.Date(timestamp))
-            } catch (e: Exception) {
-                "সম্প্রতি"
-            }
-        }
-    }
+    return getRelativeTimeBengali(timestamp)
 }
 
 @Composable
@@ -3005,18 +2976,40 @@ fun NotificationCard(
 }
 
 fun getRelativeTimeBengali(timestamp: Long): String {
+    if (timestamp <= 0L) return "সম্প্রতি"
     val now = System.currentTimeMillis()
     val diff = now - timestamp
+    if (diff < 0L) return "এইমাত্র"
     
     val minute = 60 * 1000L
     val hour = 60 * minute
     val day = 24 * hour
+    val week = 7 * day
     
     return when {
         diff < minute -> "এইমাত্র"
         diff < hour -> "${DateUtil.toBengaliNumerals((diff / minute).toInt())} মিনিট আগে"
         diff < day -> "${DateUtil.toBengaliNumerals((diff / hour).toInt())} ঘণ্টা আগে"
         diff < 2 * day -> "গতকাল"
-        else -> "${DateUtil.toBengaliNumerals((diff / day).toInt())} দিন আগে"
+        diff < week -> "${DateUtil.toBengaliNumerals((diff / day).toInt())} দিন আগে"
+        diff < 8 * day -> "১ সপ্তাহ আগে"
+        else -> {
+            try {
+                val cal = java.util.Calendar.getInstance().apply { timeInMillis = timestamp }
+                val d = cal.get(java.util.Calendar.DAY_OF_MONTH)
+                val m = cal.get(java.util.Calendar.MONTH)
+                val y = cal.get(java.util.Calendar.YEAR)
+                val englishMonthsBengali = listOf("জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর")
+                val monthName = if (m in englishMonthsBengali.indices) englishMonthsBengali[m] else ""
+                "${DateUtil.toBengaliNumerals(d)} $monthName ${DateUtil.toBengaliNumerals(y)}"
+            } catch (e: Exception) {
+                try {
+                    val sdf = java.text.SimpleDateFormat("d MMMM yyyy", java.util.Locale("bn", "BD"))
+                    sdf.format(java.util.Date(timestamp))
+                } catch (ex: Exception) {
+                    "সম্প্রতি"
+                }
+            }
+        }
     }
 }

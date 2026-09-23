@@ -221,6 +221,36 @@ fun AppNavGraph(
                 onNavigateToCalendar = {
                     navController.navigate("settings?subScreen=calendar")
                 },
+                onNavigateToDhikrReminder = { type ->
+                    if (type == com.example.utils.DhikrType.DUROOD) {
+                        navController.navigate("reminder/durood")
+                    } else {
+                        navController.navigate("reminder/istighfar")
+                    }
+                },
+                onNavigateToDua = { duaId ->
+                    navController.navigate("settings?subScreen=dua")
+                },
+                onNavigateToManzil = {
+                    navController.navigate("settings?subScreen=manzil")
+                },
+                onNavigateToPlanner = {
+                    navController.navigate("settings?subScreen=planner")
+                },
+                onNavigateToSubjectwise = { categoryName ->
+                    if (!categoryName.isNullOrEmpty()) {
+                        val encoded = java.net.URLEncoder.encode(categoryName, "UTF-8")
+                        navController.navigate("settings?subScreen=subjectwise&categoryName=$encoded")
+                    } else {
+                        navController.navigate("settings?subScreen=subjectwise")
+                    }
+                },
+                onNavigateToQibla = {
+                    navController.navigate("settings?subScreen=qibla")
+                },
+                onNavigateToVideoCreator = {
+                    navController.navigate("video_creator")
+                },
                 postsViewModel = postsViewModel
             )
         }
@@ -481,7 +511,7 @@ fun AppNavGraph(
         }
 
         composable(
-            route = "settings?subScreen={subScreen}&duaId={duaId}&highlightHijri={highlightHijri}",
+            route = "settings?subScreen={subScreen}&duaId={duaId}&highlightHijri={highlightHijri}&categoryName={categoryName}",
             arguments = listOf(
                 navArgument("subScreen") {
                     type = NavType.StringType
@@ -495,12 +525,18 @@ fun AppNavGraph(
                 navArgument("highlightHijri") {
                     type = NavType.BoolType
                     defaultValue = false
+                },
+                navArgument("categoryName") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
             val subScreen = backStackEntry.arguments?.getString("subScreen")
             val duaIdVal = backStackEntry.arguments?.getInt("duaId") ?: -1
             val highlightHijriVal = backStackEntry.arguments?.getBoolean("highlightHijri") ?: false
+            val categoryNameVal = backStackEntry.arguments?.getString("categoryName")
             val viewModel: SettingsViewModel = viewModel(factory = viewModelFactory)
             SettingsScreen(
                 viewModel = viewModel,
@@ -532,7 +568,8 @@ fun AppNavGraph(
                 },
                 initialSubScreen = subScreen,
                 initialDuaId = if (duaIdVal != -1) duaIdVal else null,
-                highlightHijriAdjustment = highlightHijriVal
+                highlightHijriAdjustment = highlightHijriVal,
+                initialCategoryName = categoryNameVal
             )
         }
 

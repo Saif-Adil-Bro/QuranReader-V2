@@ -16,6 +16,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -56,11 +57,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.MainActivity
+import com.example.R
 import com.example.data.model.PrayerName
 import com.example.ui.theme.PrimaryGreen
 import com.example.utils.DateUtil
@@ -277,7 +280,7 @@ fun PrayerAlarmScreen(
                 )
             }
 
-            // Middle Section: Pulsing Islamic Icon & Title
+            // Middle Section: Pulsing App Logo & Title
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(horizontal = 16.dp)
@@ -293,14 +296,16 @@ fun PrayerAlarmScreen(
                     Box(
                         modifier = Modifier
                             .size(90.dp)
-                            .background(Color(0xFF059669), CircleShape),
+                            .clip(CircleShape)
+                            .background(Color(0xFF059669)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Mosque,
-                            contentDescription = "Mosque",
-                            tint = Color.White,
-                            modifier = Modifier.size(48.dp)
+                        Image(
+                            painter = painterResource(id = R.mipmap.ic_launcher),
+                            contentDescription = "App Logo",
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
                         )
                     }
                 }

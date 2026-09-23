@@ -61,13 +61,23 @@ class QuranRepository(
         }
     }
 
+    private val localTranslationMemoryCache = java.util.concurrent.ConcurrentHashMap<String, com.example.data.model.QuranComResponse>()
+    private val localTafsirMemoryCache = java.util.concurrent.ConcurrentHashMap<String, QuranComTafsirResponse>()
+
     private fun getLocalSurahTranslation(surahNumber: Int, translationId: String): com.example.data.model.QuranComResponse? {
         val cleanId = translationId.trim()
         if (cleanId.isEmpty()) return null
+        val cacheKey = "${cleanId}_$surahNumber"
+        localTranslationMemoryCache[cacheKey]?.let { return it }
+
         val file = java.io.File(context.filesDir, "translation_cache/$cleanId/$surahNumber.json")
         if (file.exists() && file.length() > 0) {
             try {
-                return com.google.gson.Gson().fromJson(file.readText(), com.example.data.model.QuranComResponse::class.java)
+                val parsed = com.google.gson.Gson().fromJson(file.readText(), com.example.data.model.QuranComResponse::class.java)
+                if (parsed != null) {
+                    localTranslationMemoryCache[cacheKey] = parsed
+                    return parsed
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -214,10 +224,17 @@ class QuranRepository(
     private fun getLocalSurahTafsir(surahNumber: Int, tafsirId: String): QuranComTafsirResponse? {
         val cleanId = tafsirId.trim()
         if (cleanId.isEmpty()) return null
+        val cacheKey = "${cleanId}_$surahNumber"
+        localTafsirMemoryCache[cacheKey]?.let { return it }
+
         val file = File(context.filesDir, "tafsir_cache/$cleanId/$surahNumber.json")
         if (file.exists() && file.length() > 0) {
             try {
-                return Gson().fromJson(file.readText(), QuranComTafsirResponse::class.java)
+                val parsed = Gson().fromJson(file.readText(), QuranComTafsirResponse::class.java)
+                if (parsed != null) {
+                    localTafsirMemoryCache[cacheKey] = parsed
+                    return parsed
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -367,6 +384,14 @@ class QuranRepository(
                 val freshlyLoaded = getCombinedSurahTafsirs(surahNumber, tafsirIdsStr)
                 val freshlyParsedText = if (freshlyLoaded != null) buildCombinedTafsirText(freshlyLoaded.tafsirs, verseKey) else null
                 if (!freshlyParsedText.isNullOrBlank()) {
+                    cachedSurahDetails.keys.filter { it.startsWith("${surahNumber}_") }.forEach { key ->
+                        val existing = cachedSurahDetails[key]
+                        if (existing != null) {
+                            val newlyEnriched = enrichAyahsWithLocalTranslationsAndTafsirs(existing, tafsirIdsStr, "")
+                            cachedSurahDetails[key] = newlyEnriched
+                        }
+                    }
+                    surahDataUpdated.tryEmit(surahNumber)
                     TafsirResult.Success(freshlyParsedText)
                 } else {
                     TafsirResult.NotFound
@@ -377,6 +402,26 @@ class QuranRepository(
         } catch (e: Exception) {
             TafsirResult.Error("তাফসীর লোড করতে সমস্যা হয়েছে: ${e.localizedMessage ?: "অজানা ত্রুটি"}")
         }
+    }
+
+    suspend fun forceSyncSurahTafsir(surahNumber: Int) {
+        val tafsirIdsSet = settingsRepository.selectedTafsirIdsFlow.first()
+        val tafsirIdsStr = tafsirIdsSet.joinToString(",")
+        val translationIdsSet = settingsRepository.selectedTranslationIdsFlow.first()
+        val translationIdsStr = translationIdsSet.joinToString(",")
+        val fontStyle = settingsRepository.tanzilTextStyleFlow.first()
+        val audioEdition = settingsRepository.selectedQariIdFlow.first()
+        val cacheKey = "${surahNumber}_${tafsirIdsStr}_${translationIdsStr}_${audioEdition}_${fontStyle}"
+        val cacheFile = getSurahDetailsCacheFile(surahNumber, tafsirIdsStr, translationIdsStr, fontStyle, audioEdition)
+        val currentList = cachedSurahDetails[cacheKey] ?: getSurahDetailsCombined(surahNumber, fontStyle)
+        syncSurahTafsirAndTranslationInBackground(
+            surahNumber = surahNumber,
+            cacheKey = cacheKey,
+            cacheFile = cacheFile,
+            tafsirIdsStr = tafsirIdsStr,
+            translationIdsStr = translationIdsStr,
+            currentList = currentList
+        )
     }
 
 
@@ -419,11 +464,16 @@ class QuranRepository(
         "ن" to "نٓ"
     )
 
+    // Static pre-compiled regexes for maximum performance and 0 GC overhead
+    private val TAJWEED_REGEX = Regex("[\u06E2\u06E5\u06E6]")
+    private val PU_REGEX = Regex("[\uE000-\uF8FF]")
+    private val DIACRITICS_REGEX = Regex("[\\u064B-\\u065F\\u0670\\u06E1\\u06E2\\u06D6-\\u06DC]")
+    private val SURAHS_WITH_MUQATTAAT = setOf(2, 3, 7, 10, 11, 12, 13, 14, 15, 19, 20, 26, 27, 28, 29, 30, 31, 32, 36, 38, 40, 41, 42, 43, 44, 45, 46, 50, 68)
+
     private fun formatHurufeMuqattaat(text: String): String {
-        val diacriticsRegex = Regex("[\\u064B-\\u065F\\u0670\\u06E1\\u06E2\\u06D6-\\u06DC]")
         val words = text.split(" ")
         val formattedWords = words.map { word ->
-            val cleanWord = word.replace(diacriticsRegex, "").trim()
+            val cleanWord = word.replace(DIACRITICS_REGEX, "").trim()
             muqattaatMap[cleanWord] ?: word
         }
         return formattedWords.joinToString(" ")
@@ -431,7 +481,7 @@ class QuranRepository(
 
     private fun processArabicText(ayah: com.example.data.model.Ayah, defaultSurahNumber: Int = -1): String {
         val surahNumber = ayah.surah?.number ?: defaultSurahNumber
-        var text = ayah.text.replace(Regex("[\uE000-\uF8FF]"), "")
+        var text = ayah.text.replace(PU_REGEX, "")
         if (ayah.numberInSurah == 1 && surahNumber != 1 && surahNumber != 9) {
             for (prefix in BISMILLAH_PREFIXES) {
                 if (text.startsWith(prefix)) {
@@ -444,38 +494,71 @@ class QuranRepository(
     }
 
     private fun cleanCombinedAyahList(list: List<CombinedAyah>): List<CombinedAyah> {
-        val tajweedRegex = Regex("[\u06E2\u06E5\u06E6]")
+        if (list.isEmpty()) return list
         return list.map { ayah ->
             val sNum = ayah.surahNumber.takeIf { it > 0 } ?: com.example.data.QuranData.getSurahAndAyahFromGlobal(ayah.number).first
             
-            val rawWords = ayah.words
-            var cleanedArabicText = ayah.arabicText.replace(Regex("[\uE000-\uF8FF]"), "")
-            if (ayah.numberInSurah == 1 && sNum != 1 && sNum != 9) {
-                for (prefix in BISMILLAH_PREFIXES) {
-                    if (cleanedArabicText.startsWith(prefix)) {
-                        cleanedArabicText = cleanedArabicText.removePrefix(prefix).trimStart()
-                        break
+            var cleanedArabicText = ayah.arabicText.replace(PU_REGEX, "")
+            val isFirstAyah = ayah.numberInSurah == 1
+            if (isFirstAyah) {
+                if (sNum != 1 && sNum != 9) {
+                    for (prefix in BISMILLAH_PREFIXES) {
+                        if (cleanedArabicText.startsWith(prefix)) {
+                            cleanedArabicText = cleanedArabicText.removePrefix(prefix).trimStart()
+                            break
+                        }
+                    }
+                }
+                if (sNum in SURAHS_WITH_MUQATTAAT) {
+                    cleanedArabicText = formatHurufeMuqattaat(cleanedArabicText)
+                }
+            }
+            
+            cleanedArabicText = cleanedArabicText.replace(TAJWEED_REGEX, "")
+            
+            val formattedWords = if (isFirstAyah && sNum in SURAHS_WITH_MUQATTAAT) {
+                ayah.words.map { word ->
+                    val text = word.textUthmani
+                    if (text != null) {
+                        word.copy(textUthmani = formatHurufeMuqattaat(text).replace(TAJWEED_REGEX, ""))
+                    } else {
+                        word
+                    }
+                }
+            } else {
+                ayah.words.map { word ->
+                    val text = word.textUthmani
+                    if (text != null && (text.contains('\u06E2') || text.contains('\u06E5') || text.contains('\u06E6'))) {
+                        word.copy(textUthmani = text.replace(TAJWEED_REGEX, ""))
+                    } else {
+                        word
                     }
                 }
             }
             
-            // Format Hurufe Muqatta'at in full text
-            cleanedArabicText = formatHurufeMuqattaat(cleanedArabicText)
-            
-            // Remove specific Tajweed marks
-            cleanedArabicText = cleanedArabicText.replace(tajweedRegex, "")
-            
-            // Format Hurufe Muqatta'at in individual word-by-word text and remove Tajweed marks
-            val formattedWords = rawWords.map { word ->
-                val text = word.textUthmani
-                if (text != null) {
-                    word.copy(textUthmani = formatHurufeMuqattaat(text).replace(tajweedRegex, ""))
-                } else {
-                    word
-                }
-            }
-            
             ayah.copy(words = formattedWords, arabicText = cleanedArabicText, surahNumber = sNum)
+        }
+    }
+
+    fun getCachedSurahDetails(surahNumber: Int, arabicEdition: String = "default-indopak"): List<CombinedAyah>? {
+        val prefix = "${surahNumber}_"
+        return cachedSurahDetails.entries.find { it.key.startsWith(prefix) }?.value
+    }
+
+    fun preloadPopularSurahs() {
+        repositoryScope.launch(Dispatchers.IO) {
+            try {
+                val popular = listOf(1, 2, 18, 36, 67, 114)
+                for (s in popular) {
+                    try {
+                        getSurahDetailsCombined(s)
+                    } catch (e: Exception) {
+                        // ignore background prewarm failure
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -773,6 +856,28 @@ class QuranRepository(
         val cacheKey = "${surahNumber}_${tafsirIdsStr}_${translationIdsStr}_${audioEdition}_${arabicEdition}"
         val inMemory = cachedSurahDetails[cacheKey]
         if (inMemory != null && inMemory.isNotEmpty()) {
+            val needsTafsirSync = tafsirIdsStr.isNotBlank() && inMemory.any { it.tafsirText == null }
+            if (needsTafsirSync) {
+                val reEnriched = enrichAyahsWithLocalTranslationsAndTafsirs(inMemory, tafsirIdsStr, translationIdsStr)
+                if (reEnriched.any { it.tafsirText != null }) {
+                    cachedSurahDetails[cacheKey] = reEnriched
+                    return reEnriched
+                }
+                val isAlreadySyncing = tafsirSyncingSurahs.value.contains(surahNumber)
+                if (!isAlreadySyncing && com.example.util.NetworkUtils.isNetworkAvailable(context)) {
+                    val cacheFile = getSurahDetailsCacheFile(surahNumber, tafsirIdsStr, translationIdsStr, arabicEdition, audioEdition)
+                    repositoryScope.launch {
+                        syncSurahTafsirAndTranslationInBackground(
+                            surahNumber = surahNumber,
+                            cacheKey = cacheKey,
+                            cacheFile = cacheFile,
+                            tafsirIdsStr = tafsirIdsStr,
+                            translationIdsStr = translationIdsStr,
+                            currentList = inMemory
+                        )
+                    }
+                }
+            }
             return inMemory
         }
         return withContext(Dispatchers.IO) {
@@ -783,18 +888,8 @@ class QuranRepository(
             try {
                 val offlineAyahs = offlineDao.getAyahsBySurah(surahNumber)
                 if (offlineAyahs.isNotEmpty()) {
-                    val totalAyahs = offlineAyahs.size
-                    // Fast Progressive Loading: For large surahs (e.g. Al-Baqarah), instantly load the first chunk (30 ayahs)
-                    // and progressively load remaining words asynchronously in background.
-                    val isLargeSurah = totalAyahs > 40
-                    val initialChunkSize = if (isLargeSurah) 30 else totalAyahs
-
-                    val initialWords = if (isLargeSurah) {
-                        quranWbwDao.getWordsBySurahRange(surahNumber, 1, initialChunkSize)
-                    } else {
-                        quranWbwDao.getWordsBySurah(surahNumber)
-                    }
-                    val wordsByAyah = initialWords.groupBy { it.ayahNumber }
+                    val allWords = quranWbwDao.getWordsBySurah(surahNumber)
+                    val wordsByAyah = allWords.groupBy { it.ayahNumber }
 
                     rawList = offlineAyahs.map { ayahEntity ->
                         val ayahWords = wordsByAyah[ayahEntity.numberInSurah]?.map { w ->
@@ -823,43 +918,6 @@ class QuranRepository(
                             textUthmaniTajweed = null
                         )
                     }
-
-                    // For large surahs, lazily stream and populate the rest of the words in background chunks
-                    if (isLargeSurah) {
-                        repositoryScope.launch(Dispatchers.IO) {
-                            try {
-                                val remainingWords = quranWbwDao.getWordsBySurahRange(surahNumber, initialChunkSize + 1, totalAyahs)
-                                if (remainingWords.isNotEmpty()) {
-                                    val fullWordsByAyah = (initialWords + remainingWords).groupBy { it.ayahNumber }
-                                    val currentCached = cachedSurahDetails[cacheKey] ?: rawList
-                                    val fullyPopulated = currentCached?.map { ayah ->
-                                        if (ayah.words.isEmpty()) {
-                                            val wList = fullWordsByAyah[ayah.numberInSurah]?.map { w ->
-                                                com.example.data.model.QuranComWord(
-                                                    id = w.id,
-                                                    position = w.position,
-                                                    charTypeName = w.charTypeName ?: "word",
-                                                    textUthmani = w.textUthmani,
-                                                    translation = com.example.data.model.QuranComWordTranslation(text = w.translationBengali),
-                                                    transliteration = null,
-                                                    audioUrl = w.audioUrl
-                                                )
-                                            } ?: emptyList()
-                                            ayah.copy(words = wList)
-                                        } else {
-                                            ayah
-                                        }
-                                    }
-                                    if (fullyPopulated != null) {
-                                        cachedSurahDetails[cacheKey] = fullyPopulated
-                                        surahDataUpdated.tryEmit(surahNumber)
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
-                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -885,7 +943,7 @@ class QuranRepository(
                 val enriched = enrichAyahsWithLocalTranslationsAndTafsirs(cleaned, tafsirIdsStr, translationIdsStr)
                 cachedSurahDetails[cacheKey] = enriched
 
-                // Fast non-blocking background disk cache write and sync
+                // Fast non-blocking background disk cache write, sync, and neighbor prewarming
                 repositoryScope.launch {
                     try {
                         cacheFile.parentFile?.mkdirs()
@@ -893,6 +951,17 @@ class QuranRepository(
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
+
+                    // Prewarm neighbor surahs in background
+                    val prev = surahNumber - 1
+                    val next = surahNumber + 1
+                    if (prev >= 1 && getCachedSurahDetails(prev) == null) {
+                        try { getSurahDetailsCombined(prev, arabicEdition, audioEdition) } catch (e: Exception) {}
+                    }
+                    if (next <= 114 && getCachedSurahDetails(next) == null) {
+                        try { getSurahDetailsCombined(next, arabicEdition, audioEdition) } catch (e: Exception) {}
+                    }
+
                     if (com.example.util.NetworkUtils.isNetworkAvailable(context)) {
                         try {
                             syncSurahTafsirAndTranslationInBackground(
