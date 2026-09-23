@@ -12,6 +12,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -174,14 +176,29 @@ fun HomeScreen(
     var localNotifsList by remember { mutableStateOf(emptyList<com.example.data.model.BlogPost>()) }
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
     var backPressedOnce by remember { mutableStateOf(false) }
 
+    val isScrolled by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
+        }
+    }
+
     androidx.activity.compose.BackHandler {
-        if (backPressedOnce) {
-            (context as? android.app.Activity)?.finish()
+        if (isScrolled) {
+            coroutineScope.launch {
+                listState.animateScrollToItem(0)
+            }
+            backPressedOnce = false
         } else {
-            backPressedOnce = true
-            android.widget.Toast.makeText(context, "অ্যাপ থেকে বের হতে আবার ব্যাক প্রেস করুন", android.widget.Toast.LENGTH_SHORT).show()
+            if (backPressedOnce) {
+                (context as? android.app.Activity)?.finish()
+            } else {
+                backPressedOnce = true
+                android.widget.Toast.makeText(context, "অ্যাপ থেকে বের হতে আবার ব্যাক প্রেস করুন", android.widget.Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -569,6 +586,7 @@ fun HomeScreen(
             val horizontalPadding = if (isTablet) 32.dp else 0.dp
 
             LazyColumn(
+                state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = horizontalPadding, end = horizontalPadding, bottom = 48.dp)
             ) {
