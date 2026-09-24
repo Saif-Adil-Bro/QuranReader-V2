@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -96,7 +97,7 @@ fun TajweedLegendDialog(onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = {
             androidx.compose.material3.Text(
-                text = "তাজবীদের রঙের পরিচিতি",
+                text = stringResource(R.string.tajweed_legend_title),
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                 fontSize = 20.sp,
                 color = MaterialTheme.colorScheme.onSurface
@@ -130,7 +131,7 @@ fun TajweedLegendDialog(onDismiss: () -> Unit) {
         },
         confirmButton = {
             androidx.compose.material3.TextButton(onClick = onDismiss) {
-                androidx.compose.material3.Text("বন্ধ করুন", color = com.example.ui.theme.PrimaryGreen)
+                androidx.compose.material3.Text(stringResource(R.string.action_close), color = com.example.ui.theme.PrimaryGreen)
             }
         },
         containerColor = MaterialTheme.colorScheme.surface,
@@ -198,7 +199,7 @@ fun HomeScreen(
                 (context as? android.app.Activity)?.finish()
             } else {
                 backPressedOnce = true
-                android.widget.Toast.makeText(context, "অ্যাপ থেকে বের হতে আবার ব্যাক প্রেস করুন", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, context.getString(R.string.exit_prompt), android.widget.Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -344,7 +345,7 @@ fun HomeScreen(
     // Show download error toast if any
     LaunchedEffect(downloadError) {
         downloadError?.let {
-            Toast.makeText(context, "ডাউনলোড ত্রুটি: $it", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, context.getString(R.string.download_error_prefix, it), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -364,7 +365,7 @@ fun HomeScreen(
             onDismissRequest = { showMushafDownloadRequestDialog = false },
             title = {
                 Text(
-                    text = "মুসহাফ ডাউনলোড প্রয়োজন",
+                    text = stringResource(R.string.mushaf_download_required),
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = Color(0xFF10B981)
@@ -372,7 +373,7 @@ fun HomeScreen(
             },
             text = {
                 Text(
-                    text = "আপনার নির্বাচিত মুসহাফটি (${currentMushaf.nameBengali}) এখনো ডাউনলোড করা হয়নি। পড়ার জন্য ফাইলটি ডাউনলোড করা প্রয়োজন।\n\nফাইল সাইজ: ~${currentMushaf.fileSizeMB} মেগাবাইট\n\nআপনি কি এখনই ডাউনলোড করতে চান?",
+                    text = stringResource(R.string.mushaf_download_desc, currentMushaf.nameBengali, currentMushaf.fileSizeMB),
                     fontSize = 15.sp,
                     color = if (isDark) Color.LightGray else Color.DarkGray
                 )
@@ -388,7 +389,7 @@ fun HomeScreen(
                         containerColor = Color(0xFF10B981)
                     )
                 ) {
-                    Text("ডাউনলোড করুন", color = Color.White)
+                    Text(stringResource(R.string.action_download), color = Color.White)
                 }
             },
             dismissButton = {
@@ -397,7 +398,7 @@ fun HomeScreen(
                     border = BorderStroke(1.dp, (if (isDark) Color.White else Color.Black).copy(alpha = 0.4f)),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = if (isDark) Color.White else Color.Black)
                 ) {
-                    Text("বাতিল", color = if (isDark) Color.White else Color.Black)
+                    Text(stringResource(R.string.action_cancel), color = if (isDark) Color.White else Color.Black)
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface,
@@ -413,7 +414,7 @@ fun HomeScreen(
             onDismissRequest = { /* Prevent dismiss by clicking outside */ },
             title = {
                 Text(
-                    text = if (status?.state is com.example.data.model.DownloadState.Failed) "ডাউনলোড ব্যর্থ হয়েছে" else "ডাউনলোড হচ্ছে...",
+                    text = if (status?.state is com.example.data.model.DownloadState.Failed) stringResource(R.string.mushaf_download_failed) else stringResource(R.string.mushaf_downloading_title),
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = if (status?.state is com.example.data.model.DownloadState.Failed) Color.Red else Color(0xFF10B981)
@@ -426,9 +427,9 @@ fun HomeScreen(
                 ) {
                     Text(
                         text = if (status?.state is com.example.data.model.DownloadState.Failed) {
-                            "দুঃখিত, ডাউনলোড করার সময় সমস্যা হয়েছে। আপনার ইন্টারনেট সংযোগ চেক করে আবার চেষ্টা করুন।"
+                            stringResource(R.string.mushaf_download_error_detail)
                         } else {
-                            "$mushafName ফাইলটি ডাউনলোড করা হচ্ছে। অনুগ্রহ করে অপেক্ষা করুন।"
+                            stringResource(R.string.mushaf_downloading_wait_msg, mushafName)
                         },
                         fontSize = 14.sp,
                         color = if (isDark) Color.LightGray else Color.DarkGray,
@@ -453,20 +454,20 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "অগ্রগতি: $progress%",
+                                text = stringResource(R.string.download_progress_pct, progress),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF10B981)
                             )
                             if (currentMushaf?.isPdf == true) {
                                 Text(
-                                    text = "ডাউনলোড হচ্ছে...",
+                                    text = stringResource(R.string.mushaf_downloading_title),
                                     fontSize = 12.sp,
                                     color = Color.Gray
                                 )
                             } else {
                                 Text(
-                                    text = "$downloaded / $total পৃষ্ঠা",
+                                    text = stringResource(R.string.download_pages_count, downloaded, total),
                                     fontSize = 12.sp,
                                     color = Color.Gray
                                 )
@@ -485,7 +486,7 @@ fun HomeScreen(
                             containerColor = Color(0xFF10B981)
                         )
                     ) {
-                        Text("আবার চেষ্টা করুন", color = Color.White)
+                        Text(stringResource(R.string.retry), color = Color.White)
                     }
                 }
             },
@@ -497,7 +498,7 @@ fun HomeScreen(
                     }
                 ) {
                     Text(
-                        text = "বন্ধ করুন",
+                        text = stringResource(R.string.action_close),
                         color = if (isDark) Color.White else Color.Black
                     )
                 }

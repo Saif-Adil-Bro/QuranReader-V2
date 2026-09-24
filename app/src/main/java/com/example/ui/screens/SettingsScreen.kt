@@ -131,57 +131,62 @@ fun SettingsScreen(
     val bookmarkList by viewModel.bookmarks.collectAsState(initial = emptyList())
     
     var activeDialog by remember(initialSubScreen) { mutableStateOf<String?>(initialSubScreen) }
+    val currentLanguage by viewModel.appLanguage.collectAsState()
+    val isEn = currentLanguage == "en"
     
-    val menuCategories = listOf(
-        MenuCategory(
-            title = "কুরআন শিক্ষা ও মিডিয়া",
-            icon = Icons.Default.MenuBook,
-            items = listOf(
-                MenuItem("subjectwise", "বিষয়ভিত্তিক কুরআন", Icons.Default.Category, Color(0xFF3B82F6)),
-                MenuItem("learn", "কুরআন শিক্ষা", Icons.Default.Book, Color(0xFF4F46E5)),
-                MenuItem("hifz", "কুরআন হিফজ", Icons.Default.CheckCircle, Color(0xFF6366F1)),
-                MenuItem("player", "কুরআন প্লেয়ার", Icons.Default.MusicNote, Color(0xFF06B6D4)),
-                MenuItem("video", "ভিডিও এডিটর", Icons.Default.Videocam, Color(0xFFEF4444))
-            )
-        ),
-        MenuCategory(
-            title = "দুআ ও ইবাদত",
-            icon = Icons.Default.AutoAwesome,
-            items = listOf(
-                MenuItem("dua", "কুরআনিক দুআ", Icons.Default.Schedule, Color(0xFF8B5CF6)),
-                MenuItem("morning_evening_dua", "সকাল সন্ধ্যার দুআ", Icons.Default.WbSunny, Color(0xFFF59E0B)),
-                MenuItem("mosque", "নিকটবর্তী মসজিদ", Icons.Default.Place, Color(0xFF059669)),
-                MenuItem("manzil", "মানযিল", Icons.Default.AutoAwesome, Color(0xFF10B981)),
-                MenuItem("qibla", "কিবলা কম্পাস", Icons.Default.Explore, Color(0xFFEAB308)),
-                MenuItem("prayer_times", "নামাজের সময়সূচি", Icons.Default.AccessTime, Color(0xFF059669)),
-                MenuItem("prayer_alarms", "নামাজ ও আজান অ্যালার্ম", Icons.Default.Alarm, Color(0xFF10B981)),
-                MenuItem("calendar", "ক্যালেন্ডার", Icons.Default.CalendarMonth, Color(0xFF10B981)),
-                MenuItem("planner", "কুরআন প্ল্যানার", Icons.Default.DateRange, Color(0xFF10B981))
-            )
-        ),
-        MenuCategory(
-            title = "ব্যক্তিগত টুলস",
-            icon = Icons.Default.Person,
-            items = listOf(
-                MenuItem("bookmark", "বুকমার্ক", Icons.Default.Bookmark, Color(0xFFEF4444)),
-                MenuItem("note", "নোট", Icons.Default.Edit, Color(0xFF0D9488)),
-                MenuItem("game", "ওয়ার্ড গেম", Icons.Default.PlayCircle, Color(0xFFEC4899))
-            )
-        ),
-        MenuCategory(
-            title = "অ্যাপ সিস্টেম ও সেটিংস",
-            icon = Icons.Default.Settings,
-            items = listOf(
-                MenuItem("font_settings", "ফন্ট ও তাজভীদ", Icons.Default.FontDownload, Color(0xFF10B981)),
-                MenuItem("theme", "অ্যাপ থিম", Icons.Default.Palette, Color(0xFF9C27B0)),
-                MenuItem("notifications", "নোটিফিকেশন", Icons.Default.Notifications, Color(0xFFFBBF24)),
-                MenuItem("offline_sync", "অফলাইন ডাউনলোড", Icons.Default.Download, Color(0xFFF59E0B)),
-                MenuItem("backup", "ব্যাকআপ", Icons.Default.Cloud, Color(0xFF6B7280)),
-                MenuItem("about", "সম্পর্কে", Icons.Default.Info, Color(0xFF4CAF50)),
-                MenuItem("contact", "যোগাযোগ", Icons.Default.ContactMail, Color(0xFFF97316))
+    val menuCategories = remember(isEn) {
+        listOf(
+            MenuCategory(
+                title = if (isEn) "Quran Study & Media" else "কুরআন শিক্ষা ও মিডিয়া",
+                icon = Icons.Default.MenuBook,
+                items = listOf(
+                    MenuItem("subjectwise", if (isEn) "Subjectwise Quran" else "বিষয়ভিত্তিক কুরআন", Icons.Default.Category, Color(0xFF3B82F6)),
+                    MenuItem("learn", if (isEn) "Quran Learning" else "কুরআন শিক্ষা", Icons.Default.Book, Color(0xFF4F46E5)),
+                    MenuItem("hifz", if (isEn) "Hifz Tracker" else "কুরআন হিফজ", Icons.Default.CheckCircle, Color(0xFF6366F1)),
+                    MenuItem("player", if (isEn) "Audio Player" else "কুরআন প্লেয়ার", Icons.Default.MusicNote, Color(0xFF06B6D4)),
+                    MenuItem("video", if (isEn) "Video Creator" else "ভিডিও এডিটর", Icons.Default.Videocam, Color(0xFFEF4444))
+                )
+            ),
+            MenuCategory(
+                title = if (isEn) "Dua & Worship" else "দুআ ও ইবাদত",
+                icon = Icons.Default.AutoAwesome,
+                items = listOf(
+                    MenuItem("dua", if (isEn) "Quranic Duas" else "কুরআনিক দুআ", Icons.Default.Schedule, Color(0xFF8B5CF6)),
+                    MenuItem("morning_evening_dua", if (isEn) "Morning & Evening Duas" else "সকাল সন্ধ্যার দুআ", Icons.Default.WbSunny, Color(0xFFF59E0B)),
+                    MenuItem("mosque", if (isEn) "Nearby Mosques" else "নিকটবর্তী মসজিদ", Icons.Default.Place, Color(0xFF059669)),
+                    MenuItem("manzil", if (isEn) "Manzil" else "মানযিল", Icons.Default.AutoAwesome, Color(0xFF10B981)),
+                    MenuItem("qibla", if (isEn) "Qibla Compass" else "কিবলা কম্পাস", Icons.Default.Explore, Color(0xFFEAB308)),
+                    MenuItem("prayer_times", if (isEn) "Prayer Times" else "নামাজের সময়সূচি", Icons.Default.AccessTime, Color(0xFF059669)),
+                    MenuItem("prayer_alarms", if (isEn) "Prayer & Azan Alarms" else "নামাজ ও আজান অ্যালার্ম", Icons.Default.Alarm, Color(0xFF10B981)),
+                    MenuItem("calendar", if (isEn) "Islamic Calendar" else "ক্যালেন্ডার", Icons.Default.CalendarMonth, Color(0xFF10B981)),
+                    MenuItem("planner", if (isEn) "Quran Planner" else "কুরআন প্ল্যানার", Icons.Default.DateRange, Color(0xFF10B981))
+                )
+            ),
+            MenuCategory(
+                title = if (isEn) "Personal Tools" else "ব্যক্তিগত টুলস",
+                icon = Icons.Default.Person,
+                items = listOf(
+                    MenuItem("bookmark", if (isEn) "Bookmarks" else "বুকমার্ক", Icons.Default.Bookmark, Color(0xFFEF4444)),
+                    MenuItem("note", if (isEn) "Notepad" else "নোট", Icons.Default.Edit, Color(0xFF0D9488)),
+                    MenuItem("game", if (isEn) "Word Game" else "ওয়ার্ড গেম", Icons.Default.PlayCircle, Color(0xFFEC4899))
+                )
+            ),
+            MenuCategory(
+                title = if (isEn) "App System & Settings" else "অ্যাপ সিস্টেম ও সেটিংস",
+                icon = Icons.Default.Settings,
+                items = listOf(
+                    MenuItem("language", if (isEn) "App Language" else "ভাষা নির্বাচন", Icons.Default.Translate, Color(0xFF2563EB)),
+                    MenuItem("font_settings", if (isEn) "Font & Tajweed" else "ফন্ট ও তাজভীদ", Icons.Default.FontDownload, Color(0xFF10B981)),
+                    MenuItem("theme", if (isEn) "App Theme" else "অ্যাপ থিম", Icons.Default.Palette, Color(0xFF9C27B0)),
+                    MenuItem("notifications", if (isEn) "Notifications" else "নোটিফিকেশন", Icons.Default.Notifications, Color(0xFFFBBF24)),
+                    MenuItem("offline_sync", if (isEn) "Offline Download" else "অফলাইন ডাউনলোড", Icons.Default.Download, Color(0xFFF59E0B)),
+                    MenuItem("backup", if (isEn) "Backup" else "ব্যাকআপ", Icons.Default.Cloud, Color(0xFF6B7280)),
+                    MenuItem("about", if (isEn) "About" else "সম্পর্কে", Icons.Default.Info, Color(0xFF4CAF50)),
+                    MenuItem("contact", if (isEn) "Contact" else "যোগাযোগ", Icons.Default.ContactMail, Color(0xFFF97316))
+                )
             )
         )
-    )
+    }
     
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -197,7 +202,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "মেনু অপশন",
+                        text = if (isEn) "Menu Options" else "মেনু অপশন",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -532,6 +537,85 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
+
+            // Language Selection Card
+            val currentLanguage by viewModel.appLanguage.collectAsState()
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+                    .clickable { activeDialog = "language" },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(Color(0xFF2563EB).copy(alpha = 0.12f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Translate,
+                                contentDescription = "Language",
+                                tint = Color(0xFF2563EB),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = if (currentLanguage == "en") "App Language" else "অ্যাপের ভাষা (Language)",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (currentLanguage == "en") "English (International)" else "বাংলা (ডিফল্ট)",
+                                fontSize = 12.sp,
+                                color = PrimaryGreen,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                    
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (currentLanguage == "en") "Change" else "পরিবর্তন",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+            }
             
             // Hijri Date Adjustment
             val hijriBorderColor = if (shouldHighlightHijri) PrimaryGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
@@ -1118,32 +1202,35 @@ fun MenuDetailDialog(
                     .let { if (type == "qibla") it.background(bgGradient) else it.background(MaterialTheme.colorScheme.background) },
                 color = if (type == "qibla") Color.Transparent else MaterialTheme.colorScheme.background
             ) {
+            val currentLang by viewModel.appLanguage.collectAsState()
+            val isEn = currentLang == "en"
             Column(modifier = Modifier.fillMaxSize()) {
                 // Dialog Header
                 val title = when (type) {
-                    "calendar" -> "ক্যালেন্ডার"
-                    "profile" -> "আমার প্রোফাইল"
-                    "bookmark" -> "বুকমার্ক তালিকা"
-                    "note" -> "আমার নোটপ্যাড"
-                    "planner" -> "কুরআন প্ল্যানার"
-                    "subjectwise" -> "বিষয়ভিত্তিক কুরআন"
-                    "manzil" -> "মানযিল"
-                    "dua" -> "কুরআনিক দুআ"
-                    "morning_evening_dua" -> "সকাল সন্ধ্যার দুআ"
-                    "qibla" -> "কিবলা কম্পাস"
-                    "game" -> "ওয়ার্ড গেম"
-                    "player" -> "কুরআন অডিও প্লেয়ার"
-                    "hifz" -> "হিফজ ট্র্যাকার"
-                    "learn" -> "কুরআন শিক্ষা"
-                    "video" -> "ভিডিও এডিটর"
-                    "offline_sync" -> "কুরআন অফলাইন ডাউনলোড"
-                    "font_settings" -> "ফন্ট ও তাজভীদ"
-                    "backup" -> "ব্যাকআপ"
-                    "notifications" -> "নোটিফিকেশন সেটিংস"
-                    "theme" -> "অ্যাপ থিম"
-                    "about" -> "আমাদের সম্পর্কে ও প্রাইভেসি"
-                    "contact" -> "যোগাযোগ"
-                    else -> "বিস্তারিত"
+                    "calendar" -> if (isEn) "Islamic Calendar" else "ক্যালেন্ডার"
+                    "profile" -> if (isEn) "My Profile" else "আমার প্রোফাইল"
+                    "bookmark" -> if (isEn) "Bookmarks" else "বুকমার্ক তালিকা"
+                    "note" -> if (isEn) "My Notepad" else "আমার নোটপ্যাড"
+                    "planner" -> if (isEn) "Quran Planner" else "কুরআন প্ল্যানার"
+                    "subjectwise" -> if (isEn) "Subjectwise Quran" else "বিষয়ভিত্তিক কুরআন"
+                    "manzil" -> if (isEn) "Manzil" else "মানযিল"
+                    "dua" -> if (isEn) "Quranic Duas" else "কুরআনিক দুআ"
+                    "morning_evening_dua" -> if (isEn) "Morning & Evening Duas" else "সকাল সন্ধ্যার দুআ"
+                    "qibla" -> if (isEn) "Qibla Compass" else "কিবলা কম্পাস"
+                    "game" -> if (isEn) "Word Game" else "ওয়ার্ড গেম"
+                    "player" -> if (isEn) "Quran Audio Player" else "কুরআন অডিও প্লেয়ার"
+                    "hifz" -> if (isEn) "Hifz Tracker" else "হিফজ ট্র্যাকার"
+                    "learn" -> if (isEn) "Quran Learning" else "কুরআন শিক্ষা"
+                    "video" -> if (isEn) "Video Creator" else "ভিডিও এডিটর"
+                    "offline_sync" -> if (isEn) "Offline Quran Download" else "কুরআন অফলাইন ডাউনলোড"
+                    "language" -> if (isEn) "Language Settings" else "ভাষা নির্বাচন / Language"
+                    "font_settings" -> if (isEn) "Font & Tajweed" else "ফন্ট ও তাজভীদ"
+                    "backup" -> if (isEn) "Backup & Restore" else "ব্যাকআপ"
+                    "notifications" -> if (isEn) "Notification Settings" else "নোটিফিকেশন সেটিংস"
+                    "theme" -> if (isEn) "App Theme" else "অ্যাপ থিম"
+                    "about" -> if (isEn) "About & Privacy" else "আমাদের সম্পর্কে ও প্রাইভেসি"
+                    "contact" -> if (isEn) "Contact Us" else "যোগাযোগ"
+                    else -> if (isEn) "Details" else "বিস্তারিত"
                 }
                 
                 Row(
@@ -1248,6 +1335,7 @@ fun MenuDetailDialog(
                             onNavigateBack = { onDismiss() }
                         )
                         "offline_sync" -> OfflineSyncDialogContent(viewModel)
+                        "language" -> LanguageDialogContent(viewModel = viewModel, onDismiss = onDismiss)
                         "font_settings" -> FontSettingsContent(viewModel = viewModel, onDismiss = onDismiss)
                         "backup" -> BackupDialogContent()
                         "notifications" -> NotificationDialogContent(
@@ -6166,6 +6254,180 @@ fun FontSettingsContent(
         ) {
             Text(
                 text = "সম্পন্ন",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = White
+            )
+        }
+    }
+}
+
+@Composable
+fun LanguageDialogContent(
+    viewModel: SettingsViewModel,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val currentLanguage by viewModel.appLanguage.collectAsState()
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+
+    val languages = listOf(
+        Triple("bn", "বাংলা", "বাংলা (Bengali) - ডিফল্ট ইন্টারফেস"),
+        Triple("en", "English", "English - International UI")
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(vertical = 8.dp)
+    ) {
+        // Banner card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isDark) Color(0xFF1E3A5F) else Color(0xFFEFF6FF)
+            ),
+            border = BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.3f))
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(Color(0xFF3B82F6).copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Translate,
+                        contentDescription = null,
+                        tint = Color(0xFF2563EB),
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (currentLanguage == "en") "App Language" else "অ্যাপের ভাষা নির্বাচন",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) Color.White else Color(0xFF1E3A8A)
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (currentLanguage == "en") "Select your preferred language for the entire app." else "আপনার পছন্দের ভাষা নির্বাচন করুন। পুরো অ্যাপ নির্বাচিত ভাষায় প্রদর্শিত হবে।",
+                        fontSize = 12.sp,
+                        color = if (isDark) Color(0xFFBFDBFE) else Color(0xFF1D4ED8)
+                    )
+                }
+            }
+        }
+
+        // Language Options
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 20.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+        ) {
+            Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                languages.forEachIndexed { index, (langCode, title, subtitle) ->
+                    val isSelected = currentLanguage == langCode
+                    
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                viewModel.setAppLanguage(langCode)
+                                val msg = if (langCode == "bn") "ভাষা পরিবর্তন করে 'বাংলা' করা হয়েছে" else "Language changed to English"
+                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            }
+                            .background(
+                                if (isSelected) PrimaryGreen.copy(alpha = 0.08f) else Color.Transparent
+                            )
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            // Minimal Badge indicating language without flags
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .background(
+                                        if (isSelected) PrimaryGreen else MaterialTheme.colorScheme.surfaceVariant,
+                                        RoundedCornerShape(10.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (langCode == "bn") "বাং" else "EN",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(14.dp))
+                            Column {
+                                Text(
+                                    text = title,
+                                    fontSize = 15.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) PrimaryGreen else MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = subtitle,
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        RadioButton(
+                            selected = isSelected,
+                            onClick = {
+                                viewModel.setAppLanguage(langCode)
+                                val msg = if (langCode == "bn") "ভাষা পরিবর্তন করে 'বাংলা' করা হয়েছে" else "Language changed to English"
+                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            },
+                            colors = RadioButtonDefaults.colors(selectedColor = PrimaryGreen)
+                        )
+                    }
+
+                    if (index < languages.size - 1) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Close Button
+        Button(
+            onClick = onDismiss,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+        ) {
+            Text(
+                text = if (currentLanguage == "en") "Done" else "সম্পন্ন",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = White

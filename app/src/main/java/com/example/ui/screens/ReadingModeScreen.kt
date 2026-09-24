@@ -41,6 +41,8 @@ import com.example.ui.theme.PrimaryGreen
 import com.example.ui.components.AyahNumberCircle
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import com.example.ui.viewmodels.ReadingModeViewModel
@@ -98,17 +100,17 @@ fun ReadingModeScreen(
                 title = { 
                     val firstAyah = (uiState as? UiState.Success)?.data?.firstOrNull()
                     val surahData = firstAyah?.let { com.example.data.QuranData.surahNames.find { s -> s.first == it.surahNumber } }
-                    val surahNameBangla = surahData?.second?.first ?: "সূরা $surahNumber"
+                    val surahNameBangla = surahData?.second?.first ?: "${stringResource(R.string.surah_prefix)} $surahNumber"
                     Text(surahNameBangla, fontWeight = FontWeight.Bold, fontSize = 18.sp) 
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showSettings = true }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Reading Settings")
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.reading_settings))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -130,7 +132,7 @@ fun ReadingModeScreen(
                 is UiState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         com.example.ui.components.QuranLoadingAnimation(
-                            text = "সুরা লোড হচ্ছে...", 
+                            text = stringResource(R.string.loading_surah), 
                             color = if (theme == "Dark") Color(0xFF6B5843) else Color(0xFF1E5631)
                         )
                     }
@@ -148,7 +150,7 @@ fun ReadingModeScreen(
                                 containerColor = if (theme == "Dark") Color(0xFF6B5843) else Color(0xFF1E5631)
                             )
                         ) {
-                            Text("আবার চেষ্টা করুন", color = Color.White)
+                            Text(stringResource(R.string.retry), color = Color.White)
                         }
                     }
                 }
@@ -157,7 +159,7 @@ fun ReadingModeScreen(
                     val surahData = firstAyah?.let { com.example.data.QuranData.surahNames.find { s -> s.first == it.surahNumber } }
                     val surahNameArabic = surahData?.second?.first ?: "سورة $surahNumber"
                     val juzNum = firstAyah?.juz ?: 1
-                    val juzName = "পারা ${juzNum.toBengaliNumerals()}"
+                    val juzName = stringResource(R.string.para_format, juzNum.toBengaliNumerals())
                     
                     val ayahsByPage = state.data.groupBy { it.page }
                     
@@ -403,7 +405,7 @@ fun ReadingSettingsContent(
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
         Text(
-            text = "পঠন সেটিংস",
+            text = stringResource(R.string.reading_settings),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = topBarContentColor,
@@ -412,7 +414,7 @@ fun ReadingSettingsContent(
 
         // Arabic font size
         com.example.ui.components.SettingAdjustmentRow(
-            label = "আরবি হরফের আকার",
+            label = stringResource(R.string.arabic_font_size),
             valueText = "${arabicFontSize.toInt()}".toBengaliNumerals(),
             onDecrease = {
                 val newSize = (arabicFontSize - 1f).coerceIn(18f, 40f)
@@ -428,7 +430,7 @@ fun ReadingSettingsContent(
 
         // Arabic Line Spacing Settings
         com.example.ui.components.SettingAdjustmentRow(
-            label = "আরবি লাইন স্পেস",
+            label = stringResource(R.string.arabic_line_spacing),
             valueText = String.format("%.2f", arabicLineSpacing).toBengaliNumerals(),
             onDecrease = {
                 val newSpacing = (arabicLineSpacing - 0.05f).coerceIn(2.00f, 3.00f)
@@ -449,7 +451,7 @@ fun ReadingSettingsContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "থামার চিহ্ন প্রদর্শন (م، ج،صلے)",
+                text = stringResource(R.string.show_waqf_signs),
                 style = MaterialTheme.typography.bodyMedium,
                 color = topBarContentColor
             )
@@ -469,7 +471,7 @@ fun ReadingSettingsContent(
 
         // Theme selector
         Text(
-            text = "থিম", 
+            text = stringResource(R.string.theme_label), 
             style = MaterialTheme.typography.bodyMedium, 
             color = topBarContentColor,
             modifier = Modifier.padding(bottom = 8.dp)
@@ -478,7 +480,11 @@ fun ReadingSettingsContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            listOf("Light" to "লাইট", "Sepia" to "সেপিয়া", "Dark" to "ডার্ক").forEach { (tKey, tName) ->
+            listOf(
+                "Light" to stringResource(R.string.theme_light), 
+                "Sepia" to stringResource(R.string.theme_sepia), 
+                "Dark" to stringResource(R.string.theme_dark)
+            ).forEach { (tKey, tName) ->
                 val isSel = tKey == theme
                 Surface(
                     shape = RoundedCornerShape(8.dp),
@@ -504,7 +510,7 @@ fun ReadingSettingsContent(
 
         // Tanzil Quran Script selector
         Text(
-            text = "কুরআন স্ক্রিপ্ট স্টাইল", 
+            text = stringResource(R.string.script_style), 
             style = MaterialTheme.typography.bodyMedium, 
             color = topBarContentColor,
             modifier = Modifier.padding(bottom = 8.dp)
@@ -514,11 +520,11 @@ fun ReadingSettingsContent(
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             val scripts = listOf(
-                Pair("default-indopak", "ডিফল্ট"),
-                Pair("quran-uthmani", "উসমানী"),
-                Pair("quran-simple", "সহজ"),
-                Pair("quran-simple-clean", "ক্লিন"),
-                Pair("quran-simple-plain", "প্লেইন")
+                Pair("default-indopak", stringResource(R.string.script_default)),
+                Pair("quran-uthmani", stringResource(R.string.script_uthmani)),
+                Pair("quran-simple", stringResource(R.string.script_simple)),
+                Pair("quran-simple-clean", stringResource(R.string.script_clean)),
+                Pair("quran-simple-plain", stringResource(R.string.script_plain))
             )
             scripts.forEach { (styleId, styleName) ->
                 val isSel = styleId == tanzilTextStyle

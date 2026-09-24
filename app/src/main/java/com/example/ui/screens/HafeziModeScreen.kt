@@ -40,6 +40,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -208,14 +210,14 @@ fun HafeziModeScreen(
                             .padding(vertical = 4.dp, horizontal = 8.dp)
                     ) {
                         Text(
-                            text = "পৃষ্ঠা ${currentPage.toBengaliNumerals()}",
+                            text = stringResource(R.string.page_format, currentPage.toBengaliNumerals()),
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(
                             imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = "Jump to Page",
+                            contentDescription = stringResource(R.string.jump_to_page_title),
                             modifier = Modifier.size(20.dp),
                             tint = topBarContentColor
                         )
@@ -227,33 +229,33 @@ fun HafeziModeScreen(
                         viewModel.saveLastReadPosition()
                         onNavigateBack()
                     }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showJuzList = true }) {
                         Icon(
                             imageVector = Icons.Default.List,
-                            contentDescription = "Juz List",
+                            contentDescription = stringResource(R.string.tab_juz),
                             tint = topBarContentColor
                         )
                     }
                     IconButton(onClick = { viewModel.toggleBookmark() }) {
                         Icon(
                             if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                            contentDescription = "Bookmark",
+                            contentDescription = stringResource(R.string.feature_bookmarks),
                             tint = if (isBookmarked) Color(0xFFE5A93C) else topBarContentColor
                         )
                     }
                     IconButton(onClick = { viewModel.toggleMemorized() }) {
                         Icon(
                             if (isPageMemorized) Icons.Default.CheckCircle else Icons.Outlined.Circle,
-                            contentDescription = "Mark Memorized",
+                            contentDescription = stringResource(R.string.feature_hifz_tracker),
                             tint = if (isPageMemorized) Color(0xFF1E5631) else topBarContentColor
                         )
                     }
                     IconButton(onClick = { showSettings = true }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.nav_settings))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -279,7 +281,7 @@ fun HafeziModeScreen(
                         enabled = currentPage < 610,
                         colors = ButtonDefaults.textButtonColors(contentColor = topBarContentColor)
                     ) {
-                        Text("পরবর্তী", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.btn_next), fontWeight = FontWeight.Bold)
                     }
                     
                     FloatingActionButton(
@@ -309,7 +311,7 @@ fun HafeziModeScreen(
                         enabled = currentPage > 1,
                         colors = ButtonDefaults.textButtonColors(contentColor = topBarContentColor)
                     ) {
-                        Text("পূর্ববর্তী", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.btn_previous), fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -390,7 +392,7 @@ fun HafeziModeScreen(
                         .padding(horizontal = 24.dp, vertical = 16.dp)
                 ) {
                     Text(
-                        text = "পঠন ও অডিও সেটিংস",
+                        text = stringResource(R.string.reading_and_audio_settings),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = topBarContentColor,
@@ -399,7 +401,7 @@ fun HafeziModeScreen(
 
                     // Repeat count
                     Text(
-                        text = "আয়াত পুনরাবৃত্তি: ${repeatCount.toBengaliNumerals()} বার", 
+                        text = stringResource(R.string.ayah_repeat_count, repeatCount.toBengaliNumerals()), 
                         style = MaterialTheme.typography.bodyMedium,
                         color = topBarContentColor
                     )
@@ -418,7 +420,7 @@ fun HafeziModeScreen(
 
                     // Font Size SettingAdjustmentRow
                     com.example.ui.components.SettingAdjustmentRow(
-                        label = "আরবি হরফের আকার",
+                        label = stringResource(R.string.arabic_font_size),
                         valueText = "${arabicFontSize.toInt()}".toBengaliNumerals(),
                         onDecrease = {
                             val newSize = (arabicFontSize - 1f).coerceIn(18f, 40f)
@@ -434,7 +436,7 @@ fun HafeziModeScreen(
 
                     // Arabic Line Spacing Settings
                     com.example.ui.components.SettingAdjustmentRow(
-                        label = "আরবি লাইন স্পেস",
+                        label = stringResource(R.string.arabic_line_spacing),
                         valueText = String.format("%.2f", arabicLineSpacing).toBengaliNumerals(),
                         onDecrease = {
                             val newSpacing = (arabicLineSpacing - 0.05f).coerceIn(2.00f, 3.00f)
@@ -450,7 +452,7 @@ fun HafeziModeScreen(
 
                     // Theme selector
                     Text(
-                        text = "থিম", 
+                        text = stringResource(R.string.theme_label), 
                         style = MaterialTheme.typography.bodyMedium, 
                         color = topBarContentColor,
                         modifier = Modifier.padding(bottom = 8.dp)
@@ -459,7 +461,11 @@ fun HafeziModeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        listOf("Light" to "লাইট", "Sepia" to "সেপিয়া", "Dark" to "ডার্ক").forEach { (tKey, tName) ->
+                        listOf(
+                            "Light" to stringResource(R.string.theme_light), 
+                            "Sepia" to stringResource(R.string.theme_sepia), 
+                            "Dark" to stringResource(R.string.theme_dark)
+                        ).forEach { (tKey, tName) ->
                             val isSel = tKey == theme
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
@@ -485,7 +491,7 @@ fun HafeziModeScreen(
 
                     // Scroll direction selector
                     Text(
-                        text = "পৃষ্ঠা পরিবর্তন পদ্ধতি", 
+                        text = stringResource(R.string.page_transition_method), 
                         style = MaterialTheme.typography.bodyMedium, 
                         color = topBarContentColor,
                         modifier = Modifier.padding(bottom = 8.dp)
@@ -494,7 +500,10 @@ fun HafeziModeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        listOf("Horizontal" to "ডানে-বামে", "Vertical" to "উপর-নিচ").forEach { (dKey, dName) ->
+                        listOf(
+                            "Horizontal" to stringResource(R.string.transition_horizontal), 
+                            "Vertical" to stringResource(R.string.transition_vertical)
+                        ).forEach { (dKey, dName) ->
                             val isSel = dKey == scrollDirection
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
@@ -525,7 +534,7 @@ fun HafeziModeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "থামার চিহ্ন প্রদর্শন (م، ج،صلے)",
+                            text = stringResource(R.string.show_waqf_signs),
                             style = MaterialTheme.typography.bodyMedium,
                             color = topBarContentColor
                         )
@@ -550,7 +559,7 @@ fun HafeziModeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "তাজবীদ কালার",
+                            text = stringResource(R.string.tajweed_color),
                             style = MaterialTheme.typography.bodyMedium,
                             color = topBarContentColor
                         )
@@ -570,7 +579,7 @@ fun HafeziModeScreen(
 
                     // Font style selector
                     Text(
-                        text = "ফন্ট স্টাইল", 
+                        text = stringResource(R.string.font_style), 
                         style = MaterialTheme.typography.bodyMedium, 
                         color = topBarContentColor,
                         modifier = Modifier.padding(bottom = 8.dp)
@@ -579,7 +588,11 @@ fun HafeziModeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        val fonts = listOf("Me Quran" to "মি কুরআন", "PDMS Saleem" to "পিডিএমএস সালীম", "Noorehira" to "নূরেহেরা")
+                        val fonts = listOf(
+                            "Me Quran" to stringResource(R.string.font_me_quran), 
+                            "PDMS Saleem" to stringResource(R.string.font_pdms_saleem), 
+                            "Noorehira" to stringResource(R.string.font_noorehira)
+                        )
                         fonts.forEach { (fKey, fName) ->
                             val isSel = fKey == arabicFontName
                             Surface(
@@ -632,12 +645,12 @@ fun HafeziModeScreen(
                         androidx.compose.material3.Tab(
                             selected = hafeziSelectedTabIndex == 0,
                             onClick = { hafeziSelectedTabIndex = 0 },
-                            text = { Text("পারা", fontWeight = FontWeight.Bold) }
+                            text = { Text(stringResource(R.string.tab_para), fontWeight = FontWeight.Bold) }
                         )
                         androidx.compose.material3.Tab(
                             selected = hafeziSelectedTabIndex == 1,
                             onClick = { hafeziSelectedTabIndex = 1 },
-                            text = { Text("সূরা", fontWeight = FontWeight.Bold) }
+                            text = { Text(stringResource(R.string.tab_surah), fontWeight = FontWeight.Bold) }
                         )
                     }
                     
@@ -669,13 +682,13 @@ fun HafeziModeScreen(
                                 ) {
                                     Column {
                                         Text(
-                                            text = "পারা ${juzNum.toBengaliNumerals()}: $juzName",
+                                            text = "${stringResource(R.string.para_format, juzNum.toBengaliNumerals())}: $juzName",
                                             style = MaterialTheme.typography.bodyLarge,
                                             fontWeight = FontWeight.SemiBold,
                                             color = topBarContentColor
                                         )
                                         Text(
-                                            text = "পৃষ্ঠা ${startPage.toBengaliNumerals()}",
+                                            text = stringResource(R.string.page_format, startPage.toBengaliNumerals()),
                                             style = MaterialTheme.typography.bodySmall,
                                             color = topBarContentColor.copy(alpha = 0.7f)
                                         )
@@ -718,7 +731,7 @@ fun HafeziModeScreen(
                                             color = topBarContentColor
                                         )
                                         Text(
-                                            text = "পৃষ্ঠা ${startPage.toBengaliNumerals()}",
+                                            text = stringResource(R.string.page_format, startPage.toBengaliNumerals()),
                                             style = MaterialTheme.typography.bodySmall,
                                             color = topBarContentColor.copy(alpha = 0.7f)
                                         )
@@ -750,7 +763,7 @@ fun HafeziModeScreen(
                 onDismissRequest = { showJumpToPageDialog = false },
                 title = {
                     Text(
-                        text = "পৃষ্ঠা পরিবর্তন করুন",
+                        text = stringResource(R.string.jump_to_page_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = topBarContentColor
@@ -759,7 +772,7 @@ fun HafeziModeScreen(
                 text = {
                     Column {
                         Text(
-                            text = "১ থেকে ৬০৪ এর মধ্যে পৃষ্ঠা নম্বর লিখুন:",
+                            text = stringResource(R.string.jump_to_page_prompt),
                             style = MaterialTheme.typography.bodyMedium,
                             color = topBarContentColor.copy(alpha = 0.8f),
                             modifier = Modifier.padding(bottom = 12.dp)
@@ -777,12 +790,12 @@ fun HafeziModeScreen(
                                     isError = false
                                 }
                             },
-                            label = { Text("পৃষ্ঠা নম্বর") },
-                            placeholder = { Text("যেমন: ১২৩") },
+                            label = { Text(stringResource(R.string.page_number_label)) },
+                            placeholder = { Text(stringResource(R.string.page_number_hint)) },
                             isError = isError,
                             supportingText = {
                                 if (isError) {
-                                    Text("অনুগ্রহ করে ১ থেকে ৬১০ এর মধ্যে একটি সঠিক নম্বর লিখুন", color = MaterialTheme.colorScheme.error)
+                                    Text(stringResource(R.string.invalid_page_number_error), color = MaterialTheme.colorScheme.error)
                                 }
                             },
                             singleLine = true,
@@ -814,7 +827,7 @@ fun HafeziModeScreen(
                             containerColor = if (theme == "Dark") Color(0xFF6B5843) else Color(0xFF1E5631)
                         )
                     ) {
-                        Text("নিশ্চিত করুন")
+                        Text(stringResource(R.string.action_confirm))
                     }
                 },
                 dismissButton = {
@@ -822,7 +835,7 @@ fun HafeziModeScreen(
                         onClick = { showJumpToPageDialog = false },
                         colors = ButtonDefaults.textButtonColors(contentColor = topBarContentColor)
                     ) {
-                        Text("বাতিল")
+                        Text(stringResource(R.string.action_cancel))
                     }
                 },
                 containerColor = containerColor
@@ -874,7 +887,7 @@ fun HafeziPageContent(
     val surahData = firstAyah?.let { com.example.data.QuranData.surahNames.find { s -> s.first == it.surahNumber } }
     val surahNameArabic = surahData?.second?.first ?: "" // e.g. سورة الفাতحة
     val juzNum = firstAyah?.juz ?: 1
-    val juzName = "পারা ${juzNum.toBengaliNumerals()}"
+    val juzName = stringResource(R.string.para_format, juzNum.toBengaliNumerals())
 
     val scrollModifier = if (isVerticalScrollEnabled) {
         Modifier.verticalScroll(rememberScrollState())

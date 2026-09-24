@@ -43,6 +43,10 @@ import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
 
+  override fun attachBaseContext(newBase: android.content.Context) {
+      super.attachBaseContext(com.example.utils.LocaleHelper.onAttach(newBase))
+  }
+
   private val currentIntentState = androidx.compose.runtime.mutableStateOf<android.content.Intent?>(null)
 
   private val requestPermissionLauncher = registerForActivityResult(
@@ -92,6 +96,14 @@ class MainActivity : ComponentActivity() {
       val keepScreenOn by appContainer.settingsRepository.keepScreenOnFlow.collectAsState(initial = false)
       val arabicFontName by appContainer.settingsRepository.arabicFontNameFlow.collectAsState(initial = "Me Quran")
       val bengaliFontName by appContainer.settingsRepository.bengaliFontNameFlow.collectAsState(initial = "SolaimanLipi")
+      val currentLanguage by appContainer.settingsRepository.appLanguageFlow.collectAsState(initial = "bn")
+      
+      val localizedContext = remember(currentLanguage) {
+          com.example.utils.LocaleHelper.getLocalizedContext(this@MainActivity, currentLanguage)
+      }
+      val localizedConfig = remember(currentLanguage) {
+          android.content.res.Configuration(localizedContext.resources.configuration)
+      }
       
       LaunchedEffect(keepScreenOn) {
           if (keepScreenOn) {
@@ -106,15 +118,19 @@ class MainActivity : ComponentActivity() {
           "Light" -> false
           else -> isSystemDark
       }
-      MyApplicationTheme(
-          darkTheme = darkTheme,
-          arabicFontName = arabicFontName,
-          bengaliFontName = bengaliFontName
+      androidx.compose.runtime.CompositionLocalProvider(
+          androidx.compose.ui.platform.LocalContext provides localizedContext,
+          androidx.compose.ui.platform.LocalConfiguration provides localizedConfig
       ) {
-        Surface(
-          modifier = Modifier.fillMaxSize(),
-          color = MaterialTheme.colorScheme.background
-        ) {
+          MyApplicationTheme(
+              darkTheme = darkTheme,
+              arabicFontName = arabicFontName,
+              bengaliFontName = bengaliFontName
+          ) {
+            Surface(
+              modifier = Modifier.fillMaxSize(),
+              color = MaterialTheme.colorScheme.background
+            ) {
           val viewModelFactory = AppViewModelFactory(
             quranRepository = appContainer.quranRepository,
             settingsRepository = appContainer.settingsRepository,
@@ -270,6 +286,7 @@ class MainActivity : ComponentActivity() {
                 )
               }
             }
+          }
           }
         }
       }

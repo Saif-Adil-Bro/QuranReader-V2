@@ -35,16 +35,19 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
+import androidx.compose.ui.res.stringResource
+import com.example.R
+
 sealed class BottomNavItem(
     val route: String,
-    val title: String,
+    val titleResId: Int,
     val activeIcon: ImageVector,
     val inactiveIcon: ImageVector
 ) {
-    object Home : BottomNavItem("home", "হোম", Icons.Filled.Home, Icons.Outlined.Home)
-    object Mushaf : BottomNavItem("mushaf", "মুসহাফ", Icons.Default.MenuBook, Icons.Outlined.MenuBook)
-    object Search : BottomNavItem("search", "সার্চ", Icons.Filled.Search, Icons.Outlined.Search)
-    object Menu : BottomNavItem("settings", "মেনু", Icons.Filled.Menu, Icons.Outlined.Menu)
+    object Home : BottomNavItem("home", R.string.nav_home, Icons.Filled.Home, Icons.Outlined.Home)
+    object Mushaf : BottomNavItem("mushaf", R.string.nav_mushaf, Icons.Default.MenuBook, Icons.Outlined.MenuBook)
+    object Search : BottomNavItem("search", R.string.action_search, Icons.Filled.Search, Icons.Outlined.Search)
+    object Menu : BottomNavItem("settings", R.string.nav_menu, Icons.Filled.Menu, Icons.Outlined.Menu)
 }
 
 @Composable
@@ -145,6 +148,8 @@ fun BottomNavIcon(
     val icon = if (isSelected) item.activeIcon else item.inactiveIcon
     val fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
 
+    val titleText = stringResource(item.titleResId)
+
     Column(
         modifier = modifier
             .fillMaxHeight()
@@ -154,13 +159,13 @@ fun BottomNavIcon(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = item.title,
+            contentDescription = titleText,
             tint = iconColor,
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = item.title,
+            text = titleText,
             color = color,
             fontSize = 12.sp,
             fontWeight = fontWeight

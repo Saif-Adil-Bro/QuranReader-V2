@@ -51,6 +51,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.Canvas
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalClipboardManager
 import android.content.Intent
@@ -281,7 +282,7 @@ fun SurahDetailScreen(
             when (val state = uiState) {
                 is UiState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        com.example.ui.components.QuranLoadingAnimation(text = "লোড হচ্ছে...")
+                        com.example.ui.components.QuranLoadingAnimation(text = stringResource(R.string.loading_text))
                     }
                 }
                 is UiState.Error -> {
@@ -298,7 +299,7 @@ fun SurahDetailScreen(
                                 viewModel.loadSurah(surahNumber) 
                             }
                         }, colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)) {
-                            Text("আবার চেষ্টা করুন", color = White)
+                            Text(stringResource(R.string.retry), color = White)
                         }
                     }
                 }
@@ -434,18 +435,18 @@ fun SurahDetailScreen(
                     }
                     
                     val surahData = com.example.data.QuranData.surahNames.find { it.first == activeSurahNumber }
-                    val surahName = surahData?.second?.first ?: "সূরা $activeSurahNumber"
+                    val surahName = surahData?.second?.first ?: "${stringResource(R.string.surah_prefix)} $activeSurahNumber"
                     val title = if (surahNumber == 2 && effectiveInitialAyah == 255 && !isJuz) {
-                        "আয়াতুল কুরসি"
+                        stringResource(R.string.ayat_al_kursi_title)
                     } else if (surahNumber == 2 && effectiveInitialAyah == 285 && !isJuz) {
-                        "বাকারার শেষ ২ আয়াত"
+                        stringResource(R.string.baqarah_last_two_title)
                     } else {
                         surahName
                     }
-                    val subtitle = if (surahNumber == 2 && effectiveInitialAyah == 255 && !isJuz) "সূরা আল-বাকারাহ, আয়াত ২৫৫" else if (surahNumber == 2 && effectiveInitialAyah == 285 && !isJuz) "সূরা আল-বাকারাহ, আয়াত ২৮৫-২৮৬" else (surahData?.second?.second ?: "")
-                    val info1 = "সূরা: ${com.example.utils.DateUtil.toBengaliNumerals(activeSurahNumber)}"
+                    val subtitle = if (surahNumber == 2 && effectiveInitialAyah == 255 && !isJuz) stringResource(R.string.ayat_al_kursi_sub) else if (surahNumber == 2 && effectiveInitialAyah == 285 && !isJuz) stringResource(R.string.baqarah_last_two_sub) else (surahData?.second?.second ?: "")
+                    val info1 = "${stringResource(R.string.surah_prefix)}: ${com.example.utils.DateUtil.toBengaliNumerals(activeSurahNumber)}"
                     val info2 = com.example.data.QuranData.getSurahType(activeSurahNumber)
-                    val info3 = if (surahNumber == 2 && effectiveInitialAyah == 255 && !isJuz) "১টি আয়াত" else if (surahNumber == 2 && effectiveInitialAyah == 285 && !isJuz) "২টি আয়াত" else "মোট আয়াত: ${com.example.utils.DateUtil.toBengaliNumerals(displayedData.size)}"
+                    val info3 = if (surahNumber == 2 && effectiveInitialAyah == 255 && !isJuz) stringResource(R.string.single_ayah_count) else if (surahNumber == 2 && effectiveInitialAyah == 285 && !isJuz) stringResource(R.string.two_ayahs_count) else stringResource(R.string.total_ayahs_format, com.example.utils.DateUtil.toBengaliNumerals(displayedData.size))
 
                     var headerHeightPx by remember { mutableFloatStateOf(0f) }
                     val headerHeightDp = with(androidx.compose.ui.platform.LocalDensity.current) { headerHeightPx.toDp() }
@@ -664,7 +665,7 @@ fun SurahDetailScreen(
                                                 }
                                             }
                                         } else {
-                                            Toast.makeText(context, "আয়াত $targetNum এই সূরায় নেই", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, context.getString(R.string.ayah_not_found_in_surah, targetNum), Toast.LENGTH_SHORT).show()
                                         }
                                     }
                                 },
@@ -694,16 +695,16 @@ fun SurahDetailScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 val currentMode = pageOrder[pagerState.currentPage]
-                                ViewModeToggle("লিস্ট", Icons.Default.List, currentMode == ViewMode.LIST) { 
+                                ViewModeToggle(stringResource(R.string.tab_list), Icons.Default.List, currentMode == ViewMode.LIST) { 
                                     coroutineScope.launch { pagerState.animateScrollToPage(pageOrder.indexOf(ViewMode.LIST)) } 
                                 }
-                                ViewModeToggle("শব্দার্থ", Icons.Outlined.Book, currentMode == ViewMode.READING) { 
+                                ViewModeToggle(stringResource(R.string.tab_word_meaning), Icons.Outlined.Book, currentMode == ViewMode.READING) { 
                                     coroutineScope.launch { pagerState.animateScrollToPage(pageOrder.indexOf(ViewMode.READING)) } 
                                 }
-                                ViewModeToggle("তাফসির", Icons.Outlined.Info, currentMode == ViewMode.TAFSIR) { 
+                                ViewModeToggle(stringResource(R.string.tab_tafsir), Icons.Outlined.Info, currentMode == ViewMode.TAFSIR) { 
                                     coroutineScope.launch { pagerState.animateScrollToPage(pageOrder.indexOf(ViewMode.TAFSIR)) } 
                                 }
-                                ViewModeToggle("মুসহাফ", Icons.Outlined.MenuBook, currentMode == ViewMode.MUSHAF) { 
+                                ViewModeToggle(stringResource(R.string.tab_mushaf), Icons.Outlined.MenuBook, currentMode == ViewMode.MUSHAF) { 
                                     coroutineScope.launch { pagerState.animateScrollToPage(pageOrder.indexOf(ViewMode.MUSHAF)) } 
                                 }
                             }
@@ -866,7 +867,7 @@ fun HeaderCard(
                     .padding(horizontal = 12.dp, vertical = 4.dp)) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null, tint = White, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("প্লেয়ার", color = White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.player_title), color = White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
             
@@ -901,7 +902,7 @@ fun HeaderCard(
                         Box(modifier = Modifier.weight(1f)) {
                             if (searchQuery.isEmpty()) {
                                 Text(
-                                    text = "আয়াত নং",
+                                    text = stringResource(R.string.search_ayah_num),
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                     fontWeight = FontWeight.Medium
@@ -938,7 +939,7 @@ fun HeaderCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ArrowForward,
-                                contentDescription = "Search",
+                                contentDescription = stringResource(R.string.action_search),
                                 tint = White,
                                 modifier = Modifier.size(14.dp)
                             )
@@ -956,10 +957,10 @@ fun HeaderCard(
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                ViewModeToggle("লিস্ট", Icons.Default.List, viewMode == ViewMode.LIST) { onModeChange(ViewMode.LIST) }
-                ViewModeToggle("শব্দার্থ", Icons.Outlined.Book, viewMode == ViewMode.READING) { onModeChange(ViewMode.READING) }
-                ViewModeToggle("তাফসির", Icons.Outlined.Info, viewMode == ViewMode.TAFSIR) { onModeChange(ViewMode.TAFSIR) }
-                ViewModeToggle("মুসহাফ", Icons.Outlined.MenuBook, viewMode == ViewMode.MUSHAF) { onModeChange(ViewMode.MUSHAF) }
+                ViewModeToggle(stringResource(R.string.tab_list), Icons.Default.List, viewMode == ViewMode.LIST) { onModeChange(ViewMode.LIST) }
+                ViewModeToggle(stringResource(R.string.tab_word_meaning), Icons.Outlined.Book, viewMode == ViewMode.READING) { onModeChange(ViewMode.READING) }
+                ViewModeToggle(stringResource(R.string.tab_tafsir), Icons.Outlined.Info, viewMode == ViewMode.TAFSIR) { onModeChange(ViewMode.TAFSIR) }
+                ViewModeToggle(stringResource(R.string.tab_mushaf), Icons.Outlined.MenuBook, viewMode == ViewMode.MUSHAF) { onModeChange(ViewMode.MUSHAF) }
             }
         }
     }

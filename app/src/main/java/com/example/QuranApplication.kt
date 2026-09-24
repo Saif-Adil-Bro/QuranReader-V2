@@ -11,8 +11,18 @@ class QuranApplication : Application(), ImageLoaderFactory {
 
     lateinit var container: AppContainer
 
+    companion object {
+        lateinit var instance: QuranApplication
+            private set
+    }
+
+    override fun attachBaseContext(base: android.content.Context) {
+        super.attachBaseContext(com.example.utils.LocaleHelper.onAttach(base))
+    }
+
     override fun onCreate() {
         super.onCreate()
+        instance = this
         
         // Safely initialize Firebase to avoid any runtime startup crashes on Appetize/CI/Emulators
         try {

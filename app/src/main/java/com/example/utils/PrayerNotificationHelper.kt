@@ -42,6 +42,9 @@ object PrayerNotificationHelper {
     const val KEY_NOTIF_IFTAR = "prayer_notif_iftar"
     const val KEY_NOTIF_SUNRISE = "prayer_notif_sunrise"
     const val KEY_NOTIF_TAHAJJUD = "prayer_notif_tahajjud"
+    const val KEY_NOTIF_MAKRUH_SUNRISE = "prayer_notif_makruh_sunrise"
+    const val KEY_NOTIF_MAKRUH_ZAWAL = "prayer_notif_makruh_zawal"
+    const val KEY_NOTIF_MAKRUH_SUNSET = "prayer_notif_makruh_sunset"
 
     val VIBRATION_PATTERN = longArrayOf(0, 350, 200, 350)
     val ALARM_VIBRATION_PATTERN = longArrayOf(0, 800, 400, 800, 400, 800, 400, 1000)
@@ -120,6 +123,7 @@ object PrayerNotificationHelper {
         val defaultEnabled = when (prayerName) {
             PrayerName.FAJR, PrayerName.DHUHR, PrayerName.ASR, PrayerName.MAGHRIB, PrayerName.ISHA, PrayerName.SAHRI, PrayerName.IFTAR -> true
             PrayerName.SUNRISE, PrayerName.TAHAJJUD -> false
+            PrayerName.MAKRUH_SUNRISE, PrayerName.MAKRUH_ZAWAL, PrayerName.MAKRUH_SUNSET -> true
         }
 
         // Check modern key or legacy key
@@ -132,9 +136,18 @@ object PrayerNotificationHelper {
             defaultEnabled
         }
 
+        val defaultSoundType = when (prayerName) {
+            PrayerName.FAJR -> PrayerAlarmSoundType.AZAN_FAJR
+            PrayerName.DHUHR, PrayerName.ASR, PrayerName.MAGHRIB, PrayerName.ISHA -> PrayerAlarmSoundType.AZAN_MECCA
+            PrayerName.SAHRI, PrayerName.IFTAR, PrayerName.SUNRISE, PrayerName.TAHAJJUD -> PrayerAlarmSoundType.VOICE_NAME
+            PrayerName.MAKRUH_SUNRISE, PrayerName.MAKRUH_ZAWAL, PrayerName.MAKRUH_SUNSET -> PrayerAlarmSoundType.VOICE_NAME
+        }
+
         val offsetMinutes = prefs.getInt("config_offset_${prayerName.name}", 0)
-        val soundTypeId = prefs.getString("config_sound_${prayerName.name}", PrayerAlarmSoundType.NOTIFICATION.id) ?: PrayerAlarmSoundType.NOTIFICATION.id
-        val soundType = PrayerAlarmSoundType.values().find { it.id == soundTypeId } ?: PrayerAlarmSoundType.NOTIFICATION
+        val soundTypeId = prefs.getString("config_sound_${prayerName.name}", defaultSoundType.id) ?: defaultSoundType.id
+        val soundType = PrayerAlarmSoundType.values().find { it.id == soundTypeId } ?: defaultSoundType
+        val customUri = prefs.getString("config_custom_ringtone_uri_${prayerName.name}", null)
+        val customTitle = prefs.getString("config_custom_ringtone_title_${prayerName.name}", null)
         val isVibration = prefs.getBoolean("config_vibrate_${prayerName.name}", true)
 
         return WaqtAlarmConfig(
@@ -142,6 +155,8 @@ object PrayerNotificationHelper {
             isEnabled = isEnabled,
             offsetMinutes = offsetMinutes,
             soundType = soundType,
+            customRingtoneUri = customUri,
+            customRingtoneTitle = customTitle,
             isVibrationEnabled = isVibration
         )
     }
@@ -152,6 +167,8 @@ object PrayerNotificationHelper {
         editor.putBoolean("config_enabled_${config.prayerName.name}", config.isEnabled)
         editor.putInt("config_offset_${config.prayerName.name}", config.offsetMinutes)
         editor.putString("config_sound_${config.prayerName.name}", config.soundType.id)
+        editor.putString("config_custom_ringtone_uri_${config.prayerName.name}", config.customRingtoneUri)
+        editor.putString("config_custom_ringtone_title_${config.prayerName.name}", config.customRingtoneTitle)
         editor.putBoolean("config_vibrate_${config.prayerName.name}", config.isVibrationEnabled)
 
         // Sync legacy key
@@ -176,6 +193,9 @@ object PrayerNotificationHelper {
             PrayerName.IFTAR -> KEY_NOTIF_IFTAR
             PrayerName.SUNRISE -> KEY_NOTIF_SUNRISE
             PrayerName.TAHAJJUD -> KEY_NOTIF_TAHAJJUD
+            PrayerName.MAKRUH_SUNRISE -> KEY_NOTIF_MAKRUH_SUNRISE
+            PrayerName.MAKRUH_ZAWAL -> KEY_NOTIF_MAKRUH_ZAWAL
+            PrayerName.MAKRUH_SUNSET -> KEY_NOTIF_MAKRUH_SUNSET
         }
     }
 
@@ -207,6 +227,9 @@ object PrayerNotificationHelper {
             PrayerName.SAHRI -> 3007
             PrayerName.IFTAR -> 3008
             PrayerName.TAHAJJUD -> 3009
+            PrayerName.MAKRUH_SUNRISE -> 3010
+            PrayerName.MAKRUH_ZAWAL -> 3011
+            PrayerName.MAKRUH_SUNSET -> 3012
         }
     }
 
@@ -279,7 +302,10 @@ object PrayerNotificationHelper {
             PrayerName.ISHA,
             PrayerName.SAHRI,
             PrayerName.IFTAR,
-            PrayerName.TAHAJJUD
+            PrayerName.TAHAJJUD,
+            PrayerName.MAKRUH_SUNRISE,
+            PrayerName.MAKRUH_ZAWAL,
+            PrayerName.MAKRUH_SUNSET
         )
 
         for (prayerName in allWaqtItems) {
@@ -369,6 +395,51 @@ object PrayerNotificationHelper {
                     endTimeDigits = "",
                     endTimeFormatted = "",
                     timeRangeFormatted = "তাহাজ্জুদ: ${schedule.tahajjudRange}"
+                )
+            }
+            PrayerName.MAKRUH_SUNRISE -> {
+                val sunrise = schedule.prayers.find { it.name == PrayerName.SUNRISE } ?: return null
+                val sunriseForbiddenEndMillis = sunrise.timestampMillis + (15 * 60 * 1000L)
+                val displayRange = schedule.forbiddenSunriseFormatted.ifBlank { schedule.forbiddenMorningRange }
+                SinglePrayerTime(
+                    name = PrayerName.MAKRUH_SUNRISE,
+                    timeDigits = schedule.sunriseTimeDigits,
+                    amPm = "AM",
+                    timeFormatted = displayRange,
+                    timestampMillis = sunrise.timestampMillis,
+                    endTimeDigits = "",
+                    endTimeFormatted = "",
+                    timeRangeFormatted = "মাকরূহ (সূর্যোদয়): $displayRange"
+                )
+            }
+            PrayerName.MAKRUH_ZAWAL -> {
+                val dhuhr = schedule.prayers.find { it.name == PrayerName.DHUHR } ?: return null
+                val zawalStartMillis = dhuhr.timestampMillis - (12 * 60 * 1000L)
+                val displayRange = schedule.forbiddenMiddayFormatted.ifBlank { schedule.forbiddenNoonRange }
+                SinglePrayerTime(
+                    name = PrayerName.MAKRUH_ZAWAL,
+                    timeDigits = "",
+                    amPm = "PM",
+                    timeFormatted = displayRange,
+                    timestampMillis = zawalStartMillis,
+                    endTimeDigits = "",
+                    endTimeFormatted = dhuhr.timeFormatted,
+                    timeRangeFormatted = "মাকরূহ (দ্বিপ্রহর/জাওয়াল): $displayRange"
+                )
+            }
+            PrayerName.MAKRUH_SUNSET -> {
+                val maghrib = schedule.prayers.find { it.name == PrayerName.MAGHRIB } ?: return null
+                val sunsetForbiddenStartMillis = maghrib.timestampMillis - (15 * 60 * 1000L)
+                val displayRange = schedule.forbiddenSunsetFormatted.ifBlank { schedule.forbiddenEveningRange }
+                SinglePrayerTime(
+                    name = PrayerName.MAKRUH_SUNSET,
+                    timeDigits = "",
+                    amPm = "PM",
+                    timeFormatted = displayRange,
+                    timestampMillis = sunsetForbiddenStartMillis,
+                    endTimeDigits = "",
+                    endTimeFormatted = maghrib.timeFormatted,
+                    timeRangeFormatted = "মাকরূহ (সূর্যাস্ত): $displayRange"
                 )
             }
             else -> null
@@ -509,7 +580,10 @@ object PrayerNotificationHelper {
             PrayerName.ISHA,
             PrayerName.SAHRI,
             PrayerName.IFTAR,
-            PrayerName.TAHAJJUD
+            PrayerName.TAHAJJUD,
+            PrayerName.MAKRUH_SUNRISE,
+            PrayerName.MAKRUH_ZAWAL,
+            PrayerName.MAKRUH_SUNSET
         )
 
         for (p in allPrayers) {

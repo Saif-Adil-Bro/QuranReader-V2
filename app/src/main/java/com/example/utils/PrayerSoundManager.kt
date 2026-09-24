@@ -73,6 +73,7 @@ object PrayerSoundManager {
         return when (soundType) {
             PrayerAlarmSoundType.AZAN_MECCA -> if (prayerName == PrayerName.FAJR) "azan_fajr" else "azan_mecca"
             PrayerAlarmSoundType.AZAN_MADINA -> "azan_madina"
+            PrayerAlarmSoundType.AZAN_FAJR -> "azan_fajr"
             PrayerAlarmSoundType.BEEP -> "alarm_beep"
             PrayerAlarmSoundType.RING -> "alarm_ring"
             else -> null
@@ -82,7 +83,7 @@ object PrayerSoundManager {
     fun getRawResourceId(context: Context, soundType: PrayerAlarmSoundType, prayerName: PrayerName? = null): Int {
         val rawName = getRawResourceName(soundType, prayerName) ?: return 0
         var resId = context.resources.getIdentifier(rawName, "raw", context.packageName)
-        if (resId == 0 && soundType == PrayerAlarmSoundType.AZAN_MECCA && prayerName == PrayerName.FAJR) {
+        if (resId == 0 && (soundType == PrayerAlarmSoundType.AZAN_MECCA || soundType == PrayerAlarmSoundType.AZAN_FAJR) && prayerName == PrayerName.FAJR) {
             // Fallback to azan_mecca if azan_fajr is not provided
             resId = context.resources.getIdentifier("azan_mecca", "raw", context.packageName)
         }
@@ -92,6 +93,7 @@ object PrayerSoundManager {
     private fun playRawSound(
         context: Context,
         rawResId: Int,
+        isLooping: Boolean = false,
         onCompletion: () -> Unit = {}
     ): Boolean {
         return try {
@@ -106,10 +108,56 @@ object PrayerSoundManager {
                         .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                         .build()
                 )
+                this.isLooping = isLooping
                 setOnCompletionListener {
-                    currentlyPlayingType = null
-                    onCompletion()
+                    if (!isLooping) {
+                        currentlyPlayingType = null
+                        onCompletion()
+                    }
                 }
+                start()
+            }
+            activeMediaPlayer != null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    private fun playCustomRingtone(
+        context: Context,
+        uriString: String?,
+        isLooping: Boolean = false,
+        onCompletion: () -> Unit = {}
+    ): Boolean {
+        return try {
+            val uri = if (!uriString.isNullOrBlank()) {
+                android.net.Uri.parse(uriString)
+            } else {
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+            } ?: return false
+
+            activeMediaPlayer?.stop()
+            activeMediaPlayer?.release()
+            activeMediaPlayer = null
+
+            activeMediaPlayer = MediaPlayer().apply {
+                setDataSource(context, uri)
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build()
+                )
+                this.isLooping = isLooping
+                setOnCompletionListener {
+                    if (!isLooping) {
+                        currentlyPlayingType = null
+                        onCompletion()
+                    }
+                }
+                prepare()
                 start()
             }
             activeMediaPlayer != null
@@ -126,14 +174,20 @@ object PrayerSoundManager {
         context: Context,
         soundType: PrayerAlarmSoundType,
         prayerName: PrayerName,
+        customRingtoneUri: String? = null,
         onCompletion: () -> Unit = {}
     ) {
         stopAll()
         currentlyPlayingType = soundType
 
+        if (soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE) {
+            val started = playCustomRingtone(context, customRingtoneUri, isLooping = false, onCompletion = onCompletion)
+            if (started) return
+        }
+
         val rawResId = getRawResourceId(context, soundType, prayerName)
         if (rawResId != 0) {
-            val started = playRawSound(context, rawResId, onCompletion)
+            val started = playRawSound(context, rawResId, isLooping = false, onCompletion = onCompletion)
             if (started) return
         }
 
@@ -183,6 +237,18 @@ object PrayerSoundManager {
                         currentlyPlayingType = null
                         onCompletion()
                     }
+                    PrayerAlarmSoundType.AZAN_FAJR -> {
+                        playSynthesizedAzanMecca()
+                        delay(4000)
+                        currentlyPlayingType = null
+                        onCompletion()
+                    }
+                    PrayerAlarmSoundType.CUSTOM_RINGTONE -> {
+                        playSynthesizedMelody()
+                        delay(2500)
+                        currentlyPlayingType = null
+                        onCompletion()
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -193,9 +259,78 @@ object PrayerSoundManager {
     }
 
     /**
-     * Play when an alarm triggers in background / receiver
+     * Play when an ALARM triggers in background / receiver
      */
     fun triggerAlarmSoundAndVibrate(
+        context: Context,
+        soundType: PrayerAlarmSoundType,
+        prayerName: PrayerName,
+        enableVibration: Boolean,
+        customRingtoneUri: String? = null
+    ) {
+        stopAll()
+
+        if (enableVibration) {
+            triggerVibration(context, isRepeating = true)
+        }
+
+        if (soundType == PrayerAlarmSoundType.SILENT) {
+            return
+        }
+
+        if (soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE) {
+            val started = playCustomRingtone(context, customRingtoneUri, isLooping = true)
+            if (started) {
+                currentlyPlayingType = soundType
+                return
+            }
+        }
+
+        val rawResId = getRawResourceId(context, soundType, prayerName)
+        if (rawResId != 0) {
+            val played = playRawSound(context, rawResId, isLooping = true)
+            if (played) {
+                currentlyPlayingType = soundType
+                return
+            }
+        }
+
+        currentlyPlayingType = soundType
+        playbackJob = CoroutineScope(Dispatchers.IO).launch {
+            try {
+                when (soundType) {
+                    PrayerAlarmSoundType.AZAN_MECCA, PrayerAlarmSoundType.AZAN_FAJR -> {
+                        repeat(10) {
+                            playSynthesizedAzanMecca()
+                            delay(4500)
+                        }
+                    }
+                    PrayerAlarmSoundType.AZAN_MADINA -> {
+                        repeat(10) {
+                            playSynthesizedAzanMadina()
+                            delay(4500)
+                        }
+                    }
+                    PrayerAlarmSoundType.CUSTOM_RINGTONE -> {
+                        repeat(8) {
+                            playSynthesizedMelody()
+                            delay(3000)
+                        }
+                    }
+                    else -> {}
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                currentlyPlayingType = null
+            }
+        }
+    }
+
+    /**
+     * Play when a gentle NOTIFICATION triggers in background / receiver
+     */
+    fun triggerNotificationSoundAndVibrate(
         context: Context,
         soundType: PrayerAlarmSoundType,
         prayerName: PrayerName,
@@ -203,14 +338,8 @@ object PrayerSoundManager {
     ) {
         stopAll()
 
-        val isAlarmTone = soundType == PrayerAlarmSoundType.AZAN_MECCA ||
-                soundType == PrayerAlarmSoundType.AZAN_MADINA ||
-                soundType == PrayerAlarmSoundType.BEEP ||
-                soundType == PrayerAlarmSoundType.RING ||
-                soundType == PrayerAlarmSoundType.VOICE_NAME
-
         if (enableVibration) {
-            triggerVibration(context, isRepeating = isAlarmTone)
+            triggerVibration(context, isRepeating = false)
         }
 
         if (soundType == PrayerAlarmSoundType.SILENT) {
@@ -218,46 +347,31 @@ object PrayerSoundManager {
         }
 
         if (soundType == PrayerAlarmSoundType.NOTIFICATION) {
-            // For standard notification, system notification sound / channel handles it,
-            // but we can also play the short notification chime
             playSystemNotificationSound(context)
             return
         }
 
         val rawResId = getRawResourceId(context, soundType, prayerName)
         if (rawResId != 0) {
-            val played = playRawSound(context, rawResId)
-            if (played) return
+            playRawSound(context, rawResId, isLooping = false)
+            return
         }
 
         currentlyPlayingType = soundType
         playbackJob = CoroutineScope(Dispatchers.IO).launch {
             try {
                 when (soundType) {
-                    PrayerAlarmSoundType.SILENT -> {}
                     PrayerAlarmSoundType.BEEP -> {
-                        repeat(5) {
-                            playSynthesizedBeep()
-                            delay(1000)
-                        }
+                        playSynthesizedBeep()
                     }
                     PrayerAlarmSoundType.RING -> {
-                        repeat(4) {
-                            playSynthesizedMelody()
-                            delay(800)
-                        }
+                        playSynthesizedMelody()
                     }
                     PrayerAlarmSoundType.VOICE_NAME -> {
                         val announcement = getVoiceAnnouncementText(prayerName)
                         speakText(context, announcement)
                     }
-                    PrayerAlarmSoundType.NOTIFICATION -> {}
-                    PrayerAlarmSoundType.AZAN_MECCA -> {
-                        playSynthesizedAzanMecca()
-                    }
-                    PrayerAlarmSoundType.AZAN_MADINA -> {
-                        playSynthesizedAzanMadina()
-                    }
+                    else -> {}
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -329,6 +443,9 @@ object PrayerSoundManager {
             PrayerName.TAHAJJUD -> "তাহাজ্জুদের বিশেষ ফজিলতপূর্ণ সময় হয়েছে"
             PrayerName.SAHRI -> "সাহরির সময় শেষ হয়েছে, রোজার নিয়ত করে নিন"
             PrayerName.IFTAR -> "ইফতারের সময় হয়েছে, বিসমিল্লাহ বলে ইফতার করুন"
+            PrayerName.MAKRUH_SUNRISE -> "সূর্যোদয়কালীন মাকরূহ সময় শুরু হয়েছে, এই সময়ে সালাত আদায় করা নিষিদ্ধ"
+            PrayerName.MAKRUH_ZAWAL -> "দ্বিপ্রহরের মাকরূহ সময় শুরু হয়েছে, এই সময়ে সালাত আদায় করা নিষেধ"
+            PrayerName.MAKRUH_SUNSET -> "সূর্যাস্তকালীন মাকরূহ সময় শুরু হয়েছে, এই সময়ে সালাত আদায় করা নিষেধ"
         }
     }
 

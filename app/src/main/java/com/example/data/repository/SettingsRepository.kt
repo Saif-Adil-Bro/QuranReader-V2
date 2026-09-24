@@ -75,6 +75,10 @@ class SettingsRepository(val context: Context) {
     private val HIJRI_OFFSET_KEY = intPreferencesKey("hijri_offset")
     private val SAHRI_OFFSET_KEY = intPreferencesKey("sahri_offset_minutes")
     private val IFTAR_OFFSET_KEY = intPreferencesKey("iftar_offset_minutes")
+    private val APP_LANGUAGE_KEY = stringPreferencesKey("app_language")
+
+    val appLanguageFlow: Flow<String> = context.dataStore.data
+        .map { preferences -> preferences[APP_LANGUAGE_KEY] ?: "bn" }
 
     val showTranslationFlow: Flow<Boolean> = context.dataStore.data
         .map { preferences -> preferences[SHOW_TRANSLATION_KEY] ?: true }
@@ -366,6 +370,11 @@ class SettingsRepository(val context: Context) {
 
     suspend fun setSahriOffset(offsetMinutes: Int) {
         context.dataStore.edit { preferences -> preferences[SAHRI_OFFSET_KEY] = offsetMinutes }
+    }
+
+    suspend fun setAppLanguage(languageCode: String) {
+        context.dataStore.edit { preferences -> preferences[APP_LANGUAGE_KEY] = languageCode }
+        com.example.utils.LocaleHelper.setLocale(context, languageCode)
     }
 
     suspend fun setIftarOffset(offsetMinutes: Int) {

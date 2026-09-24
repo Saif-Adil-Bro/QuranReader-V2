@@ -25,24 +25,50 @@ enum class PrayerName(val id: String, val nameBn: String, val nameEn: String, va
     ISHA("isha", "এশা", "Isha", "🌙"),
     TAHAJJUD("tahajjud", "তাহাজ্জুদ", "Tahajjud", "🌌"),
     SAHRI("sahri", "সাহরি শেষ", "Sahri", "🌙"),
-    IFTAR("iftar", "ইফতার", "Iftar", "✨")
+    IFTAR("iftar", "ইফতার", "Iftar", "✨"),
+    MAKRUH_SUNRISE("makruh_sunrise", "মাকরূহ: সূর্যোদয়", "Makruh Sunrise", "⚠️"),
+    MAKRUH_ZAWAL("makruh_zawal", "মাকরূহ: দ্বিপ্রহর (জাওয়াল)", "Makruh Zawal", "⚠️"),
+    MAKRUH_SUNSET("makruh_sunset", "মাকরূহ: সূর্যাস্ত", "Makruh Sunset", "⚠️");
+
+    val isMakruh: Boolean
+        get() = this == MAKRUH_SUNRISE || this == MAKRUH_ZAWAL || this == MAKRUH_SUNSET
 }
 
-enum class PrayerAlarmSoundType(val id: String, val titleBn: String, val subtitleBn: String) {
-    SILENT("silent", "নিঃশব্দ", "কোনো শব্দ হবে না"),
-    BEEP("beep", "বিপ", "মৃদু অ্যালার্ম বিপ টোন"),
-    RING("ring", "রিং", "মধুর সুরের রিংটোন"),
-    VOICE_NAME("voice_name", "ওয়াক্তের নাম", "বাংলায় ওয়াক্তের নাম ঘোষণা"),
-    NOTIFICATION("notification", "নোটিফিকেশন", "ডিফল্ট নোটিফিকেশন টিউন"),
-    AZAN_MECCA("azan_mecca", "মক্কা মুকাররমা আজান", "মক্কার সুমধুর আজান ধ্বনি"),
-    AZAN_MADINA("azan_madina", "মদিনা মুনাওয়ারা আজান", "মদিনার হৃদয়স্পর্শী আজান")
+enum class AlertCategory(val id: String, val titleBn: String) {
+    NOTIFICATION("notification", "নোটিফিকেশন"),
+    ALARM("alarm", "অ্যালার্ম ও আযান")
+}
+
+enum class PrayerAlarmSoundType(
+    val id: String, 
+    val titleBn: String, 
+    val subtitleBn: String,
+    val category: AlertCategory
+) {
+    // Notification category
+    SILENT("silent", "নিঃশব্দ", "কোনো শব্দ হবে না", AlertCategory.NOTIFICATION),
+    BEEP("beep", "মৃদু বিপ", "সংক্ষিপ্ত হালকা বিপ টোন", AlertCategory.NOTIFICATION),
+    RING("ring", "মৃদু রিং", "মধুর সুরের সংক্ষিপ্ত রিংটোন", AlertCategory.NOTIFICATION),
+    VOICE_NAME("voice_name", "ওয়াক্তের নাম", "বাংলায় ওয়াক্তের নাম ঘোষণা", AlertCategory.NOTIFICATION),
+    NOTIFICATION("notification", "নোটিফিকেশন", "ডিফল্ট নোটিফিকেশন টিউন", AlertCategory.NOTIFICATION),
+
+    // Alarm category
+    AZAN_MECCA("azan_mecca", "মক্কা মুকাররমা আজান", "মক্কার সুমধুর আজান ধ্বনি", AlertCategory.ALARM),
+    AZAN_MADINA("azan_madina", "মদিনা মুনাওয়ারা আজান", "মদিনার হৃদয়স্পর্শী আজান", AlertCategory.ALARM),
+    AZAN_FAJR("azan_fajr", "ফজর স্পেশাল আজান", "আস-সালাতু খাইরুম মিনান নাওম সহ", AlertCategory.ALARM),
+    CUSTOM_RINGTONE("custom_ringtone", "ফোনের রিংটোন", "ডিভাইসের নিজস্ব রিংটোন তালিকা থেকে নির্বাচন", AlertCategory.ALARM);
+
+    val isAlarm: Boolean get() = category == AlertCategory.ALARM
+    val isNotification: Boolean get() = category == AlertCategory.NOTIFICATION
 }
 
 data class WaqtAlarmConfig(
     val prayerName: PrayerName,
     val isEnabled: Boolean = true,
     val offsetMinutes: Int = 0, // -30 min to +30 min
-    val soundType: PrayerAlarmSoundType = PrayerAlarmSoundType.NOTIFICATION,
+    val soundType: PrayerAlarmSoundType = PrayerAlarmSoundType.AZAN_MECCA,
+    val customRingtoneUri: String? = null,
+    val customRingtoneTitle: String? = null,
     val isVibrationEnabled: Boolean = true
 )
 

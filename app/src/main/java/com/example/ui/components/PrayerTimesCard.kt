@@ -739,6 +739,18 @@ private fun GoldenPrayerIcon(
                 drawCircle(goldColor, radius = width * 0.07f, center = Offset(width * 0.72f, height * 0.35f))
                 drawCircle(goldColor, radius = width * 0.05f, center = Offset(width * 0.85f, height * 0.55f))
             }
+            PrayerName.MAKRUH_SUNRISE, PrayerName.MAKRUH_ZAWAL, PrayerName.MAKRUH_SUNSET -> {
+                // Warning triangle icon
+                val trianglePath = Path().apply {
+                    moveTo(width * 0.5f, height * 0.18f)
+                    lineTo(width * 0.88f, height * 0.82f)
+                    lineTo(width * 0.12f, height * 0.82f)
+                    close()
+                }
+                drawPath(trianglePath, goldColor, style = Stroke(width = 2.5f, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+                drawLine(goldColor, Offset(width * 0.5f, height * 0.40f), Offset(width * 0.5f, height * 0.60f), 2.5f, StrokeCap.Round)
+                drawCircle(goldColor, radius = width * 0.04f, center = Offset(width * 0.5f, height * 0.72f))
+            }
         }
     }
 }

@@ -100,22 +100,26 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             val districtNameBn = intent.getStringExtra("district_name_bn") ?: "ঢাকা"
 
             val isSoundEnabled = PrayerNotificationHelper.isSoundEnabled(context)
-            val isCustomAlarmTone = isSoundEnabled && (
-                config.soundType == PrayerAlarmSoundType.AZAN_MECCA ||
-                config.soundType == PrayerAlarmSoundType.AZAN_MADINA ||
-                config.soundType == PrayerAlarmSoundType.BEEP ||
-                config.soundType == PrayerAlarmSoundType.RING ||
-                config.soundType == PrayerAlarmSoundType.VOICE_NAME
-            )
+            val isAlarm = isSoundEnabled && config.soundType.isAlarm
 
-            // Trigger alarm audio & vibration according to config
-            val soundTypeToPlay = if (isSoundEnabled) config.soundType else PrayerAlarmSoundType.SILENT
-            PrayerSoundManager.triggerAlarmSoundAndVibrate(
-                context = context,
-                soundType = soundTypeToPlay,
-                prayerName = prayerName,
-                enableVibration = config.isVibrationEnabled
-            )
+            // Trigger alarm audio & vibration or gentle notification sound according to config
+            if (isAlarm) {
+                PrayerSoundManager.triggerAlarmSoundAndVibrate(
+                    context = context,
+                    soundType = config.soundType,
+                    prayerName = prayerName,
+                    enableVibration = config.isVibrationEnabled,
+                    customRingtoneUri = config.customRingtoneUri
+                )
+            } else {
+                val notifSoundToPlay = if (isSoundEnabled) config.soundType else PrayerAlarmSoundType.SILENT
+                PrayerSoundManager.triggerNotificationSoundAndVibrate(
+                    context = context,
+                    soundType = notifSoundToPlay,
+                    prayerName = prayerName,
+                    enableVibration = config.isVibrationEnabled
+                )
+            }
 
             val isFriday = LocalDate.now().dayOfWeek == DayOfWeek.FRIDAY
             val isDhuhrOnFriday = isFriday && prayerName == PrayerName.DHUHR
@@ -130,6 +134,9 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 PrayerName.TAHAJJUD -> "তাহাজ্জুদের বিশেষ সময় হয়েছে 🌌"
                 PrayerName.SAHRI -> "সাহরির সময় শেষ হতে যাচ্ছে 🌙"
                 PrayerName.IFTAR -> "ইফতারের সময় হয়েছে ✨"
+                PrayerName.MAKRUH_SUNRISE -> "মাকরূহ ওয়াক্ত: সূর্যোদয় ⚠️"
+                PrayerName.MAKRUH_ZAWAL -> "মাকরূহ ওয়াক্ত: দ্বিপ্রহর (জাওয়াল) ⚠️"
+                PrayerName.MAKRUH_SUNSET -> "মাকরূহ ওয়াক্ত: সূর্যাস্ত ⚠️"
             }
 
             val prayerDisplayTitle = when (prayerName) {
@@ -142,6 +149,9 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 PrayerName.TAHAJJUD -> "তাহাজ্জুদ"
                 PrayerName.SAHRI -> "সাহরি শেষ"
                 PrayerName.IFTAR -> "ইফতার"
+                PrayerName.MAKRUH_SUNRISE -> "সূর্যোদয় মাকরূহ সময়"
+                PrayerName.MAKRUH_ZAWAL -> "দ্বিপ্রহর (জাওয়াল) মাকরূহ সময়"
+                PrayerName.MAKRUH_SUNSET -> "সূর্যাস্ত মাকরূহ সময়"
             }
 
             val message = when (prayerName) {
@@ -155,6 +165,18 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 }
                 PrayerName.TAHAJJUD -> {
                     "তাহাজ্জুদের বরকতময় সময়। শেষ রাতে রবের দরবারে তাওবা ও দুআ করার উত্তম মুহূর্ত।"
+                }
+                PrayerName.MAKRUH_SUNRISE -> {
+                    val timeDisplay = if (prayerRangeFormatted.isNotBlank()) prayerRangeFormatted else if (prayerTimeFormatted.isNotBlank()) prayerTimeFormatted else "সূর্যোদয়কালীন সময়"
+                    "সূর্যোদয়ের নিষিদ্ধ (মাকরূহ) ওয়াক্ত: $timeDisplay ($districtNameBn)। সূর্যোদয়কালীন এই সময়ে কোনো সালাত বা সিজদাহ আদায় করা নিষিদ্ধ।"
+                }
+                PrayerName.MAKRUH_ZAWAL -> {
+                    val timeDisplay = if (prayerRangeFormatted.isNotBlank()) prayerRangeFormatted else if (prayerTimeFormatted.isNotBlank()) prayerTimeFormatted else "দ্বিপ্রহরের সময়"
+                    "দ্বিপ্রহরের নিষিদ্ধ (মাকরূহ) ওয়াক্ত: $timeDisplay ($districtNameBn)। ঠিক দুপুরে সূর্য মাথার ওপর অবস্থানকালে সালাত বা সিজদাহ আদায় করা নিষিদ্ধ।"
+                }
+                PrayerName.MAKRUH_SUNSET -> {
+                    val timeDisplay = if (prayerRangeFormatted.isNotBlank()) prayerRangeFormatted else if (prayerTimeFormatted.isNotBlank()) prayerTimeFormatted else "সূর্যাস্তের সময়"
+                    "সূর্যাস্তের নিষিদ্ধ (মাকরূহ) ওয়াক্ত: $timeDisplay ($districtNameBn)। সূর্যাস্তের পূর্ববর্তী এই সময়ে সালাত বা সিজদাহ আদায় করা নিষিদ্ধ।"
                 }
                 else -> {
                     val timeDisplay = if (prayerRangeFormatted.isNotBlank()) {
@@ -216,7 +238,7 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             val iconRes = R.mipmap.ic_launcher
             val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
-            val channelId = if (isCustomAlarmTone) {
+            val channelId = if (isAlarm) {
                 PrayerNotificationHelper.PRAYER_ALARM_CHANNEL_ID
             } else {
                 PrayerNotificationHelper.PRAYER_NOTIFICATION_CHANNEL_ID
@@ -231,7 +253,7 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 .setContentIntent(pendingIntent)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
-            if (isCustomAlarmTone) {
+            if (isAlarm) {
                 // Full-Screen Alarm Intent for Locked / Unlocked screen
                 val fullScreenIntent = Intent(context, com.example.ui.screens.alarm.PrayerAlarmActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or
@@ -281,8 +303,8 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
 
             notificationManager.notify(notifId, builder.build())
 
-            // On locked screen or waking up, directly launch the full screen alarm activity for custom alarm tones
-            if (isCustomAlarmTone) {
+            // On locked screen or waking up, directly launch the full screen alarm activity for alarms
+            if (isAlarm) {
                 try {
                     val activityIntent = Intent(context, com.example.ui.screens.alarm.PrayerAlarmActivity::class.java).apply {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or

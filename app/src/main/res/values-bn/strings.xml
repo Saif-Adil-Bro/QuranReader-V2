@@ -1,0 +1,192 @@
+<resources>
+    <string name="app_name">কুরআন রিডার</string>
+
+    <!-- General Navigation & Common Labels -->
+    <string name="nav_home">হোম</string>
+    <string name="nav_mushaf">মুসহাফ</string>
+    <string name="nav_quran">কুরআন</string>
+    <string name="nav_islamic">ইসলামিক</string>
+    <string name="nav_settings">সেটিংস</string>
+    <string name="nav_menu">মেনু</string>
+    
+    <!-- Tabs & View Modes -->
+    <string name="tab_surah">সূরা</string>
+    <string name="tab_para">পারা</string>
+    <string name="tab_juz">পারা</string>
+    <string name="tab_list">লিস্ট</string>
+    <string name="tab_word_meaning">শব্দার্থ</string>
+    <string name="tab_tafsir">তাফসির</string>
+    <string name="tab_mushaf">মুসহাফ</string>
+
+    <!-- Reading & Display -->
+    <string name="last_read">সর্বশেষ পঠিত</string>
+    <string name="continue_reading">পড়া চালিয়ে যান</string>
+    <string name="surah_prefix">সূরা</string>
+    <string name="para_prefix">পারা</string>
+    <string name="ayah_prefix">আয়াত</string>
+    <string name="page_prefix">পৃষ্ঠা</string>
+    <string name="page_format">পৃষ্ঠা %s</string>
+    <string name="para_format">পারা %s</string>
+    <string name="surah_format">সূরা: %s</string>
+    <string name="ayah_format">আয়াত: %s</string>
+    <string name="total_ayahs_format">মোট আয়াত: %s</string>
+    <string name="makki">মাক্কী</string>
+    <string name="madani">মাদানী</string>
+    <string name="loading_text">লোড হচ্ছে...</string>
+    <string name="loading_surah">সুরা লোড হচ্ছে...</string>
+    <string name="retry">আবার চেষ্টা করুন</string>
+    <string name="player_title">প্লেয়ার</string>
+    <string name="search_ayah_num">আয়াত নং</string>
+    <string name="ayah_not_found_in_surah">আয়াত %d এই সূরায় নেই</string>
+    <string name="ayat_al_kursi_title">আয়াতুল কুরসি</string>
+    <string name="baqarah_last_two_title">বাকারার শেষ ২ আয়াত</string>
+    <string name="ayat_al_kursi_sub">সূরা আল-বাকারাহ, আয়াত ২৫৫</string>
+    <string name="baqarah_last_two_sub">সূরা আল-বাকারাহ, আয়াত ২৮৫-২৮৬</string>
+    <string name="single_ayah_count">১টি আয়াত</string>
+    <string name="two_ayahs_count">২টি আয়াত</string>
+    <string name="tajweed_legend_title">তাজবীদের রঙের পরিচিতি</string>
+
+    <!-- Settings & Controls in Reading Screens -->
+    <string name="reading_and_audio_settings">পঠন ও অডিও সেটিংস</string>
+    <string name="reading_settings">পঠন সেটিংস</string>
+    <string name="ayah_repeat_count">আয়াত পুনরাবৃত্তি: %s বার</string>
+    <string name="arabic_font_size">আরবি হরফের আকার</string>
+    <string name="translation_font_size">অনুবাদ হরফের আকার</string>
+    <string name="arabic_line_spacing">আরবি লাইন স্পেস</string>
+    <string name="show_waqf_signs">থামার চিহ্ন প্রদর্শন (م، ج،صلے)</string>
+    <string name="tajweed_color">তাজবীদ কালার</string>
+    <string name="theme_label">থিম</string>
+    <string name="theme_light">লাইট</string>
+    <string name="theme_sepia">সেপিয়া</string>
+    <string name="theme_dark">ডার্ক</string>
+    <string name="page_transition_method">পৃষ্ঠা পরিবর্তন পদ্ধতি</string>
+    <string name="transition_horizontal">ডানে-বামে</string>
+    <string name="transition_vertical">উপর-নিচ</string>
+    <string name="font_style">ফন্ট স্টাইল</string>
+    <string name="font_me_quran">মি কুরআন</string>
+    <string name="font_pdms_saleem">পিডিএমএস সালীম</string>
+    <string name="font_noorehira">নূরেহেরা</string>
+    <string name="script_style">কুরআন স্ক্রিপ্ট স্টাইল</string>
+    <string name="script_default">ডিফল্ট</string>
+    <string name="script_uthmani">উসমানী</string>
+    <string name="script_simple">সহজ</string>
+    <string name="script_clean">ক্লিন</string>
+    <string name="script_plain">প্লেইন</string>
+    <string name="jump_to_page_title">পৃষ্ঠা পরিবর্তন করুন</string>
+    <string name="jump_to_page_prompt">১ থেকে ৬১০ এর মধ্যে পৃষ্ঠা নম্বর লিখুন:</string>
+    <string name="page_number_label">পৃষ্ঠা নম্বর</string>
+    <string name="page_number_hint">যেমন: ১২৩</string>
+    <string name="invalid_page_number_error">অনুগ্রহ করে ১ থেকে ৬১০ এর মধ্যে একটি সঠিক নম্বর লিখুন</string>
+    <string name="btn_next">পরবর্তী</string>
+    <string name="btn_previous">পূর্ববর্তী</string>
+
+    <!-- Download Dialogs in Home / Detail -->
+    <string name="mushaf_download_required">মুসহাফ ডাউনলোড প্রয়োজন</string>
+    <string name="mushaf_download_desc">আপনার নির্বাচিত মুসহাফটি (%1$s) এখনো ডাউনলোড করা হয়নি। পড়ার জন্য ফাইলটি ডাউনলোড করা প্রয়োজন।\n\nফাইল সাইজ: ~%2$d মেগাবাইট\n\nআপনি কি এখনই ডাউনলোড করতে চান?</string>
+    <string name="mushaf_download_failed">ডাউনলোড ব্যর্থ হয়েছে</string>
+    <string name="mushaf_downloading_title">ডাউনলোড হচ্ছে...</string>
+    <string name="mushaf_download_error_detail">দুঃখিত, ডাউনলোড করার সময় সমস্যা হয়েছে। আপনার ইন্টারনেট সংযোগ চেক করে আবার চেষ্টা করুন।</string>
+    <string name="mushaf_downloading_wait_msg">%s ফাইলটি ডাউনলোড করা হচ্ছে। অনুগ্রহ করে অপেক্ষা করুন।</string>
+    <string name="download_progress_pct">অগ্রগতি: %d%%</string>
+    <string name="download_pages_count">%1$d / %2$d পৃষ্ঠা</string>
+    <string name="download_error_prefix">ডাউনলোড ত্রুটি: %s</string>
+    <string name="hijri_adjustment">হিজরি সমন্বয়</string>
+    <string name="district">জেলা</string>
+    <string name="hanafi">হানাফী</string>
+    <string name="shafi">শাফেয়ী</string>
+    
+    <!-- Actions -->
+    <string name="action_save">সংরক্ষণ করুন</string>
+    <string name="action_cancel">বাতিল</string>
+    <string name="action_delete">মুছুন</string>
+    <string name="action_edit">সম্পাদনা</string>
+    <string name="action_add_new">নতুন যোগ করুন</string>
+    <string name="action_search">অনুসন্ধান</string>
+    <string name="action_filter">ফিল্টার</string>
+    <string name="action_sort">ক্রমানুসার</string>
+    <string name="action_view_details">বিস্তারিত দেখুন</string>
+    <string name="action_back">ফিরে যান</string>
+    <string name="action_confirm">নিশ্চিত করুন</string>
+    <string name="action_close">বন্ধ করুন</string>
+    <string name="action_done">সম্পন্ন</string>
+    <string name="action_share">শেয়ার করুন</string>
+    <string name="action_download">ডাউনলোড</string>
+    <string name="action_print">প্রিন্ট</string>
+    <string name="action_export_pdf">পিডিএফ এক্সপোর্ট</string>
+    <string name="action_refresh">রিফ্রেশ</string>
+    <string name="action_play">প্লে করুন</string>
+    <string name="action_pause">পজ করুন</string>
+    <string name="action_copy">কপি করুন</string>
+
+    <!-- Language & Locale -->
+    <string name="language_settings">অ্যাপের ভাষা</string>
+    <string name="language_settings_subtitle">পছন্দের ভাষা নির্বাচন করুন</string>
+    <string name="select_language">ভাষা নির্বাচন</string>
+    <string name="language_bangla">বাংলা (Bengali)</string>
+    <string name="language_english">English (International)</string>
+    <string name="language_switched_msg">ভাষা সফলভাবে পরিবর্তন করা হয়েছে</string>
+    <string name="language_desc">আপনার পছন্দের ভাষা নির্বাচন করুন। পুরো অ্যাপ নির্বাচিত ভাষায় প্রদর্শিত হবে।</string>
+
+    <!-- Quran & Reading Modes -->
+    <string name="mode_hafezi">হাফেজী কুরআন</string>
+    <string name="mode_hafezi_desc">হিফজের জন্য ১৫ লাইনের সুস্পষ্ট নূরানী হাফেজী কুরআন</string>
+    <string name="mode_tajweed">তাজবীদ কুরআন</string>
+    <string name="mode_tajweed_desc">রঙিন তাজবীদ কালার কোডিং সহ কুরআনুল কারীম</string>
+    <string name="mode_translation">অনুবাদ মোড</string>
+    <string name="mode_translation_desc">শব্দে শব্দে অর্থ ও বাংলা তাফসীর সহ কুরআন অধ্যয়ন</string>
+    <string name="mode_mushaf">মুসহাফ লাইব্রেরি</string>
+    <string name="mode_mushaf_desc">মুদ্রিত ক্যালিগ্রাফি স্টাইলের হাই কোয়ালিটি ডিজিটাল মুসহাফ</string>
+    <string name="mode_player">অডিও তেলাওয়াত</string>
+    <string name="mode_player_desc">বিশ্বখ্যাত বিভিন্ন ক্বারীদের সুললিত কণ্ঠে সম্পূর্ণ তেলাওয়াত</string>
+    <string name="mode_video">ভিডিও মেকার</string>
+    <string name="mode_video_desc">সুন্দর কুরআন ভিডিও ক্লিপ ও রিলস তৈরি করুন</string>
+
+    <!-- Islamic & Utility Modules -->
+    <string name="feature_quran">আল-কুরআন</string>
+    <string name="feature_prayer_times">নামাজের সময়সূচি</string>
+    <string name="feature_nearby_mosque">নিকটস্থ মসজিদ</string>
+    <string name="feature_qibla">ক্বিবলা কম্পাস</string>
+    <string name="feature_tasbih">ডিজিটাল তাসবীহ</string>
+    <string name="feature_dua">কুরআনী দোয়া</string>
+    <string name="feature_morning_evening_dua">সকাল-সন্ধ্যার দুআ</string>
+    <string name="feature_manzil">মানযিল</string>
+    <string name="feature_subjectwise">বিষয়ভিত্তিক আয়াত</string>
+    <string name="feature_hifz_tracker">হিফজ ট্র্যাকার</string>
+    <string name="feature_hijri_calendar">ইসলামিক ক্যালেন্ডার</string>
+    <string name="feature_planner">কুরআন প্ল্যানার</string>
+    <string name="feature_ramadan">রমজান সময়সূচি</string>
+    <string name="feature_zakat_calc">যাকাত ক্যালকুলেটর</string>
+    <string name="feature_word_game">শব্দ গেম</string>
+    <string name="feature_bookmarks">বুকমার্ক সমূহ</string>
+    <string name="feature_notes">আমার নোটপ্যাড</string>
+
+    <!-- Settings Menu Sections -->
+    <string name="menu_title">মেনু অপশন</string>
+    <string name="section_quran_media">কুরআন স্টাডি ও মিডিয়া</string>
+    <string name="section_dua_ibadah">দোয়া ও ইবাদাত</string>
+    <string name="section_personal_tools">ব্যক্তিগত টুলস</string>
+    <string name="section_app_settings">অ্যাপ সেটিংস ও সিস্টেম</string>
+
+    <!-- App System Settings -->
+    <string name="setting_font_tajweed">ফন্ট ও তাজবীদ</string>
+    <string name="setting_app_theme">থিম পরিবর্তন</string>
+    <string name="setting_notifications">নোটিফিকেশন</string>
+    <string name="setting_offline_download">অফলাইন ডাউনলোড</string>
+    <string name="setting_backup">ব্যাকআপ</string>
+    <string name="setting_about">আমাদের সম্পর্কে</string>
+    <string name="setting_contact">যোগাযোগ</string>
+    <string name="setting_keep_screen_on">স্ক্রিন সচল রাখুন</string>
+    <string name="setting_show_translation">অনুবাদ প্রদর্শন</string>
+    <string name="setting_show_transliteration">উচ্চারণ প্রদর্শন</string>
+    <string name="setting_show_tajweed">তাজবীদ কালার</string>
+    <string name="setting_tanzil_style">কুরআন স্ক্রিপ্ট স্টাইল</string>
+
+    <!-- Dialogs & Prompts -->
+    <string name="dialog_download_title">মুসহাফ ডাউনলোড করুন</string>
+    <string name="dialog_download_desc">ইন্টারনেট ছাড়া সম্পূর্ণ অফলাইনে পড়তে এই মুসহাফটি ডাউনলোড করে নিন।</string>
+    <string name="exit_prompt">অ্যাপ থেকে বের হতে আবার ব্যাক প্রেস করুন</string>
+    <string name="search_surah_placeholder">সূরা খুঁজুন (যেমন: ফাতিহা বা ১)...</string>
+    <string name="search_ayah_placeholder">আয়াত বা শব্দ দিয়ে অনুসন্ধান করুন...</string>
+    <string name="qari_selection_title">ক্বারী নির্বাচন</string>
+    <string name="qari_selection_subtitle">আপনার প্রিয় ক্বারীর তেলাওয়াত নির্বাচন করুন</string>
+</resources>

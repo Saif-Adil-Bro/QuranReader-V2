@@ -69,6 +69,17 @@ class SettingsViewModel(
         viewModelScope.launch { repository.setTheme(theme) }
     }
 
+    val appLanguage: StateFlow<String> = repository.appLanguageFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "bn"
+        )
+
+    fun setAppLanguage(languageCode: String) {
+        viewModelScope.launch { repository.setAppLanguage(languageCode) }
+    }
+
     val arabicFontName: StateFlow<String> = repository.arabicFontNameFlow
         .stateIn(
             scope = viewModelScope,

@@ -108,9 +108,17 @@ fun WaqtAlarmOverviewSheet(
             PrayerName.SAHRI -> schedule.sahriEndTimeFormatted
             PrayerName.IFTAR -> schedule.iftarTimeFormatted
             PrayerName.TAHAJJUD -> schedule.tahajjudEndTimeFormatted
+            PrayerName.MAKRUH_SUNRISE -> schedule.forbiddenSunriseFormatted.ifBlank { schedule.forbiddenMorningRange }
+            PrayerName.MAKRUH_ZAWAL -> schedule.forbiddenMiddayFormatted.ifBlank { schedule.forbiddenNoonRange }
+            PrayerName.MAKRUH_SUNSET -> schedule.forbiddenSunsetFormatted.ifBlank { schedule.forbiddenEveningRange }
             else -> matchingPrayer?.timeFormatted ?: ""
         }
-        val timestampMillis = matchingPrayer?.timestampMillis ?: 0L
+        val timestampMillis = when (pName) {
+            PrayerName.MAKRUH_SUNRISE -> schedule.prayers.find { it.name == PrayerName.SUNRISE }?.timestampMillis ?: 0L
+            PrayerName.MAKRUH_ZAWAL -> (schedule.prayers.find { it.name == PrayerName.DHUHR }?.timestampMillis ?: 0L) - 12 * 60 * 1000L
+            PrayerName.MAKRUH_SUNSET -> (schedule.prayers.find { it.name == PrayerName.MAGHRIB }?.timestampMillis ?: 0L) - 15 * 60 * 1000L
+            else -> matchingPrayer?.timestampMillis ?: 0L
+        }
 
         WaqtAlarmConfigDialog(
             prayerName = pName,
@@ -352,7 +360,7 @@ fun WaqtAlarmOverviewSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "ওয়াক্তভিত্তিক অ্যালার্ম কনফিগারেশন:",
+                text = "নামাজের ওয়াক্ত ও ইবাদত অ্যালার্ম:",
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.LightGray.copy(alpha = 0.9f)
@@ -434,16 +442,30 @@ fun WaqtAlarmOverviewSheet(
                                 }
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
+                                    val soundTitle = if (config.soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE && !config.customRingtoneTitle.isNullOrBlank()) {
+                                        config.customRingtoneTitle
+                                    } else {
+                                        config.soundType.titleBn
+                                    }
+                                    val categoryLabel = if (config.soundType.isAlarm) "অ্যালার্ম" else "নোটিফিকেশন"
+                                    val toneColor = if (config.soundType == PrayerAlarmSoundType.SILENT) {
+                                        Color.LightGray.copy(alpha = 0.5f)
+                                    } else if (config.soundType.isAlarm) {
+                                        Color(0xFFFBBF24)
+                                    } else {
+                                        Color(0xFF38BDF8)
+                                    }
+
                                     Text(
-                                        text = config.soundType.titleBn,
+                                        text = "$categoryLabel: $soundTitle",
                                         fontSize = 11.5.sp,
-                                        color = if (config.soundType == PrayerAlarmSoundType.SILENT) Color.LightGray.copy(alpha = 0.5f) else Color(0xFF38BDF8)
+                                        color = toneColor
                                     )
                                     if (config.offsetMinutes != 0) {
                                         Text(
                                             text = " • ${DateUtil.toBengaliNumerals(kotlin.math.abs(config.offsetMinutes))} মি. ${if (config.offsetMinutes < 0) "আগে" else "পরে"}",
                                             fontSize = 11.5.sp,
-                                            color = Color(0xFFFBBF24)
+                                            color = Color(0xFF34D399)
                                         )
                                     }
                                     if (config.isVibrationEnabled) {
@@ -470,6 +492,164 @@ fun WaqtAlarmOverviewSheet(
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
                                     checkedTrackColor = emeraldGreen,
+                                    uncheckedThumbColor = Color.LightGray,
+                                    uncheckedTrackColor = Color(0xFF475569)
+                                )
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = "কাস্টমাইজ করুন",
+                                tint = Color.LightGray.copy(alpha = 0.5f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Makruh Prayer Times Section
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "মাকরূহ (নিষিদ্ধ) ওয়াক্তের নোটিফিকেশন:",
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFFF87171)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "⚠️",
+                    fontSize = 12.sp
+                )
+            }
+            Text(
+                text = "নিষিদ্ধ সময়ে সালাত থেকে বিরত থাকার সতর্কবার্তা",
+                fontSize = 11.5.sp,
+                color = Color.LightGray.copy(alpha = 0.6f)
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            val makruhList = listOf(
+                PrayerName.MAKRUH_SUNRISE,
+                PrayerName.MAKRUH_ZAWAL,
+                PrayerName.MAKRUH_SUNSET
+            )
+
+            makruhList.forEach { pName ->
+                val config = remember(pName, reloadTrigger) {
+                    PrayerNotificationHelper.getPrayerAlarmConfig(context, pName)
+                }
+                val timeRangeStr = when (pName) {
+                    PrayerName.MAKRUH_SUNRISE -> schedule.forbiddenSunriseFormatted.ifBlank { schedule.forbiddenMorningRange }
+                    PrayerName.MAKRUH_ZAWAL -> schedule.forbiddenMiddayFormatted.ifBlank { schedule.forbiddenNoonRange }
+                    PrayerName.MAKRUH_SUNSET -> schedule.forbiddenSunsetFormatted.ifBlank { schedule.forbiddenEveningRange }
+                    else -> ""
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = if (config.isEnabled) Color(0xFF2D1619) else Color(0xFF221316),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (config.isEnabled) Color(0xFF66262D) else Color(0xFF40181C)
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .clickable {
+                            selectedWaqtForEdit = pName
+                        }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = "⚠️",
+                                fontSize = 18.sp
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = pName.nameBn,
+                                        fontSize = 14.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (config.isEnabled) Color(0xFFFFD1D5) else Color.LightGray.copy(alpha = 0.6f)
+                                    )
+                                    if (timeRangeStr.isNotBlank()) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "($timeRangeStr)",
+                                            fontSize = 11.5.sp,
+                                            color = Color(0xFFF87171)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    val soundTitle = if (config.soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE && !config.customRingtoneTitle.isNullOrBlank()) {
+                                        config.customRingtoneTitle
+                                    } else {
+                                        config.soundType.titleBn
+                                    }
+                                    val categoryLabel = if (config.soundType.isAlarm) "অ্যালার্ম" else "নোটিফিকেশন"
+                                    val toneColor = if (config.soundType == PrayerAlarmSoundType.SILENT) {
+                                        Color.LightGray.copy(alpha = 0.5f)
+                                    } else {
+                                        Color(0xFF38BDF8)
+                                    }
+
+                                    Text(
+                                        text = "$categoryLabel: $soundTitle",
+                                        fontSize = 11.sp,
+                                        color = toneColor
+                                    )
+                                    if (config.offsetMinutes != 0) {
+                                        Text(
+                                            text = " • ${DateUtil.toBengaliNumerals(kotlin.math.abs(config.offsetMinutes))} মি. ${if (config.offsetMinutes < 0) "আগে" else "পরে"}",
+                                            fontSize = 11.sp,
+                                            color = Color(0xFF34D399)
+                                        )
+                                    }
+                                    if (config.isVibrationEnabled) {
+                                        Text(
+                                            text = " • ভাইব্রেশন",
+                                            fontSize = 11.sp,
+                                            color = Color.LightGray.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // Quick Toggle Switch
+                            Switch(
+                                checked = config.isEnabled,
+                                onCheckedChange = { checked ->
+                                    val updated = config.copy(isEnabled = checked)
+                                    PrayerNotificationHelper.savePrayerAlarmConfig(context, updated)
+                                    reloadTrigger++
+                                },
+                                modifier = Modifier.height(28.dp),
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = Color(0xFFDC2626),
                                     uncheckedThumbColor = Color.LightGray,
                                     uncheckedTrackColor = Color(0xFF475569)
                                 )

@@ -629,16 +629,22 @@ fun PrayerTimesDetailSheet(
                         ForbiddenTimeBox(
                             title = "সকাল",
                             timeRange = activeSchedule.forbiddenMorningRange,
+                            prayerName = com.example.data.model.PrayerName.MAKRUH_SUNRISE,
+                            onAlarmClick = { selectedWaqtForAlarmSettings = it },
                             modifier = Modifier.weight(1f)
                         )
                         ForbiddenTimeBox(
                             title = "দুপুর",
                             timeRange = activeSchedule.forbiddenNoonRange,
+                            prayerName = com.example.data.model.PrayerName.MAKRUH_ZAWAL,
+                            onAlarmClick = { selectedWaqtForAlarmSettings = it },
                             modifier = Modifier.weight(1f)
                         )
                         ForbiddenTimeBox(
                             title = "সন্ধ্যা",
                             timeRange = activeSchedule.forbiddenEveningRange,
+                            prayerName = com.example.data.model.PrayerName.MAKRUH_SUNSET,
+                            onAlarmClick = { selectedWaqtForAlarmSettings = it },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -1092,9 +1098,17 @@ fun PrayerTimesDetailSheet(
             com.example.data.model.PrayerName.SAHRI -> activeSchedule.sahriEndTimeFormatted
             com.example.data.model.PrayerName.IFTAR -> activeSchedule.iftarTimeFormatted
             com.example.data.model.PrayerName.TAHAJJUD -> activeSchedule.tahajjudEndTimeFormatted
+            com.example.data.model.PrayerName.MAKRUH_SUNRISE -> activeSchedule.forbiddenSunriseFormatted.ifBlank { activeSchedule.forbiddenMorningRange }
+            com.example.data.model.PrayerName.MAKRUH_ZAWAL -> activeSchedule.forbiddenMiddayFormatted.ifBlank { activeSchedule.forbiddenNoonRange }
+            com.example.data.model.PrayerName.MAKRUH_SUNSET -> activeSchedule.forbiddenSunsetFormatted.ifBlank { activeSchedule.forbiddenEveningRange }
             else -> matchingPrayer?.timeFormatted ?: ""
         }
-        val timestampMillis = matchingPrayer?.timestampMillis ?: 0L
+        val timestampMillis = when (pName) {
+            com.example.data.model.PrayerName.MAKRUH_SUNRISE -> activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.SUNRISE }?.timestampMillis ?: 0L
+            com.example.data.model.PrayerName.MAKRUH_ZAWAL -> (activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.DHUHR }?.timestampMillis ?: 0L) - 12 * 60 * 1000L
+            com.example.data.model.PrayerName.MAKRUH_SUNSET -> (activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.MAGHRIB }?.timestampMillis ?: 0L) - 15 * 60 * 1000L
+            else -> matchingPrayer?.timestampMillis ?: 0L
+        }
 
         WaqtAlarmConfigDialog(
             prayerName = pName,
@@ -1278,24 +1292,50 @@ private fun PrayerDetailRow(
 private fun ForbiddenTimeBox(
     title: String,
     timeRange: String,
+    prayerName: com.example.data.model.PrayerName? = null,
+    onAlarmClick: ((com.example.data.model.PrayerName) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val config = remember(prayerName) {
+        prayerName?.let { com.example.utils.PrayerNotificationHelper.getPrayerAlarmConfig(context, it) }
+    }
+
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = ForbiddenCardBg,
         border = androidx.compose.foundation.BorderStroke(1.dp, ForbiddenCardBorder),
         modifier = modifier
+            .then(
+                if (prayerName != null && onAlarmClick != null) {
+                    Modifier.clickable { onAlarmClick(prayerName) }
+                } else Modifier
+            )
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 10.dp, horizontal = 6.dp),
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = title,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFFFD1D5)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFFFD1D5)
+                )
+                if (prayerName != null && config != null) {
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = if (config.isEnabled) Icons.Filled.NotificationsActive else Icons.Outlined.NotificationsOff,
+                        contentDescription = "মাকরূহ অ্যালার্ট",
+                        tint = if (config.isEnabled) Color(0xFFF87171) else Color(0xFF64748B),
+                        modifier = Modifier.size(13.dp)
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = timeRange,

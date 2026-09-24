@@ -1,3 +1,192 @@
 <resources>
     <string name="app_name">Quran Reader</string>
+
+    <!-- General Navigation & Common Labels -->
+    <string name="nav_home">Home</string>
+    <string name="nav_mushaf">Mushaf</string>
+    <string name="nav_quran">Quran</string>
+    <string name="nav_islamic">Islamic</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_menu">Menu</string>
+    
+    <!-- Tabs & View Modes -->
+    <string name="tab_surah">Surah</string>
+    <string name="tab_para">Para</string>
+    <string name="tab_juz">Juz</string>
+    <string name="tab_list">List</string>
+    <string name="tab_word_meaning">Word-by-Word</string>
+    <string name="tab_tafsir">Tafsir</string>
+    <string name="tab_mushaf">Mushaf</string>
+
+    <!-- Reading & Display -->
+    <string name="last_read">Last Read</string>
+    <string name="continue_reading">Continue Reading</string>
+    <string name="surah_prefix">Surah</string>
+    <string name="para_prefix">Para</string>
+    <string name="ayah_prefix">Ayah</string>
+    <string name="page_prefix">Page</string>
+    <string name="page_format">Page %s</string>
+    <string name="para_format">Para %s</string>
+    <string name="surah_format">Surah: %s</string>
+    <string name="ayah_format">Ayah: %s</string>
+    <string name="total_ayahs_format">Total Ayahs: %s</string>
+    <string name="makki">Makki</string>
+    <string name="madani">Madani</string>
+    <string name="loading_text">Loading...</string>
+    <string name="loading_surah">Loading Surah...</string>
+    <string name="retry">Try Again</string>
+    <string name="player_title">Player</string>
+    <string name="search_ayah_num">Ayah No</string>
+    <string name="ayah_not_found_in_surah">Ayah %d is not in this Surah</string>
+    <string name="ayat_al_kursi_title">Ayat al-Kursi</string>
+    <string name="baqarah_last_two_title">Last 2 Verses of Baqarah</string>
+    <string name="ayat_al_kursi_sub">Surah Al-Baqarah, Ayah 255</string>
+    <string name="baqarah_last_two_sub">Surah Al-Baqarah, Ayahs 285-286</string>
+    <string name="single_ayah_count">1 Ayah</string>
+    <string name="two_ayahs_count">2 Ayahs</string>
+    <string name="tajweed_legend_title">Tajweed Color Guide</string>
+
+    <!-- Settings & Controls in Reading Screens -->
+    <string name="reading_and_audio_settings">Reading &amp; Audio Settings</string>
+    <string name="reading_settings">Reading Settings</string>
+    <string name="ayah_repeat_count">Ayah Repeat: %s times</string>
+    <string name="arabic_font_size">Arabic Font Size</string>
+    <string name="translation_font_size">Translation Font Size</string>
+    <string name="arabic_line_spacing">Arabic Line Spacing</string>
+    <string name="show_waqf_signs">Show Waqf Signs (م، ج،صلے)</string>
+    <string name="tajweed_color">Tajweed Colors</string>
+    <string name="theme_label">Theme</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_sepia">Sepia</string>
+    <string name="theme_dark">Dark</string>
+    <string name="page_transition_method">Page Transition</string>
+    <string name="transition_horizontal">Horizontal</string>
+    <string name="transition_vertical">Vertical</string>
+    <string name="font_style">Font Style</string>
+    <string name="font_me_quran">Me Quran</string>
+    <string name="font_pdms_saleem">PDMS Saleem</string>
+    <string name="font_noorehira">Noorehira</string>
+    <string name="script_style">Quran Script Style</string>
+    <string name="script_default">Default</string>
+    <string name="script_uthmani">Uthmani</string>
+    <string name="script_simple">Simple</string>
+    <string name="script_clean">Clean</string>
+    <string name="script_plain">Plain</string>
+    <string name="jump_to_page_title">Jump to Page</string>
+    <string name="jump_to_page_prompt">Enter page number between 1 and 610:</string>
+    <string name="page_number_label">Page Number</string>
+    <string name="page_number_hint">e.g. 123</string>
+    <string name="invalid_page_number_error">Please enter a valid number between 1 and 610</string>
+    <string name="btn_next">Next</string>
+    <string name="btn_previous">Previous</string>
+
+    <!-- Download Dialogs in Home / Detail -->
+    <string name="mushaf_download_required">Mushaf Download Required</string>
+    <string name="mushaf_download_desc">Your selected Mushaf (%1$s) has not been downloaded yet. Downloading is required to read offline.\n\nFile size: ~%2$d MB\n\nDo you want to download now?</string>
+    <string name="mushaf_download_failed">Download Failed</string>
+    <string name="mushaf_downloading_title">Downloading...</string>
+    <string name="mushaf_download_error_detail">Sorry, an error occurred while downloading. Please check your internet connection and try again.</string>
+    <string name="mushaf_downloading_wait_msg">Downloading %s file. Please wait.</string>
+    <string name="download_progress_pct">Progress: %d%%</string>
+    <string name="download_pages_count">%1$d / %2$d Pages</string>
+    <string name="download_error_prefix">Download Error: %s</string>
+    <string name="hijri_adjustment">Hijri Adjustment</string>
+    <string name="district">District</string>
+    <string name="hanafi">Hanafi</string>
+    <string name="shafi">Shafi\'i</string>
+    
+    <!-- Actions -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_add_new">Create New</string>
+    <string name="action_search">Search</string>
+    <string name="action_filter">Filter</string>
+    <string name="action_sort">Sort</string>
+    <string name="action_view_details">View Details</string>
+    <string name="action_back">Back</string>
+    <string name="action_confirm">Confirm</string>
+    <string name="action_close">Close</string>
+    <string name="action_done">Done</string>
+    <string name="action_share">Share</string>
+    <string name="action_download">Download</string>
+    <string name="action_print">Print</string>
+    <string name="action_export_pdf">Export PDF</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_play">Play</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_copy">Copy</string>
+
+    <!-- Language & Locale -->
+    <string name="language_settings">App Language</string>
+    <string name="language_settings_subtitle">Select your preferred app language</string>
+    <string name="select_language">Select Language</string>
+    <string name="language_bangla">বাংলা (Bengali)</string>
+    <string name="language_english">English (International)</string>
+    <string name="language_switched_msg">Language updated successfully</string>
+    <string name="language_desc">Select your preferred language. The entire app will adapt to the selected language.</string>
+
+    <!-- Quran & Reading Modes -->
+    <string name="mode_hafezi">Hafezi Quran</string>
+    <string name="mode_hafezi_desc">15 Line Hafezi Quran for Memorization</string>
+    <string name="mode_tajweed">Color Tajweed</string>
+    <string name="mode_tajweed_desc">Tajweed Rules Color-Coded Quran</string>
+    <string name="mode_translation">Translation Mode</string>
+    <string name="mode_translation_desc">Word-by-word with Bengali &amp; English translation</string>
+    <string name="mode_mushaf">Mushaf Library</string>
+    <string name="mode_mushaf_desc">Printed style high-quality digital Mushafs</string>
+    <string name="mode_player">Audio Recitation</string>
+    <string name="mode_player_desc">Audio recitations from renowned world Qaris</string>
+    <string name="mode_video">Video Creator</string>
+    <string name="mode_video_desc">Generate beautiful Quran video clips with subtitles</string>
+
+    <!-- Islamic & Utility Modules -->
+    <string name="feature_quran">Al-Quran</string>
+    <string name="feature_prayer_times">Prayer Times</string>
+    <string name="feature_nearby_mosque">Nearby Mosques</string>
+    <string name="feature_qibla">Qibla Compass</string>
+    <string name="feature_tasbih">Digital Tasbih</string>
+    <string name="feature_dua">Quranic Duas</string>
+    <string name="feature_morning_evening_dua">Morning &amp; Evening Duas</string>
+    <string name="feature_manzil">Manzil</string>
+    <string name="feature_subjectwise">Subjectwise Quran</string>
+    <string name="feature_hifz_tracker">Hifz Tracker</string>
+    <string name="feature_hijri_calendar">Islamic Calendar</string>
+    <string name="feature_planner">Quran Planner</string>
+    <string name="feature_ramadan">Ramadan Schedule</string>
+    <string name="feature_zakat_calc">Zakat Calculator</string>
+    <string name="feature_word_game">Word Game</string>
+    <string name="feature_bookmarks">Bookmarks</string>
+    <string name="feature_notes">My Notepad</string>
+
+    <!-- Settings Menu Sections -->
+    <string name="menu_title">Menu Options</string>
+    <string name="section_quran_media">Quran Study &amp; Media</string>
+    <string name="section_dua_ibadah">Dua &amp; Worship</string>
+    <string name="section_personal_tools">Personal Tools</string>
+    <string name="section_app_settings">App Settings &amp; System</string>
+
+    <!-- App System Settings -->
+    <string name="setting_font_tajweed">Font &amp; Tajweed</string>
+    <string name="setting_app_theme">App Theme</string>
+    <string name="setting_notifications">Notifications</string>
+    <string name="setting_offline_download">Offline Download</string>
+    <string name="setting_backup">Backup</string>
+    <string name="setting_about">About Us &amp; Privacy</string>
+    <string name="setting_contact">Contact Us</string>
+    <string name="setting_keep_screen_on">Keep Screen On</string>
+    <string name="setting_show_translation">Show Translation</string>
+    <string name="setting_show_transliteration">Word Transliteration</string>
+    <string name="setting_show_tajweed">Tajweed Colors</string>
+    <string name="setting_tanzil_style">Quran Script Style</string>
+
+    <!-- Dialogs & Prompts -->
+    <string name="dialog_download_title">Download Mushaf</string>
+    <string name="dialog_download_desc">Download this Mushaf to read completely offline without internet.</string>
+    <string name="exit_prompt">Press back again to exit</string>
+    <string name="search_surah_placeholder">Search Surah (e.g. Fatihah or 1)...</string>
+    <string name="search_ayah_placeholder">Search Ayah or keyword...</string>
+    <string name="qari_selection_title">Select Qari</string>
+    <string name="qari_selection_subtitle">Choose your favorite reciter</string>
 </resources>
