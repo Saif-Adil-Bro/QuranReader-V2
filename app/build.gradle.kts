@@ -30,7 +30,11 @@ android {
     versionName = "1.0"
     
     val geminiKey = System.getenv("GEMINI_API_KEY") ?: ""
+    val mapsKey = System.getenv("MAPS_API_KEY") ?: System.getenv("GOOGLE_MAPS_API_KEY") ?: System.getenv("PLACES_API_KEY") ?: ""
     buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
+    buildConfigField("String", "MAPS_API_KEY", "\"$mapsKey\"")
+    buildConfigField("String", "PLACES_API_KEY", "\"$mapsKey\"")
+    manifestPlaceholders["MAPS_API_KEY"] = mapsKey
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -129,6 +133,10 @@ dependencies {
   implementation(libs.media3.session)
   implementation(libs.coil.compose)
   implementation(libs.coil.gif)
+  // implementation(libs.maps.compose)
+  // implementation(libs.play.services.maps)
+  // implementation(libs.places)
+  implementation(libs.play.services.location)
   implementation(libs.converter.moshi)
   implementation(libs.converter.gson)
   // implementation(libs.firebase.ai)

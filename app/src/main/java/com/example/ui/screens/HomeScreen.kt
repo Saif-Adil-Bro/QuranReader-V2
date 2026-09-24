@@ -166,6 +166,7 @@ fun HomeScreen(
     onNavigateToPlanner: () -> Unit = {},
     onNavigateToSubjectwise: (String?) -> Unit = {},
     onNavigateToQibla: () -> Unit = {},
+    onNavigateToMosque: () -> Unit = {},
     onNavigateToVideoCreator: () -> Unit = {},
     postsViewModel: com.example.ui.viewmodels.PostsViewModel? = null
 ) {
@@ -662,6 +663,7 @@ fun HomeScreen(
                     TopFeaturesGridSection(
                         isDark = isDark,
                         onQiblaClick = onNavigateToQibla,
+                        onMosqueClick = onNavigateToMosque,
                         onDuaClick = { onNavigateToDua(null) },
                         onManzilClick = onNavigateToManzil,
                         onPlannerClick = onNavigateToPlanner,
@@ -670,6 +672,13 @@ fun HomeScreen(
                         onSubjectwiseClick = { onNavigateToSubjectwise(null) },
                         onTasbihClick = { onNavigateToDhikrReminder(com.example.utils.DhikrType.DUROOD) },
                         onMoreClick = onSettingsClick
+                    )
+                }
+                item {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    NearbyMosqueHomeBanner(
+                        isDark = isDark,
+                        onMosqueClick = onNavigateToMosque
                     )
                 }
                 item {
@@ -2480,6 +2489,7 @@ fun DhikrHabitCard(
 fun TopFeaturesGridSection(
     isDark: Boolean,
     onQiblaClick: () -> Unit,
+    onMosqueClick: () -> Unit = {},
     onDuaClick: () -> Unit,
     onManzilClick: () -> Unit,
     onPlannerClick: () -> Unit,
@@ -2584,6 +2594,14 @@ fun TopFeaturesGridSection(
                     onClick = onQiblaClick
                 )
                 TopFeatureCircleButton(
+                    title = "মসজিদ",
+                    icon = Icons.Default.Place,
+                    isDark = isDark,
+                    bgColor = if (isDark) Color(0xFF042F2E) else Color(0xFFCCFBF1),
+                    iconTint = if (isDark) Color(0xFF2DD4BF) else Color(0xFF0D9488),
+                    onClick = onMosqueClick
+                )
+                TopFeatureCircleButton(
                     title = "মাসনূন দুআ",
                     icon = Icons.Default.VolunteerActivism,
                     isDark = isDark,
@@ -2599,14 +2617,6 @@ fun TopFeaturesGridSection(
                     iconTint = if (isDark) Color(0xFF10B981) else Color(0xFF059669),
                     onClick = onManzilClick
                 )
-                TopFeatureCircleButton(
-                    title = "প্ল্যানার",
-                    icon = Icons.Default.TrackChanges,
-                    isDark = isDark,
-                    bgColor = if (isDark) Color(0xFF4C0519) else Color(0xFFFFE4E6),
-                    iconTint = if (isDark) Color(0xFFFB7185) else Color(0xFFE11D48),
-                    onClick = onPlannerClick
-                )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -2616,6 +2626,14 @@ fun TopFeaturesGridSection(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
+                TopFeatureCircleButton(
+                    title = "প্ল্যানার",
+                    icon = Icons.Default.TrackChanges,
+                    isDark = isDark,
+                    bgColor = if (isDark) Color(0xFF4C0519) else Color(0xFFFFE4E6),
+                    iconTint = if (isDark) Color(0xFFFB7185) else Color(0xFFE11D48),
+                    onClick = onPlannerClick
+                )
                 TopFeatureCircleButton(
                     title = "ক্যালেন্ডার",
                     icon = Icons.Default.CalendarMonth,
@@ -2640,13 +2658,104 @@ fun TopFeaturesGridSection(
                     iconTint = if (isDark) Color(0xFF818CF8) else Color(0xFF4F46E5),
                     onClick = onSubjectwiseClick
                 )
-                TopFeatureCircleButton(
-                    title = "তাসবিহ ও জিকির",
-                    icon = Icons.Default.NotificationsActive,
-                    isDark = isDark,
-                    bgColor = if (isDark) Color(0xFF134E4A) else Color(0xFFCCFBF1),
-                    iconTint = if (isDark) Color(0xFF2DD4BF) else Color(0xFF0D9488),
-                    onClick = onTasbihClick
+            }
+        }
+    }
+}
+
+@Composable
+fun NearbyMosqueHomeBanner(
+    isDark: Boolean,
+    onMosqueClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clickable(onClick = onMosqueClick),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isDark) Color(0xFF132A1F) else Color(0xFFEDF8F2)
+        ),
+        border = BorderStroke(1.dp, if (isDark) Color(0xFF1E4633) else Color(0xFFB7E4C7)),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .background(
+                            color = PrimaryGreen,
+                            shape = RoundedCornerShape(14.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Place,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "নিকটবর্তী মসজিদ খুঁজুন",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Surface(
+                            color = Color(0xFFEAB308).copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = "লাইভ জিপিএস",
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDark) Color(0xFFFBBF24) else Color(0xFFB45309),
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = "আশপাশের জামে মসজিদ, জামাতের সময় ও দিকনির্দেশনা",
+                        fontSize = 11.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 16.sp,
+                        maxLines = 2
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = onMosqueClick,
+                modifier = Modifier
+                    .size(34.dp)
+                    .background(PrimaryGreen.copy(alpha = 0.15f), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = null,
+                    tint = PrimaryGreen,
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }

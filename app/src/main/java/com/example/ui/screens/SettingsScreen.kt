@@ -150,6 +150,7 @@ fun SettingsScreen(
             items = listOf(
                 MenuItem("dua", "কুরআনিক দুআ", Icons.Default.Schedule, Color(0xFF8B5CF6)),
                 MenuItem("morning_evening_dua", "সকাল সন্ধ্যার দুআ", Icons.Default.WbSunny, Color(0xFFF59E0B)),
+                MenuItem("mosque", "নিকটবর্তী মসজিদ", Icons.Default.Place, Color(0xFF059669)),
                 MenuItem("manzil", "মানযিল", Icons.Default.AutoAwesome, Color(0xFF10B981)),
                 MenuItem("qibla", "কিবলা কম্পাস", Icons.Default.Explore, Color(0xFFEAB308)),
                 MenuItem("prayer_times", "নামাজের সময়সূচি", Icons.Default.AccessTime, Color(0xFF059669)),
@@ -991,6 +992,16 @@ fun SettingsScreen(
         com.example.ui.components.WaqtAlarmOverviewSheet(
             schedule = prayerSchedule,
             onDismiss = {
+                if (initialSubScreen != null) {
+                    onNavigateBack()
+                } else {
+                    activeDialog = null
+                }
+            }
+        )
+    } else if (activeDialog == "mosque") {
+        com.example.ui.screens.mosque.NearbyMosqueScreen(
+            onBackClick = {
                 if (initialSubScreen != null) {
                     onNavigateBack()
                 } else {

@@ -248,6 +248,9 @@ fun AppNavGraph(
                 onNavigateToQibla = {
                     navController.navigate("settings?subScreen=qibla")
                 },
+                onNavigateToMosque = {
+                    navController.navigate("nearby_mosque")
+                },
                 onNavigateToVideoCreator = {
                     navController.navigate("video_creator")
                 },
@@ -603,6 +606,18 @@ fun AppNavGraph(
             com.example.ui.screens.QuranVideoCreatorScreen(
                 onNavigateBack = { navController.popBackStack() },
                 viewModel = videoVm
+            )
+        }
+
+        composable("nearby_mosque") {
+            com.example.ui.screens.mosque.NearbyMosqueScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable("mosque_map") {
+            com.example.ui.screens.mosque.MosqueMapScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
     }
