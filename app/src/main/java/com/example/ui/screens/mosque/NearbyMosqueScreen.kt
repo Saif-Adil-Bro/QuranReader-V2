@@ -1,6 +1,7 @@
 package com.example.ui.screens.mosque
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.hardware.Sensor
@@ -113,6 +114,21 @@ fun NearbyMosqueScreen(
         }
     }
 
+    val activity = context as? Activity
+
+    // GPS Settings hardware enable launcher
+    val gpsSettingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            Toast.makeText(context, "জিপিএস চালু হয়েছে! অবস্থান শনাক্ত করা হচ্ছে...", Toast.LENGTH_SHORT).show()
+            viewModel.detectCurrentLocationAndFetch()
+        } else {
+            Toast.makeText(context, "নেটওয়ার্ক অবস্থান ব্যবহার করা হচ্ছে।", Toast.LENGTH_SHORT).show()
+            viewModel.detectCurrentLocationAndFetch()
+        }
+    }
+
     // Permission launcher
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -120,11 +136,66 @@ fun NearbyMosqueScreen(
         val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
         val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (fineGranted || coarseGranted) {
-            Toast.makeText(context, "লাইভ জিপিএস চালু হয়েছে। বর্তমান অবস্থানের মসজিদ খোঁজা হচ্ছে...", Toast.LENGTH_SHORT).show()
-            viewModel.detectCurrentLocationAndFetch()
+            if (activity != null && !com.example.utils.DeviceLocationProvider.isLocationEnabled(context)) {
+                com.example.utils.DeviceLocationProvider.checkAndPromptEnableGps(
+                    activity = activity,
+                    onResolutionRequired = { resolvable ->
+                        try {
+                            val intentSenderRequest = androidx.activity.result.IntentSenderRequest.Builder(resolvable.resolution).build()
+                            gpsSettingsLauncher.launch(intentSenderRequest)
+                        } catch (e: Exception) {
+                            viewModel.detectCurrentLocationAndFetch()
+                        }
+                    },
+                    onAlreadyEnabled = {
+                        Toast.makeText(context, "লাইভ জিপিএস চালু হয়েছে। চারপাশের মসজিদ খোঁজা হচ্ছে...", Toast.LENGTH_SHORT).show()
+                        viewModel.detectCurrentLocationAndFetch()
+                    },
+                    onError = {
+                        viewModel.detectCurrentLocationAndFetch()
+                    }
+                )
+            } else {
+                Toast.makeText(context, "লাইভ জিপিএস চালু হয়েছে। চারপাশের মসজিদ খোঁজা হচ্ছে...", Toast.LENGTH_SHORT).show()
+                viewModel.detectCurrentLocationAndFetch()
+            }
         } else {
             Toast.makeText(context, "জিপিএস পারমিশন দেওয়া হয়নি। নেটওয়ার্ক লোকেশন ব্যবহার করা হচ্ছে।", Toast.LENGTH_SHORT).show()
             viewModel.detectCurrentLocationAndFetch()
+        }
+    }
+
+    val requestLiveGpsLocation: () -> Unit = {
+        if (!com.example.utils.DeviceLocationProvider.hasLocationPermission(context)) {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        } else {
+            if (activity != null && !com.example.utils.DeviceLocationProvider.isLocationEnabled(context)) {
+                com.example.utils.DeviceLocationProvider.checkAndPromptEnableGps(
+                    activity = activity,
+                    onResolutionRequired = { resolvable ->
+                        try {
+                            val intentSenderRequest = androidx.activity.result.IntentSenderRequest.Builder(resolvable.resolution).build()
+                            gpsSettingsLauncher.launch(intentSenderRequest)
+                        } catch (e: Exception) {
+                            viewModel.detectCurrentLocationAndFetch()
+                        }
+                    },
+                    onAlreadyEnabled = {
+                        viewModel.detectCurrentLocationAndFetch()
+                    },
+                    onError = {
+                        viewModel.detectCurrentLocationAndFetch()
+                    }
+                )
+            } else {
+                viewModel.detectCurrentLocationAndFetch()
+                Toast.makeText(context, "লাইভ জিপিএস অবস্থান রিফ্রেশ করা হচ্ছে...", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -137,7 +208,7 @@ fun NearbyMosqueScreen(
                 )
             )
         } else {
-            viewModel.detectCurrentLocationAndFetch()
+            requestLiveGpsLocation()
         }
     }
 
@@ -224,17 +295,7 @@ fun NearbyMosqueScreen(
                     // GPS Refresh
                     IconButton(
                         onClick = {
-                            if (!com.example.utils.DeviceLocationProvider.hasLocationPermission(context)) {
-                                locationPermissionLauncher.launch(
-                                    arrayOf(
-                                        Manifest.permission.ACCESS_FINE_LOCATION,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                    )
-                                )
-                            } else {
-                                viewModel.detectCurrentLocationAndFetch()
-                                Toast.makeText(context, "লাইভ জিপিএস অবস্থান রিফ্রেশ করা হচ্ছে...", Toast.LENGTH_SHORT).show()
-                            }
+                            requestLiveGpsLocation()
                         }
                     ) {
                         if (isDetectingLocation) {
@@ -746,13 +807,8 @@ fun NearbyMosqueScreen(
                 Toast.makeText(context, "${city.nameBn} এর আশপাশের মসজিদ লোড হচ্ছে...", Toast.LENGTH_SHORT).show()
             },
             onResetToLiveGps = {
-                locationPermissionLauncher.launch(
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    )
-                )
                 showLocationSwitcherDialog = false
+                requestLiveGpsLocation()
             },
             onDismiss = {
                 showLocationSwitcherDialog = false

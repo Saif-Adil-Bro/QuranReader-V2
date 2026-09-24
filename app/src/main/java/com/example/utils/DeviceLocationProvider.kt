@@ -2,6 +2,7 @@ package com.example.utils
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Geocoder
@@ -11,7 +12,12 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
 import androidx.core.content.ContextCompat
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +36,7 @@ data class DeviceLocationResult(
     val latitude: Double,
     val longitude: Double,
     val address: String,
-    val source: String, // "GPS", "FUSED", "NETWORK", "IP_GEO", "DEFAULT"
+    val source: String, // "FUSED_GPS", "NATIVE_GPS", "IP_GEO", "DEFAULT"
     val isRealTime: Boolean
 )
 
@@ -44,6 +50,49 @@ object DeviceLocationProvider {
         val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         return fine || coarse
+    }
+
+    fun isLocationEnabled(context: Context): Boolean {
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+               locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    }
+
+    /**
+     * Prompts Google Play Services system dialog to turn on GPS hardware in 1 tap
+     */
+    fun checkAndPromptEnableGps(
+        activity: Activity,
+        onResolutionRequired: (ResolvableApiException) -> Unit,
+        onAlreadyEnabled: () -> Unit = {},
+        onError: (Exception) -> Unit = {}
+    ) {
+        try {
+            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+                .setMinUpdateIntervalMillis(2000)
+                .build()
+
+            val builder = LocationSettingsRequest.Builder()
+                .addLocationRequest(locationRequest)
+                .setAlwaysShow(true)
+
+            val client = LocationServices.getSettingsClient(activity)
+            val task = client.checkLocationSettings(builder.build())
+
+            task.addOnSuccessListener {
+                onAlreadyEnabled()
+            }
+
+            task.addOnFailureListener { exception ->
+                if (exception is ResolvableApiException) {
+                    onResolutionRequired(exception)
+                } else {
+                    onError(exception)
+                }
+            }
+        } catch (e: Exception) {
+            onError(e)
+        }
     }
 
     /**
@@ -101,7 +150,7 @@ object DeviceLocationProvider {
     }
 
     @SuppressLint("MissingPermission")
-    private suspend fun getFusedLocation(context: Context): Location? = withTimeoutOrNull(5000) {
+    private suspend fun getFusedLocation(context: Context): Location? = withTimeoutOrNull(6000) {
         suspendCancellableCoroutine { continuation ->
             try {
                 val fusedClient = LocationServices.getFusedLocationProviderClient(context)
@@ -114,14 +163,19 @@ object DeviceLocationProvider {
                         } else {
                             // Try lastLocation
                             fusedClient.lastLocation.addOnSuccessListener { lastLoc ->
-                                if (continuation.isActive) continuation.resume(lastLoc)
+                                if (lastLoc != null) {
+                                    if (continuation.isActive) continuation.resume(lastLoc)
+                                } else {
+                                    // Request single update via callback
+                                    requestSingleFusedUpdate(fusedClient, continuation)
+                                }
                             }.addOnFailureListener {
-                                if (continuation.isActive) continuation.resume(null)
+                                requestSingleFusedUpdate(fusedClient, continuation)
                             }
                         }
                     }
                     .addOnFailureListener {
-                        if (continuation.isActive) continuation.resume(null)
+                        requestSingleFusedUpdate(fusedClient, continuation)
                     }
 
                 continuation.invokeOnCancellation {
@@ -130,6 +184,38 @@ object DeviceLocationProvider {
             } catch (e: Exception) {
                 if (continuation.isActive) continuation.resume(null)
             }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun requestSingleFusedUpdate(
+        fusedClient: com.google.android.gms.location.FusedLocationProviderClient,
+        continuation: kotlinx.coroutines.CancellableContinuation<Location?>
+    ) {
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
+            .setMaxUpdates(1)
+            .setMinUpdateIntervalMillis(500)
+            .build()
+
+        val callback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                val last = result.lastLocation
+                try {
+                    fusedClient.removeLocationUpdates(this)
+                } catch (e: Exception) {}
+                if (continuation.isActive) continuation.resume(last)
+            }
+        }
+
+        try {
+            fusedClient.requestLocationUpdates(request, callback, Looper.getMainLooper())
+            continuation.invokeOnCancellation {
+                try {
+                    fusedClient.removeLocationUpdates(callback)
+                } catch (e: Exception) {}
+            }
+        } catch (e: Exception) {
+            if (continuation.isActive) continuation.resume(null)
         }
     }
 

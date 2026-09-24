@@ -1,14 +1,13 @@
 package com.example.ui.screens.mosque
 
 import android.annotation.SuppressLint
-import android.content.Context
+import android.util.Base64
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,7 +20,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -55,8 +53,7 @@ fun InteractiveMosqueMapView(
     var currentLayer by remember { mutableStateOf(initialLayer) }
     var showLayerMenu by remember { mutableStateOf(false) }
 
-    // Build JSON data for all mosques to send to the map
-    fun getMosquesJson(): String {
+    fun getMosquesBase64(): String {
         val array = JSONArray()
         for (m in mosques) {
             val obj = JSONObject().apply {
@@ -76,23 +73,22 @@ fun InteractiveMosqueMapView(
             }
             array.put(obj)
         }
-        return array.toString()
+        val raw = array.toString()
+        return Base64.encodeToString(raw.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
     }
 
-    // Effect to update markers and center when userLocation or mosques change
     LaunchedEffect(userLocation.latitude, userLocation.longitude, mosques.size, selectedMosque?.id) {
         val targetWebView = webViewRef.value ?: return@LaunchedEffect
-        val mosquesJson = getMosquesJson()
+        val b64 = getMosquesBase64()
         val selId = selectedMosque?.id ?: ""
         val js = """
-            if (window.updateMapData) {
-                window.updateMapData(${userLocation.latitude}, ${userLocation.longitude}, '$mosquesJson', '$selId');
+            if (window.updateMapDataEncoded) {
+                window.updateMapDataEncoded(${userLocation.latitude}, ${userLocation.longitude}, '$b64', '$selId');
             }
         """.trimIndent()
         targetWebView.evaluateJavascript(js, null)
     }
 
-    // Effect to update map layer style
     LaunchedEffect(currentLayer) {
         val targetWebView = webViewRef.value ?: return@LaunchedEffect
         val layerKey = when (currentLayer) {
@@ -128,7 +124,7 @@ fun InteractiveMosqueMapView(
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
-                            val mosquesJson = getMosquesJson()
+                            val b64 = getMosquesBase64()
                             val selId = selectedMosque?.id ?: ""
                             val layerKey = when (currentLayer) {
                                 MosqueMapLayer.STREET -> "street"
@@ -137,8 +133,8 @@ fun InteractiveMosqueMapView(
                                 MosqueMapLayer.TOPO -> "topo"
                             }
                             val js = """
-                                if (window.initAppMap) {
-                                    window.initAppMap(${userLocation.latitude}, ${userLocation.longitude}, '$mosquesJson', '$selId', '$layerKey');
+                                if (window.initAppMapEncoded) {
+                                    window.initAppMapEncoded(${userLocation.latitude}, ${userLocation.longitude}, '$b64', '$selId', '$layerKey');
                                 }
                             """.trimIndent()
                             view?.evaluateJavascript(js, null)
@@ -160,12 +156,12 @@ fun InteractiveMosqueMapView(
                     webViewRef.value = this
                 }
             },
-            update = { view ->
-                webViewRef.value = view
+            update = {
+                webViewRef.value = it
             }
         )
 
-        // Floating Map Controls (Layer Switcher, Re-center, Zoom In/Out)
+        // Floating Map Controls on Top Right
         Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -173,9 +169,9 @@ fun InteractiveMosqueMapView(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.End
         ) {
-            // Layer Switcher Button
+            // Map Layer Selector Button
             Surface(
-                onClick = { showLayerMenu = !showLayerMenu },
+                onClick = { showLayerMenu = true },
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
                 shadowElevation = 4.dp,
@@ -187,14 +183,13 @@ fun InteractiveMosqueMapView(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Layers,
-                        contentDescription = "ম্যাপ লেয়ার",
+                        contentDescription = "ম্যাপ লেয়ার",
                         tint = PrimaryGreen,
                         modifier = Modifier.size(20.dp)
                     )
                 }
             }
 
-            // Layer Selection Dropdown
             DropdownMenu(
                 expanded = showLayerMenu,
                 onDismissRequest = { showLayerMenu = false }
@@ -388,7 +383,6 @@ private fun buildMapEngineHtml(): String {
                     attributionControl: false
                 }).setView([23.8103, 90.4125], 14);
 
-                // Multiple high-speed, free tile layers (0 API Keys required)
                 var layers = {
                     street: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
                     satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
@@ -431,11 +425,30 @@ private fun buildMapEngineHtml(): String {
                     });
                 }
 
-                window.initAppMap = function(userLat, userLon, mosquesJsonStr, selectedId, layerKey) {
+                function decodeUtf8Base64(b64) {
+                    try {
+                        var bin = atob(b64);
+                        var bytes = new Uint8Array(bin.length);
+                        for (var i = 0; i < bin.length; i++) {
+                            bytes[i] = bin.charCodeAt(i);
+                        }
+                        var decoder = new TextDecoder('utf-8');
+                        return decoder.decode(bytes);
+                    } catch(e) {
+                        return atob(b64);
+                    }
+                }
+
+                window.initAppMapEncoded = function(userLat, userLon, b64Data, selectedId, layerKey) {
                     if (layerKey && layers[layerKey]) {
                         window.setMapLayer(layerKey);
                     }
-                    window.updateMapData(userLat, userLon, mosquesJsonStr, selectedId);
+                    window.updateMapDataEncoded(userLat, userLon, b64Data, selectedId);
+                };
+
+                window.updateMapDataEncoded = function(userLat, userLon, b64Data, selectedId) {
+                    var jsonStr = decodeUtf8Base64(b64Data);
+                    window.updateMapData(userLat, userLon, jsonStr, selectedId);
                 };
 
                 window.updateMapData = function(userLat, userLon, mosquesJsonStr, selectedId) {
