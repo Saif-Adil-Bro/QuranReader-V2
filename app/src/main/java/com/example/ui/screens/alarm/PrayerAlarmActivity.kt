@@ -203,6 +203,7 @@ fun PrayerAlarmScreen(
         PrayerName.TAHAJJUD -> "وَمِنَ اللَّيْلِ فَتَهَجَّدْ بِهِ نَافِلَةً لَّكَ"
         PrayerName.SAHRI -> "تَسَحَّرُوا فَإِنَّ فِي السَّحُورِ بَرَكَةً"
         PrayerName.IFTAR -> "ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ"
+        PrayerName.MAKRUH_SUNRISE, PrayerName.MAKRUH_ZAWAL, PrayerName.MAKRUH_SUNSET -> "لَا صَلَاةَ فِي هَذَا الْوَقْتِ"
         else -> "حَيَّ عَلَى الصَّلَاةِ • حَيَّ عَلَى الْفَلَاحِ"
     }
 
