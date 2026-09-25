@@ -71,9 +71,9 @@ object PrayerSoundManager {
 
     fun getRawResourceName(soundType: PrayerAlarmSoundType, prayerName: PrayerName? = null): String? {
         return when (soundType) {
-            PrayerAlarmSoundType.AZAN_MECCA -> if (prayerName == PrayerName.FAJR) "azan_fajr" else "azan_mecca"
+            PrayerAlarmSoundType.AZAN_MECCA -> "azan_mecca"
             PrayerAlarmSoundType.AZAN_MADINA -> "azan_madina"
-            PrayerAlarmSoundType.AZAN_FAJR -> "azan_fajr"
+            PrayerAlarmSoundType.AZAN_FAJR -> "azan_mecca"
             PrayerAlarmSoundType.BEEP -> "alarm_beep"
             PrayerAlarmSoundType.RING -> "alarm_ring"
             else -> null
@@ -81,19 +81,21 @@ object PrayerSoundManager {
     }
 
     fun getRawResourceId(context: Context, soundType: PrayerAlarmSoundType, prayerName: PrayerName? = null): Int {
-        val rawName = getRawResourceName(soundType, prayerName) ?: return 0
-        var resId = context.resources.getIdentifier(rawName, "raw", context.packageName)
-        if (resId == 0 && (soundType == PrayerAlarmSoundType.AZAN_MECCA || soundType == PrayerAlarmSoundType.AZAN_FAJR) && prayerName == PrayerName.FAJR) {
-            // Fallback to azan_mecca if azan_fajr is not provided
-            resId = context.resources.getIdentifier("azan_mecca", "raw", context.packageName)
+        return when (soundType) {
+            PrayerAlarmSoundType.AZAN_MECCA -> com.example.R.raw.azan_mecca
+            PrayerAlarmSoundType.AZAN_MADINA -> com.example.R.raw.azan_madina
+            PrayerAlarmSoundType.AZAN_FAJR -> com.example.R.raw.azan_mecca
+            PrayerAlarmSoundType.BEEP -> com.example.R.raw.alarm_beep
+            PrayerAlarmSoundType.RING -> com.example.R.raw.alarm_ring
+            else -> 0
         }
-        return resId
     }
 
     private fun playRawSound(
         context: Context,
         rawResId: Int,
         isLooping: Boolean = false,
+        isAlarmUsage: Boolean = true,
         onCompletion: () -> Unit = {}
     ): Boolean {
         return try {
@@ -101,23 +103,50 @@ object PrayerSoundManager {
             activeMediaPlayer?.release()
             activeMediaPlayer = null
 
-            activeMediaPlayer = MediaPlayer.create(context, rawResId)?.apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .build()
-                )
-                this.isLooping = isLooping
-                setOnCompletionListener {
-                    if (!isLooping) {
-                        currentlyPlayingType = null
-                        onCompletion()
+            val usage = if (isAlarmUsage) AudioAttributes.USAGE_ALARM else AudioAttributes.USAGE_NOTIFICATION
+            val audioAttributes = AudioAttributes.Builder()
+                .setUsage(usage)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+
+            var mp: MediaPlayer? = null
+            try {
+                val afd = context.resources.openRawResourceFd(rawResId)
+                if (afd != null) {
+                    mp = MediaPlayer().apply {
+                        setAudioAttributes(audioAttributes)
+                        setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                        afd.close()
+                        this.isLooping = isLooping
+                        setOnCompletionListener {
+                            if (!isLooping) {
+                                currentlyPlayingType = null
+                                onCompletion()
+                            }
+                        }
+                        prepare()
+                        start()
                     }
                 }
-                start()
+            } catch (ex: Exception) {
+                ex.printStackTrace()
             }
-            activeMediaPlayer != null
+
+            if (mp == null) {
+                mp = MediaPlayer.create(context, rawResId)?.apply {
+                    this.isLooping = isLooping
+                    setOnCompletionListener {
+                        if (!isLooping) {
+                            currentlyPlayingType = null
+                            onCompletion()
+                        }
+                    }
+                    start()
+                }
+            }
+
+            activeMediaPlayer = mp
+            mp != null
         } catch (e: Exception) {
             e.printStackTrace()
             false

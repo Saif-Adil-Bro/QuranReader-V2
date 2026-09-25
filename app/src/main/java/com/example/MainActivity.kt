@@ -120,7 +120,8 @@ class MainActivity : ComponentActivity() {
       }
       androidx.compose.runtime.CompositionLocalProvider(
           androidx.compose.ui.platform.LocalContext provides localizedContext,
-          androidx.compose.ui.platform.LocalConfiguration provides localizedConfig
+          androidx.compose.ui.platform.LocalConfiguration provides localizedConfig,
+          androidx.activity.compose.LocalActivityResultRegistryOwner provides this@MainActivity
       ) {
           MyApplicationTheme(
               darkTheme = darkTheme,

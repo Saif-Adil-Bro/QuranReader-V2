@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">قارئ القرآن</string>
+
+    <!-- General Navigation & Common Labels -->
+    <string name="nav_home">الرئيسية</string>
+    <string name="nav_mushaf">المصحف</string>
+    <string name="nav_quran">القرآن</string>
+    <string name="nav_islamic">إسلاميات</string>
+    <string name="nav_settings">الإعدادات</string>
+    <string name="nav_menu">القائمة</string>
+    
+    <!-- Tabs & View Modes -->
+    <string name="tab_surah">السورة</string>
+    <string name="tab_para">الجزء</string>
+    <string name="tab_juz">الجزء</string>
+    <string name="tab_list">القائمة</string>
+    <string name="tab_word_meaning">معاني الكلمات</string>
+    <string name="tab_tafsir">التفسير</string>
+    <string name="tab_mushaf">المصحف</string>
+
+    <!-- Reading & Display -->
+    <string name="last_read">آخر قراءة</string>
+    <string name="continue_reading">متابعة القراءة</string>
+    <string name="surah_prefix">سورة</string>
+    <string name="para_prefix">جزء</string>
+    <string name="ayah_prefix">آية</string>
+    <string name="page_prefix">صفحة</string>
+    <string name="page_format">صفحة %s</string>
+    <string name="para_format">جزء %s</string>
+    <string name="surah_format">سورة: %s</string>
+    <string name="ayah_format">آية: %s</string>
+    <string name="total_ayahs_format">إجمالي الآيات: %s</string>
+    <string name="makki">مكية</string>
+    <string name="madani">مدنية</string>
+    <string name="loading_text">جاري التحميل...</string>
+    <string name="loading_surah">جاري تحميل السورة...</string>
+    <string name="retry">إعادة المحاولة</string>
+    <string name="player_title">المشغل</string>
+    <string name="search_ayah_num">رقم الآية</string>
+    <string name="ayah_not_found_in_surah">الآية %d غير موجودة في هذه السورة</string>
+    <string name="ayat_al_kursi_title">آية الكرسي</string>
+    <string name="baqarah_last_two_title">خواتيم سورة البقرة</string>
+    <string name="ayat_al_kursi_sub">سورة البقرة، آية ٢٥٥</string>
+    <string name="baqarah_last_two_sub">سورة البقرة، آيتان ٢٨٥-٢٨٦</string>
+    <string name="single_ayah_count">آية واحدة</string>
+    <string name="two_ayahs_count">آيتان</string>
+    <string name="tajweed_legend_title">دليل ألوان التجويد</string>
+
+    <!-- Settings & Controls in Reading Screens -->
+    <string name="reading_and_audio_settings">إعدادات القراءة والتلاوة</string>
+    <string name="reading_settings">إعدادات القراءة</string>
+    <string name="ayah_repeat_count">تكرار الآية: %s مرات</string>
+    <string name="arabic_font_size">حجم الخط العربي</string>
+    <string name="translation_font_size">حجم خط الترجمة</string>
+    <string name="arabic_line_spacing">تباعد الأسطر</string>
+    <string name="show_waqf_signs">إظهار علامات الوقف (م، ج، صلے)</string>
+    <string name="tajweed_color">ألوان التجويد</string>
+    <string name="theme_label">المظهر</string>
+    <string name="theme_light">فاتح</string>
+    <string name="theme_sepia">سيبيا</string>
+    <string name="theme_dark">داكن</string>
+    <string name="page_transition_method">طريقة تقليب الصفحات</string>
+    <string name="transition_horizontal">أفقي</string>
+    <string name="transition_vertical">عمودي</string>
+    <string name="font_style">نوع الخط</string>
+    <string name="font_me_quran">مصحف المدينة</string>
+    <string name="font_pdms_saleem">سليم</string>
+    <string name="font_noorehira">نور حراء</string>
+    <string name="script_style">رسم المصحف</string>
+    <string name="script_default">افتراضي</string>
+    <string name="script_uthmani">عثماني</string>
+    <string name="script_simple">بسيط</string>
+    <string name="script_clean">نقي</string>
+    <string name="script_plain">عادي</string>
+    <string name="jump_to_page_title">الانتقال إلى صفحة</string>
+    <string name="jump_to_page_prompt">أدخل رقم الصفحة بين ١ و ٦١٠:</string>
+    <string name="page_number_label">رقم الصفحة</string>
+    <string name="page_number_hint">مثال: ١٢٣</string>
+    <string name="invalid_page_number_error">الرجاء إدخال رقم صحيح بين ١ و ٦١٠</string>
+    <string name="btn_next">التالي</string>
+    <string name="btn_previous">السابق</string>
+
+    <!-- Download Dialogs in Home / Detail -->
+    <string name="mushaf_download_required">مطلوب تحميل المصحف</string>
+    <string name="mushaf_download_desc">المصحف المختار (%1$s) غير محمل بعد. يلزم التحميل للقراءة بدون إنترنت.\n\nالحجم: ~%2$d ميغابايت\n\nهل تريد التحميل الآن؟</string>
+    <string name="mushaf_download_failed">فشل التحميل</string>
+    <string name="mushaf_downloading_title">جاري التحميل...</string>
+    <string name="mushaf_download_error_detail">عذراً، حدث خطأ أثناء التحميل. يرجى التحقق من اتصال الإنترنت والمحاولة ثانية.</string>
+    <string name="mushaf_downloading_wait_msg">جاري تحميل ملف %s. يرجى الانتظار.</string>
+    <string name="download_progress_pct">التقدم: %d%%</string>
+    <string name="download_pages_count">%1$d / %2$d صفحة</string>
+    <string name="download_error_prefix">خطأ في التحميل: %s</string>
+    <string name="hijri_adjustment">تعديل التاريخ الهجري</string>
+    <string name="district">المدينة / المنطقة</string>
+    <string name="hanafi">حنفي</string>
+    <string name="shafi">شافعي</string>
+    
+    <!-- Actions -->
+    <string name="action_save">حفظ</string>
+    <string name="action_cancel">إلغاء</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_edit">تعديل</string>
+    <string name="action_add_new">إنشاء جديد</string>
+    <string name="action_search">بحث</string>
+    <string name="action_filter">تصفية</string>
+    <string name="action_sort">ترتيب</string>
+    <string name="action_view_details">عرض التفاصيل</string>
+    <string name="action_back">رجوع</string>
+    <string name="action_confirm">تأكيد</string>
+    <string name="action_close">إغلاق</string>
+    <string name="action_done">تم</string>
+    <string name="action_share">مشاركة</string>
+    <string name="action_download">تحميل</string>
+    <string name="action_print">طباعة</string>
+    <string name="action_export_pdf">تصدير PDF</string>
+    <string name="action_refresh">تحديث</string>
+    <string name="action_play">تشغيل</string>
+    <string name="action_pause">إيقاف مؤقت</string>
+    <string name="action_copy">نسخ</string>
+
+    <!-- Language & Locale -->
+    <string name="language_settings">لغة التطبيق</string>
+    <string name="language_settings_subtitle">اختر لغة التطبيق المفضلة</string>
+    <string name="select_language">اختر اللغة</string>
+    <string name="language_bangla">বাংলা (البنغالية)</string>
+    <string name="language_english">English (الإنجليزية)</string>
+    <string name="language_arabic">العربية (Arabic)</string>
+    <string name="language_switched_msg">تم تغيير اللغة بنجاح</string>
+    <string name="language_desc">اختر لغتك المفضلة، وسيتكيف التطبيق بالكامل مع اللغة المحددة.</string>
+
+    <!-- Quran & Reading Modes -->
+    <string name="mode_hafezi">مصحف الحفظ</string>
+    <string name="mode_hafezi_desc">مصحف ١٥ سطر مخصص للحفظ والمراجعة</string>
+    <string name="mode_tajweed">مصحف التجويد الملون</string>
+    <string name="mode_tajweed_desc">مصحف ملون بأحكام التجويد المعتمدة</string>
+    <string name="mode_translation">وضع الترجمة</string>
+    <string name="mode_translation_desc">ترجمة الآيات ومعاني الكلمات</string>
+    <string name="mode_mushaf">مكتبة المصاحف</string>
+    <string name="mode_mushaf_desc">مصاحف رقمية مطبوعة بجودة عالية</string>
+    <string name="mode_player">التلاوات الصوتية</string>
+    <string name="mode_player_desc">تلاوات عذبة لكبار قراء العالم الإسلامي</string>
+    <string name="mode_video">صانع الفيديو</string>
+    <string name="mode_video_desc">إنشاء مقاطع قرآنية مميزة مع الترجمة والخط</string>
+
+    <!-- Islamic & Utility Modules -->
+    <string name="feature_quran">القرآن الكريم</string>
+    <string name="feature_prayer_times">مواقيت الصلاة</string>
+    <string name="feature_nearby_mosque">المساجد القريبة</string>
+    <string name="feature_qibla">بوصلة القبلة</string>
+    <string name="feature_tasbih">المسبحة الإلكترونية</string>
+    <string name="feature_dua">الأدعية القرآنية</string>
+    <string name="feature_morning_evening_dua">أذكار الصباح والمساء</string>
+    <string name="feature_manzil">المنزل</string>
+    <string name="feature_subjectwise">مواضيع القرآن</string>
+    <string name="feature_hifz_tracker">تحفيظ القرآن</string>
+    <string name="feature_hijri_calendar">التقويم الهجري</string>
+    <string name="feature_planner">مخطط ختم القرآن</string>
+    <string name="feature_ramadan">إمساكية رمضان</string>
+    <string name="feature_zakat_calc">حاسبة الزكاة</string>
+    <string name="feature_word_game">لعبة الكلمات</string>
+    <string name="feature_bookmarks">الإشارات المرجعية</string>
+    <string name="feature_notes">دفتر الملاحظات</string>
+
+    <!-- Settings Menu Sections -->
+    <string name="menu_title">خيارات القائمة</string>
+    <string name="section_quran_media">دراسة القرآن والإعلام</string>
+    <string name="section_dua_ibadah">الأدعية والعبادة</string>
+    <string name="section_personal_tools">الأدوات الشخصية</string>
+    <string name="section_app_settings">إعدادات النظام والتطبيق</string>
+
+    <!-- App System Settings -->
+    <string name="setting_font_tajweed">الخط والتجويد</string>
+    <string name="setting_app_theme">مظهر التطبيق</string>
+    <string name="setting_notifications">الإشعارات</string>
+    <string name="setting_offline_download">التحميل بدون إنترنت</string>
+    <string name="setting_backup">النسخ الاحتياطي</string>
+    <string name="setting_about">حول التطبيق والخصوصية</string>
+    <string name="setting_contact">اتصل بنا</string>
+    <string name="setting_keep_screen_on">إبقاء الشاشة مضاءة</string>
+    <string name="setting_show_translation">عرض الترجمة</string>
+    <string name="setting_show_transliteration">النطق الصوتي للكلمات</string>
+    <string name="setting_show_tajweed">ألوان أحكام التجويد</string>
+    <string name="setting_tanzil_style">رسم المصحف الشريف</string>
+
+    <!-- Dialogs & Prompts -->
+    <string name="dialog_download_title">تحميل المصحف</string>
+    <string name="dialog_download_desc">قم بتحميل هذا المصحف للقراءة بالكامل بدون الحاجة لإنترنت.</string>
+    <string name="exit_prompt">اضغط مرة أخرى للخروج</string>
+    <string name="search_surah_placeholder">ابحث عن سورة (مثال: الفاتحة أو ١)...</string>
+    <string name="search_ayah_placeholder">ابحث عن آية أو كلمة...</string>
+    <string name="qari_selection_title">اختر القارئ</string>
+    <string name="qari_selection_subtitle">اختر قارئك المفضل للاستماع</string>
+</resources>

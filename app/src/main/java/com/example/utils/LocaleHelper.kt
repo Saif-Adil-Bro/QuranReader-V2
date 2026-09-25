@@ -10,7 +10,7 @@ import android.os.LocaleList
 import java.util.Locale
 
 /**
- * Utility for managing dynamic in-app locale (Bangla <-> English)
+ * Utility for managing dynamic in-app locale (Bangla <-> English <-> Arabic)
  */
 object LocaleHelper {
 
@@ -18,6 +18,7 @@ object LocaleHelper {
     private const val KEY_LANGUAGE = "selected_language"
     const val LANGUAGE_BANGLA = "bn"
     const val LANGUAGE_ENGLISH = "en"
+    const val LANGUAGE_ARABIC = "ar"
 
     fun onAttach(context: Context): Context {
         val lang = getPersistedLanguage(context, LANGUAGE_BANGLA)

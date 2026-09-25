@@ -132,57 +132,56 @@ fun SettingsScreen(
     
     var activeDialog by remember(initialSubScreen) { mutableStateOf<String?>(initialSubScreen) }
     val currentLanguage by viewModel.appLanguage.collectAsState()
-    val isEn = currentLanguage == "en"
     
-    val menuCategories = remember(isEn) {
+    val menuCategories = remember(currentLanguage) {
         listOf(
             MenuCategory(
-                title = if (isEn) "Quran Study & Media" else "কুরআন শিক্ষা ও মিডিয়া",
+                title = com.example.utils.SettingsLocalization.get("cat_quran_media", currentLanguage),
                 icon = Icons.Default.MenuBook,
                 items = listOf(
-                    MenuItem("subjectwise", if (isEn) "Subjectwise Quran" else "বিষয়ভিত্তিক কুরআন", Icons.Default.Category, Color(0xFF3B82F6)),
-                    MenuItem("learn", if (isEn) "Quran Learning" else "কুরআন শিক্ষা", Icons.Default.Book, Color(0xFF4F46E5)),
-                    MenuItem("hifz", if (isEn) "Hifz Tracker" else "কুরআন হিফজ", Icons.Default.CheckCircle, Color(0xFF6366F1)),
-                    MenuItem("player", if (isEn) "Audio Player" else "কুরআন প্লেয়ার", Icons.Default.MusicNote, Color(0xFF06B6D4)),
-                    MenuItem("video", if (isEn) "Video Creator" else "ভিডিও এডিটর", Icons.Default.Videocam, Color(0xFFEF4444))
+                    MenuItem("subjectwise", com.example.utils.SettingsLocalization.get("item_subjectwise", currentLanguage), Icons.Default.Category, Color(0xFF3B82F6)),
+                    MenuItem("learn", com.example.utils.SettingsLocalization.get("item_learn", currentLanguage), Icons.Default.Book, Color(0xFF4F46E5)),
+                    MenuItem("hifz", com.example.utils.SettingsLocalization.get("item_hifz", currentLanguage), Icons.Default.CheckCircle, Color(0xFF6366F1)),
+                    MenuItem("player", com.example.utils.SettingsLocalization.get("item_player", currentLanguage), Icons.Default.MusicNote, Color(0xFF06B6D4)),
+                    MenuItem("video", com.example.utils.SettingsLocalization.get("item_video", currentLanguage), Icons.Default.Videocam, Color(0xFFEF4444))
                 )
             ),
             MenuCategory(
-                title = if (isEn) "Dua & Worship" else "দুআ ও ইবাদত",
+                title = com.example.utils.SettingsLocalization.get("cat_dua_worship", currentLanguage),
                 icon = Icons.Default.AutoAwesome,
                 items = listOf(
-                    MenuItem("dua", if (isEn) "Quranic Duas" else "কুরআনিক দুআ", Icons.Default.Schedule, Color(0xFF8B5CF6)),
-                    MenuItem("morning_evening_dua", if (isEn) "Morning & Evening Duas" else "সকাল সন্ধ্যার দুআ", Icons.Default.WbSunny, Color(0xFFF59E0B)),
-                    MenuItem("mosque", if (isEn) "Nearby Mosques" else "নিকটবর্তী মসজিদ", Icons.Default.Place, Color(0xFF059669)),
-                    MenuItem("manzil", if (isEn) "Manzil" else "মানযিল", Icons.Default.AutoAwesome, Color(0xFF10B981)),
-                    MenuItem("qibla", if (isEn) "Qibla Compass" else "কিবলা কম্পাস", Icons.Default.Explore, Color(0xFFEAB308)),
-                    MenuItem("prayer_times", if (isEn) "Prayer Times" else "নামাজের সময়সূচি", Icons.Default.AccessTime, Color(0xFF059669)),
-                    MenuItem("prayer_alarms", if (isEn) "Prayer & Azan Alarms" else "নামাজ ও আজান অ্যালার্ম", Icons.Default.Alarm, Color(0xFF10B981)),
-                    MenuItem("calendar", if (isEn) "Islamic Calendar" else "ক্যালেন্ডার", Icons.Default.CalendarMonth, Color(0xFF10B981)),
-                    MenuItem("planner", if (isEn) "Quran Planner" else "কুরআন প্ল্যানার", Icons.Default.DateRange, Color(0xFF10B981))
+                    MenuItem("dua", com.example.utils.SettingsLocalization.get("item_dua", currentLanguage), Icons.Default.Schedule, Color(0xFF8B5CF6)),
+                    MenuItem("morning_evening_dua", com.example.utils.SettingsLocalization.get("item_morning_evening_dua", currentLanguage), Icons.Default.WbSunny, Color(0xFFF59E0B)),
+                    MenuItem("mosque", com.example.utils.SettingsLocalization.get("item_mosque", currentLanguage), Icons.Default.Place, Color(0xFF059669)),
+                    MenuItem("manzil", com.example.utils.SettingsLocalization.get("item_manzil", currentLanguage), Icons.Default.AutoAwesome, Color(0xFF10B981)),
+                    MenuItem("qibla", com.example.utils.SettingsLocalization.get("item_qibla", currentLanguage), Icons.Default.Explore, Color(0xFFEAB308)),
+                    MenuItem("prayer_times", com.example.utils.SettingsLocalization.get("item_prayer_times", currentLanguage), Icons.Default.AccessTime, Color(0xFF059669)),
+                    MenuItem("prayer_alarms", com.example.utils.SettingsLocalization.get("item_prayer_alarms", currentLanguage), Icons.Default.Alarm, Color(0xFF10B981)),
+                    MenuItem("calendar", com.example.utils.SettingsLocalization.get("item_calendar", currentLanguage), Icons.Default.CalendarMonth, Color(0xFF10B981)),
+                    MenuItem("planner", com.example.utils.SettingsLocalization.get("item_planner", currentLanguage), Icons.Default.DateRange, Color(0xFF10B981))
                 )
             ),
             MenuCategory(
-                title = if (isEn) "Personal Tools" else "ব্যক্তিগত টুলস",
+                title = com.example.utils.SettingsLocalization.get("cat_personal_tools", currentLanguage),
                 icon = Icons.Default.Person,
                 items = listOf(
-                    MenuItem("bookmark", if (isEn) "Bookmarks" else "বুকমার্ক", Icons.Default.Bookmark, Color(0xFFEF4444)),
-                    MenuItem("note", if (isEn) "Notepad" else "নোট", Icons.Default.Edit, Color(0xFF0D9488)),
-                    MenuItem("game", if (isEn) "Word Game" else "ওয়ার্ড গেম", Icons.Default.PlayCircle, Color(0xFFEC4899))
+                    MenuItem("bookmark", com.example.utils.SettingsLocalization.get("item_bookmark", currentLanguage), Icons.Default.Bookmark, Color(0xFFEF4444)),
+                    MenuItem("note", com.example.utils.SettingsLocalization.get("item_note", currentLanguage), Icons.Default.Edit, Color(0xFF0D9488)),
+                    MenuItem("game", com.example.utils.SettingsLocalization.get("item_game", currentLanguage), Icons.Default.PlayCircle, Color(0xFFEC4899))
                 )
             ),
             MenuCategory(
-                title = if (isEn) "App System & Settings" else "অ্যাপ সিস্টেম ও সেটিংস",
+                title = com.example.utils.SettingsLocalization.get("cat_app_settings", currentLanguage),
                 icon = Icons.Default.Settings,
                 items = listOf(
-                    MenuItem("language", if (isEn) "App Language" else "ভাষা নির্বাচন", Icons.Default.Translate, Color(0xFF2563EB)),
-                    MenuItem("font_settings", if (isEn) "Font & Tajweed" else "ফন্ট ও তাজভীদ", Icons.Default.FontDownload, Color(0xFF10B981)),
-                    MenuItem("theme", if (isEn) "App Theme" else "অ্যাপ থিম", Icons.Default.Palette, Color(0xFF9C27B0)),
-                    MenuItem("notifications", if (isEn) "Notifications" else "নোটিফিকেশন", Icons.Default.Notifications, Color(0xFFFBBF24)),
-                    MenuItem("offline_sync", if (isEn) "Offline Download" else "অফলাইন ডাউনলোড", Icons.Default.Download, Color(0xFFF59E0B)),
-                    MenuItem("backup", if (isEn) "Backup" else "ব্যাকআপ", Icons.Default.Cloud, Color(0xFF6B7280)),
-                    MenuItem("about", if (isEn) "About" else "সম্পর্কে", Icons.Default.Info, Color(0xFF4CAF50)),
-                    MenuItem("contact", if (isEn) "Contact" else "যোগাযোগ", Icons.Default.ContactMail, Color(0xFFF97316))
+                    MenuItem("language", com.example.utils.SettingsLocalization.get("item_language", currentLanguage), Icons.Default.Translate, Color(0xFF2563EB)),
+                    MenuItem("font_settings", com.example.utils.SettingsLocalization.get("item_font_settings", currentLanguage), Icons.Default.FontDownload, Color(0xFF10B981)),
+                    MenuItem("theme", com.example.utils.SettingsLocalization.get("item_theme", currentLanguage), Icons.Default.Palette, Color(0xFF9C27B0)),
+                    MenuItem("notifications", com.example.utils.SettingsLocalization.get("item_notifications", currentLanguage), Icons.Default.Notifications, Color(0xFFFBBF24)),
+                    MenuItem("offline_sync", com.example.utils.SettingsLocalization.get("item_offline_sync", currentLanguage), Icons.Default.Download, Color(0xFFF59E0B)),
+                    MenuItem("backup", com.example.utils.SettingsLocalization.get("item_backup", currentLanguage), Icons.Default.Cloud, Color(0xFF6B7280)),
+                    MenuItem("about", com.example.utils.SettingsLocalization.get("item_about", currentLanguage), Icons.Default.Info, Color(0xFF4CAF50)),
+                    MenuItem("contact", com.example.utils.SettingsLocalization.get("item_contact", currentLanguage), Icons.Default.ContactMail, Color(0xFFF97316))
                 )
             )
         )
@@ -202,7 +201,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (isEn) "Menu Options" else "মেনু অপশন",
+                        text = com.example.utils.SettingsLocalization.get("menu_title", currentLanguage),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -215,7 +214,7 @@ fun SettingsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
+                            contentDescription = com.example.utils.SettingsLocalization.get("close", currentLanguage),
                             tint = GrayText,
                             modifier = Modifier.size(20.dp)
                         )
@@ -1203,34 +1202,33 @@ fun MenuDetailDialog(
                 color = if (type == "qibla") Color.Transparent else MaterialTheme.colorScheme.background
             ) {
             val currentLang by viewModel.appLanguage.collectAsState()
-            val isEn = currentLang == "en"
             Column(modifier = Modifier.fillMaxSize()) {
                 // Dialog Header
                 val title = when (type) {
-                    "calendar" -> if (isEn) "Islamic Calendar" else "ক্যালেন্ডার"
-                    "profile" -> if (isEn) "My Profile" else "আমার প্রোফাইল"
-                    "bookmark" -> if (isEn) "Bookmarks" else "বুকমার্ক তালিকা"
-                    "note" -> if (isEn) "My Notepad" else "আমার নোটপ্যাড"
-                    "planner" -> if (isEn) "Quran Planner" else "কুরআন প্ল্যানার"
-                    "subjectwise" -> if (isEn) "Subjectwise Quran" else "বিষয়ভিত্তিক কুরআন"
-                    "manzil" -> if (isEn) "Manzil" else "মানযিল"
-                    "dua" -> if (isEn) "Quranic Duas" else "কুরআনিক দুআ"
-                    "morning_evening_dua" -> if (isEn) "Morning & Evening Duas" else "সকাল সন্ধ্যার দুআ"
-                    "qibla" -> if (isEn) "Qibla Compass" else "কিবলা কম্পাস"
-                    "game" -> if (isEn) "Word Game" else "ওয়ার্ড গেম"
-                    "player" -> if (isEn) "Quran Audio Player" else "কুরআন অডিও প্লেয়ার"
-                    "hifz" -> if (isEn) "Hifz Tracker" else "হিফজ ট্র্যাকার"
-                    "learn" -> if (isEn) "Quran Learning" else "কুরআন শিক্ষা"
-                    "video" -> if (isEn) "Video Creator" else "ভিডিও এডিটর"
-                    "offline_sync" -> if (isEn) "Offline Quran Download" else "কুরআন অফলাইন ডাউনলোড"
-                    "language" -> if (isEn) "Language Settings" else "ভাষা নির্বাচন / Language"
-                    "font_settings" -> if (isEn) "Font & Tajweed" else "ফন্ট ও তাজভীদ"
-                    "backup" -> if (isEn) "Backup & Restore" else "ব্যাকআপ"
-                    "notifications" -> if (isEn) "Notification Settings" else "নোটিফিকেশন সেটিংস"
-                    "theme" -> if (isEn) "App Theme" else "অ্যাপ থিম"
-                    "about" -> if (isEn) "About & Privacy" else "আমাদের সম্পর্কে ও প্রাইভেসি"
-                    "contact" -> if (isEn) "Contact Us" else "যোগাযোগ"
-                    else -> if (isEn) "Details" else "বিস্তারিত"
+                    "calendar" -> com.example.utils.SettingsLocalization.get("item_calendar", currentLang)
+                    "profile" -> com.example.utils.SettingsLocalization.get("profile_title", currentLang)
+                    "bookmark" -> com.example.utils.SettingsLocalization.get("item_bookmark", currentLang)
+                    "note" -> com.example.utils.SettingsLocalization.get("item_note", currentLang)
+                    "planner" -> com.example.utils.SettingsLocalization.get("item_planner", currentLang)
+                    "subjectwise" -> com.example.utils.SettingsLocalization.get("item_subjectwise", currentLang)
+                    "manzil" -> com.example.utils.SettingsLocalization.get("item_manzil", currentLang)
+                    "dua" -> com.example.utils.SettingsLocalization.get("item_dua", currentLang)
+                    "morning_evening_dua" -> com.example.utils.SettingsLocalization.get("item_morning_evening_dua", currentLang)
+                    "qibla" -> com.example.utils.SettingsLocalization.get("item_qibla", currentLang)
+                    "game" -> com.example.utils.SettingsLocalization.get("item_game", currentLang)
+                    "player" -> com.example.utils.SettingsLocalization.get("item_player", currentLang)
+                    "hifz" -> com.example.utils.SettingsLocalization.get("item_hifz", currentLang)
+                    "learn" -> com.example.utils.SettingsLocalization.get("item_learn", currentLang)
+                    "video" -> com.example.utils.SettingsLocalization.get("item_video", currentLang)
+                    "offline_sync" -> com.example.utils.SettingsLocalization.get("item_offline_sync", currentLang)
+                    "language" -> com.example.utils.SettingsLocalization.get("lang_screen_title", currentLang)
+                    "font_settings" -> com.example.utils.SettingsLocalization.get("item_font_settings", currentLang)
+                    "backup" -> com.example.utils.SettingsLocalization.get("item_backup", currentLang)
+                    "notifications" -> com.example.utils.SettingsLocalization.get("item_notifications", currentLang)
+                    "theme" -> com.example.utils.SettingsLocalization.get("item_theme", currentLang)
+                    "about" -> com.example.utils.SettingsLocalization.get("item_about", currentLang)
+                    "contact" -> com.example.utils.SettingsLocalization.get("item_contact", currentLang)
+                    else -> com.example.utils.SettingsLocalization.get("details", currentLang)
                 }
                 
                 Row(
