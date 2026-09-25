@@ -480,10 +480,11 @@ fun PrayerTimesDetailSheet(
 
                 PrayerDivider()
 
-                // Dhuhr
+                // Dhuhr / Jumu'ah on Friday
+                val dhuhrName = if (activeSchedule.isFriday) "জুমুআ" else "যোহর"
                 PrayerDetailRow(
                     icon = Icons.Outlined.WbSunny,
-                    name = "যুহর",
+                    name = dhuhrName,
                     timeRange = activeSchedule.dhuhrRange,
                     prayerName = com.example.data.model.PrayerName.DHUHR,
                     onAlarmClick = { selectedWaqtForAlarmSettings = it }
@@ -519,7 +520,7 @@ fun PrayerTimesDetailSheet(
                 // Isha
                 PrayerDetailRow(
                     icon = Icons.Outlined.Nightlight,
-                    name = "ইশা",
+                    name = "এশা",
                     timeRange = activeSchedule.ishaRange,
                     subItems = listOf(
                         BulletSubItem("উত্তম সময় শেষ: ${activeSchedule.ishaUttomTime}", GreenBullet),
@@ -797,10 +798,11 @@ fun PrayerTimesDetailSheet(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         // Chips for individual prayers
+                        val dhuhrToggleName = if (activeSchedule.isFriday) "জুমুআ" else "যোহর"
                         val prayersToToggle = listOf(
                             Triple("সাহরি", isNotifSahri, com.example.data.model.PrayerName.SAHRI),
                             Triple("ফজর", isNotifFajr, com.example.data.model.PrayerName.FAJR),
-                            Triple("যুহর", isNotifDhuhr, com.example.data.model.PrayerName.DHUHR),
+                            Triple(dhuhrToggleName, isNotifDhuhr, com.example.data.model.PrayerName.DHUHR),
                             Triple("আসর", isNotifAsr, com.example.data.model.PrayerName.ASR),
                             Triple("মাগরিব", isNotifMaghrib, com.example.data.model.PrayerName.MAGHRIB),
                             Triple("ইফতার", isNotifIftar, com.example.data.model.PrayerName.IFTAR),
@@ -1401,17 +1403,17 @@ private fun PrayerReferenceDialog(
                 val referenceContent = when (type) {
                     ReferenceType.FARD_PRAYERS -> """
                         • ফজর: সুবহে সাদিক থেকে শুরু হয়ে সূর্যোদয়ের পূর্ব পর্যন্ত। (সহীহ মুসলিম ৬১২)
-                        • যুহর: সূর্য পশ্চিমাকাশে ঢলে পড়ার পর থেকে শুরু করে প্রতিটি বস্তুর ছায়া সমপরিমাণ হওয়া পর্যন্ত। (সহীহ বুখারী ৫৪১)
+                        • যোহর: সূর্য পশ্চিমাকাশে ঢলে পড়ার পর থেকে শুরু করে প্রতিটি বস্তুর ছায়া সমপরিমাণ হওয়া পর্যন্ত। (সহীহ বুখারী ৫৪১)
                         • আসর: আসরের ওয়াক্ত শুরু হয় ছায়া দ্বিগুণ হওয়ার পর (হানাফী) বা এক গুণ পর (জমহুর) থেকে সূর্যাস্তের পূর্ব পর্যন্ত।
                         • মাগরিব: সূর্যাস্তের পর থেকে পশ্চিমাকাশের লাল আভা (শাফাক) বিলীন হওয়া পর্যন্ত।
-                        • ইশা: পশ্চিমাকাশের লালিমা দূর হওয়ার পর থেকে ফজর উদয় পর্যন্ত (উত্তম সময় রাতের প্রথমার্ধ)।
+                        • এশা: পশ্চিমাকাশের লালিমা দূর হওয়ার পর থেকে ফজর উদয় পর্যন্ত (উত্তম সময় রাতের প্রথমার্ধ)।
                     """.trimIndent()
 
                     ReferenceType.NAFL_PRAYERS -> """
                         • দুহা (ইশরাক/চাশত): সূর্যোদয়ের ১৫-২০ মিনিট পর থেকে ঠিক দ্বিপ্রহরের (জাওয়াল) ১০ মিনিট পূর্ব পর্যন্ত। রাসুলুল্লাহ (ﷺ) নিয়মিত দুহার সালাত পড়ার অসিয়ত করেছেন। (বুখারী ১৯৮১)
                         • জাওয়াল: ঠিক দুপুরে সূর্য যখন মধ্যাকাশে অবস্থান করে, তখন সালাত মাকরূহ। সূর্য সামান্য ঢলে পড়ার পরই যোহরের ওয়াক্ত হয়।
                         • আওয়াবিন: মাগরিবের ফরজের পর ৬ রাকাত পর্যন্ত নফল সালাত আদায় করা মুস্তাহাব।
-                        • তাহাজ্জুদ: ইশার সালাত ও ঘুমের পর থেকে সুবহে সাদিক পর্যন্ত। রাতের শেষ তৃতীয়াংশ সর্বোত্তম সময়। (সহীহ বুখারী ১১৪৫)
+                        • তাহাজ্জুদ: এশার সালাত ও ঘুমের পর থেকে সুবহে সাদিক পর্যন্ত। রাতের শেষ তৃতীয়াংশ সর্বোত্তম সময়। (সহীহ বুখারী ১১৪৫)
                     """.trimIndent()
 
                     ReferenceType.FORBIDDEN_TIMES -> """

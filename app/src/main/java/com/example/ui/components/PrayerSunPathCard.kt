@@ -77,7 +77,7 @@ fun PrayerSunPathCard(
                 list.add(
                     VisualPrayerPoint(
                         name = prayerTime.name.name,
-                        bengaliName = prayerTime.name.nameBn,
+                        bengaliName = prayerTime.displayNameBn,
                         timeMinutes = minutes,
                         timeString = "${prayerTime.timeDigits} ${prayerTime.amPm}",
                         iconType = prayerTime.name

@@ -59,6 +59,7 @@ fun QuranVideoCreatorScreen(
     val exportError by viewModel.exportError.collectAsState()
 
     val context = LocalContext.current
+    val isEn = com.example.utils.LocaleHelper.getLanguage(context) == "en"
 
     LaunchedEffect(initialSurah, initialAyah) {
         if (initialSurah != null && initialSurah > 0) {
@@ -79,15 +80,15 @@ fun QuranVideoCreatorScreen(
                 title = {
                     Column {
                         Text(
-                            text = "🎬 কুরআন ভিডিও ক্রিয়েটর",
+                            text = if (isEn) "🎬 Quran Video Creator" else "🎬 কুরআন ভিডিও ক্রিয়েটর",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
                             text = when (currentStep) {
-                                1 -> "ধাপ ১: আয়াত নির্বাচন"
-                                2 -> "ধাপ ২: অডিও ডাউনলোড ও প্রস্তুতি"
-                                3 -> "ধাপ ৩: ডিজাইন ও লাইভ প্রিভিউ"
-                                else -> "ধাপ ৪: ভিডিও রেন্ডারিং ও শেয়ার"
+                                1 -> if (isEn) "Step 1: Select Verses" else "ধাপ ১: আয়াত নির্বাচন"
+                                2 -> if (isEn) "Step 2: Audio Download & Prep" else "ধাপ ২: অডিও ডাউনলোড ও প্রস্তুতি"
+                                3 -> if (isEn) "Step 3: Design & Live Preview" else "ধাপ ৩: ডিজাইন ও লাইভ প্রিভিউ"
+                                else -> if (isEn) "Step 4: Video Render & Share" else "ধাপ ৪: ভিডিও রেন্ডারিং ও শেয়ার"
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -152,6 +153,7 @@ fun QuranVideoCreatorScreen(
                 when (currentStep) {
                     1 -> Step1ContentSelection(
                         config = config,
+                        isEn = isEn,
                         onSurahSelected = { surah, start, end -> viewModel.loadSurah(surah, start, end) },
                         onToggleBismillah = { viewModel.toggleIncludeBismillah(it) },
                         onNext = { viewModel.setStep(2) }
@@ -160,6 +162,7 @@ fun QuranVideoCreatorScreen(
                         config = config,
                         audioPrepState = audioPrepState,
                         playingAyahNumber = playingAyahNumber,
+                        isEn = isEn,
                         onQariSelected = { qId, qName -> viewModel.setQari(qId, qName) },
                         onStartPrepare = { viewModel.startAudioPreparation() },
                         onPlayAyah = { viewModel.playSingleAyahAudio(it) },
@@ -171,6 +174,7 @@ fun QuranVideoCreatorScreen(
                         isPlaying = isPlaying,
                         playbackProgress = playbackProgress,
                         currentAyahIndex = currentAyahIndex,
+                        isEn = isEn,
                         onTogglePlayPause = { viewModel.togglePlayPause() },
                         onSeek = { viewModel.seekToProgress(it) },
                         onTemplateSelected = { viewModel.setTemplate(it) },
@@ -198,6 +202,7 @@ fun QuranVideoCreatorScreen(
                         progress = exportProgress,
                         exportedUri = exportedUri,
                         errorMessage = exportError,
+                        isEn = isEn,
                         onShare = { viewModel.shareExportedVideo() },
                         onCreateAnother = { viewModel.setStep(1) }
                     )
@@ -210,6 +215,7 @@ fun QuranVideoCreatorScreen(
 @Composable
 fun Step1ContentSelection(
     config: QuranVideoConfig,
+    isEn: Boolean = false,
     onSurahSelected: (Int, Int, Int) -> Unit,
     onToggleBismillah: (Boolean) -> Unit,
     onNext: () -> Unit
@@ -243,14 +249,14 @@ fun Step1ContentSelection(
             ) {
                 Icon(Icons.Default.Movie, contentDescription = null, tint = PrimaryGreen, modifier = Modifier.size(32.dp))
                 Column {
-                    Text("কুরআন ভিডিও ক্রিয়েটর (৪-ধাপ পদ্ধতি)", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text("১. আয়াত সিলেক্ট ➔ ২. অডিও ডাউনলোড ও প্রিপারেশন ➔ ৩. ডিজাইন ও প্রিভিউ ➔ ৪. রেন্ডারিং ও শেয়ার", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(if (isEn) "Quran Video Creator (4-Step Flow)" else "কুরআন ভিডিও ক্রিয়েটর (৪-ধাপ পদ্ধতি)", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(if (isEn) "1. Select Verses ➔ 2. Audio Prep ➔ 3. Design & Preview ➔ 4. Render & Share" else "১. আয়াত সিলেক্ট ➔ ২. অডিও ডাউনলোড ও প্রিপারেশন ➔ ৩. ডিজাইন ও প্রিভিউ ➔ ৪. রেন্ডারিং ও শেয়ার", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
 
         // Surah Selection
-        Text("১. সূরা নির্বাচন করুন", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        Text(if (isEn) "1. Select Surah" else "১. সূরা নির্বাচন করুন", fontWeight = FontWeight.Bold, fontSize = 14.sp)
         OutlinedCard(
             onClick = { expandedSurahDropdown = true },
             modifier = Modifier.fillMaxWidth(),
@@ -265,12 +271,12 @@ fun Step1ContentSelection(
             ) {
                 Column {
                     Text(
-                        text = "সূরা $currentBanglaName ($currentArabicName)",
+                        text = if (isEn) "Surah $currentArabicName ($currentBanglaName)" else "সূরা $currentBanglaName ($currentArabicName)",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     )
                     Text(
-                        text = "মোট আয়াত সংখ্যা: ${DateUtil.toBengaliNumerals(totalAyahs)}টি",
+                        text = if (isEn) "Total verses: $totalAyahs" else "মোট আয়াত সংখ্যা: ${DateUtil.toBengaliNumerals(totalAyahs)}টি",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -290,7 +296,7 @@ fun Step1ContentSelection(
                 val sArabic = item.second.second
                 DropdownMenuItem(
                     text = {
-                        Text("${DateUtil.toBengaliNumerals(sNum)}. সূরা $sBangla ($sArabic)")
+                        Text(if (isEn) "$sNum. Surah $sArabic ($sBangla)" else "${DateUtil.toBengaliNumerals(sNum)}. সূরা $sBangla ($sArabic)")
                     },
                     onClick = {
                         selectedSurahNumber = sNum
@@ -304,7 +310,7 @@ fun Step1ContentSelection(
         }
 
         // Ayah Range Selection
-        Text("২. আয়াতের পরিসীমা নির্বাচন করুন (১ হতে ${DateUtil.toBengaliNumerals(totalAyahs)})", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        Text(if (isEn) "2. Select Ayah Range (1 to $totalAyahs)" else "২. আয়াতের পরিসীমা নির্বাচন করুন (১ হতে ${DateUtil.toBengaliNumerals(totalAyahs)})", fontWeight = FontWeight.Bold, fontSize = 14.sp)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -321,7 +327,7 @@ fun Step1ContentSelection(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        "শুরুর আয়াত",
+                        text = if (isEn) "Start Ayah" else "শুরুর আয়াত",
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -347,7 +353,7 @@ fun Step1ContentSelection(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Default.Remove,
-                                    contentDescription = "কমান",
+                                    contentDescription = if (isEn) "Decrease" else "কমান",
                                     tint = PrimaryGreen,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -394,7 +400,7 @@ fun Step1ContentSelection(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Default.Add,
-                                    contentDescription = "বাড়ান",
+                                    contentDescription = if (isEn) "Increase" else "বাড়ান",
                                     tint = Color.White,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -416,7 +422,7 @@ fun Step1ContentSelection(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        "শেষ আয়াত",
+                        text = if (isEn) "End Ayah" else "শেষ আয়াত",
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -441,7 +447,7 @@ fun Step1ContentSelection(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Default.Remove,
-                                    contentDescription = "কমান",
+                                    contentDescription = if (isEn) "Decrease" else "কমান",
                                     tint = PrimaryGreen,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -486,7 +492,7 @@ fun Step1ContentSelection(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     Icons.Default.Add,
-                                    contentDescription = "বাড়ান",
+                                    contentDescription = if (isEn) "Increase" else "বাড়ান",
                                     tint = Color.White,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -525,13 +531,13 @@ fun Step1ContentSelection(
                     )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "শুরুতে বিসমিল্লাহ যুক্ত করুন",
+                            text = if (isEn) "Add Bismillah at start" else "শুরুতে বিসমিল্লাহ যুক্ত করুন",
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "ভিডিওর শুরুতে সূরা আল-ফাতিহার প্রথম আয়াত (বিসমিল্লাহ) তিলাওয়াতসহ যোগ হবে",
+                            text = if (isEn) "First verse of Surah Al-Fatiha (Bismillah) will be added at beginning" else "ভিডিওর শুরুতে সূরা আল-ফাতিহার প্রথম আয়াত (বিসমিল্লাহ) তিলাওয়াতসহ যোগ হবে",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -541,7 +547,7 @@ fun Step1ContentSelection(
         }
 
         // Preview of selected verses
-        Text("নির্বাচিত আয়াতসমূহ (${DateUtil.toBengaliNumerals(config.selectedAyahs.size)}টি)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        Text(if (isEn) "Selected Verses (${config.selectedAyahs.size})" else "নির্বাচিত আয়াতসমূহ (${DateUtil.toBengaliNumerals(config.selectedAyahs.size)}টি)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -558,7 +564,7 @@ fun Step1ContentSelection(
                                 modifier = Modifier.padding(bottom = 6.dp)
                             ) {
                                 Text(
-                                    text = "বিসমিল্লাহির রাহমানির রাহিম",
+                                    text = if (isEn) "Bismillahir Rahmanir Rahim" else "বিসমিল্লাহির রাহমানির রাহিম",
                                     color = PrimaryGreen,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.5.sp,
@@ -575,7 +581,7 @@ fun Step1ContentSelection(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = if (isBismillah) ayah.bengaliText else "${DateUtil.toBengaliNumerals(ayah.numberInSurah)}. ${ayah.bengaliText}",
+                            text = if (isBismillah) ayah.bengaliText else (if (isEn) "${ayah.numberInSurah}. ${ayah.bengaliText}" else "${DateUtil.toBengaliNumerals(ayah.numberInSurah)}. ${ayah.bengaliText}"),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -599,7 +605,7 @@ fun Step1ContentSelection(
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Text("পরবর্তী ধাপ: অডিও প্রস্তুতি ➔", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text(if (isEn) "Next: Audio Preparation ➔" else "পরবর্তী ধাপ: অডিও প্রস্তুতি ➔", fontWeight = FontWeight.Bold, fontSize = 15.sp)
         }
     }
 }
@@ -609,6 +615,7 @@ fun Step2AudioPreparation(
     config: QuranVideoConfig,
     audioPrepState: AudioPreparationState,
     playingAyahNumber: Int?,
+    isEn: Boolean = false,
     onQariSelected: (String, String) -> Unit,
     onStartPrepare: () -> Unit,
     onPlayAyah: (PreparedAyahAudio) -> Unit,
@@ -638,14 +645,14 @@ fun Step2AudioPreparation(
             ) {
                 Icon(Icons.Default.GraphicEq, contentDescription = null, tint = PrimaryGreen, modifier = Modifier.size(30.dp))
                 Column {
-                    Text("ধাপ ২: অডিও ডাউনলোড ও টাইমিং প্রস্তুতি", fontWeight = FontWeight.Bold, fontSize = 14.5.sp)
-                    Text("আগে অডিও ডাউনলোড করে প্রতিটি আয়াতের সঠিক সময়কাল (timing) পরিমাপ করা হবে, যাতে ভিডিওতে কোনো মিস-ম্যাচ না হয়।", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(if (isEn) "Step 2: Audio Download & Timing Preparation" else "ধাপ ২: অডিও ডাউনলোড ও টাইমিং প্রস্তুতি", fontWeight = FontWeight.Bold, fontSize = 14.5.sp)
+                    Text(if (isEn) "Audio will be downloaded beforehand to measure precise timings per verse, preventing audio-video sync mismatch." else "আগে অডিও ডাউনলোড করে প্রতিটি আয়াতের সঠিক সময়কাল (timing) পরিমাপ করা হবে, যাতে ভিডিওতে কোনো মিস-ম্যাচ না হয়।", fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
 
         // Qari Selection
-        Text("১. ক্বারী / তেলাওয়াতকারী নির্বাচন করুন", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        Text(if (isEn) "1. Select Qari / Reciter" else "১. ক্বারী / তেলাওয়াতকারী নির্বাচন করুন", fontWeight = FontWeight.Bold, fontSize = 14.sp)
         OutlinedCard(
             onClick = { expandedQariDropdown = true },
             modifier = Modifier.fillMaxWidth(),
@@ -665,13 +672,18 @@ fun Step2AudioPreparation(
                 ) {
                     Icon(Icons.Default.RecordVoiceOver, contentDescription = null, tint = PrimaryGreen)
                     Column {
+                        val displayQari = if (isEn) {
+                            com.example.util.QariData.list.find { it.id == config.qariId }?.nameEnglish ?: config.qariName
+                        } else {
+                            config.qariName.ifEmpty { currentQariDisplay }
+                        }
                         Text(
-                            text = config.qariName.ifEmpty { currentQariDisplay },
+                            text = displayQari,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
                         )
                         Text(
-                            text = "ক্বারী পরিবর্তন করতে স্পর্শ করুন",
+                            text = if (isEn) "Tap to change reciter" else "ক্বারী পরিবর্তন করতে স্পর্শ করুন",
                             fontSize = 11.5.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -691,12 +703,12 @@ fun Step2AudioPreparation(
                         text = {
                             Column {
                                 Text(
-                                    text = item.nameBengali,
+                                    text = if (isEn) item.nameEnglish else item.nameBengali,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                     color = if (isSelected) PrimaryGreen else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = item.nameEnglish,
+                                    text = if (isEn) item.nameBengali else item.nameEnglish,
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -710,7 +722,7 @@ fun Step2AudioPreparation(
                             }
                         },
                         onClick = {
-                            onQariSelected(item.id, item.nameBengali)
+                            onQariSelected(item.id, if (isEn) item.nameEnglish else item.nameBengali)
                             expandedQariDropdown = false
                         }
                     )
@@ -719,7 +731,7 @@ fun Step2AudioPreparation(
         }
 
         // Preparation Status Card
-        Text("২. অডিও প্রস্তুতি ও টাইমিং যাচাই", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        Text(if (isEn) "2. Audio Preparation & Timing Verification" else "২. অডিও প্রস্তুতি ও টাইমিং যাচাই", fontWeight = FontWeight.Bold, fontSize = 14.sp)
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -732,7 +744,7 @@ fun Step2AudioPreparation(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "নির্বাচিত আয়াত: ${DateUtil.toBengaliNumerals(config.selectedAyahs.size)}টি",
+                        text = if (isEn) "Selected verses: ${config.selectedAyahs.size}" else "নির্বাচিত আয়াত: ${DateUtil.toBengaliNumerals(config.selectedAyahs.size)}টি",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 13.5.sp
                     )
@@ -743,7 +755,7 @@ fun Step2AudioPreparation(
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
-                                text = "মোট দৈর্ঘ্য: ${String.format(java.util.Locale.US, "%.1f", totalSec)} সেকেন্ড",
+                                text = if (isEn) "Total duration: ${String.format(java.util.Locale.US, "%.1f", totalSec)} sec" else "মোট দৈর্ঘ্য: ${String.format(java.util.Locale.US, "%.1f", totalSec)} সেকেন্ড",
                                 color = PrimaryGreen,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 12.sp,
@@ -764,8 +776,13 @@ fun Step2AudioPreparation(
                             modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
                             color = PrimaryGreen
                         )
+                        val preparingText = if (isEn) {
+                            "Downloading & converting Ayah ${audioPrepState.currentAyahNumber} (${(audioPrepState.progress * 100).toInt()}%)..."
+                        } else {
+                            "আয়াত ${DateUtil.toBengaliNumerals(audioPrepState.currentAyahNumber)} ডাউনলোড ও কনভার্ট হচ্ছে (${(audioPrepState.progress * 100).toInt()}%)..."
+                        }
                         Text(
-                            text = "আয়াত ${DateUtil.toBengaliNumerals(audioPrepState.currentAyahNumber)} ডাউনলোড ও কনভার্ট হচ্ছে (${(audioPrepState.progress * 100).toInt()}%)...",
+                            text = preparingText,
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = PrimaryGreen
@@ -773,7 +790,7 @@ fun Step2AudioPreparation(
                     }
                 } else if (audioPrepState.errorMessage != null) {
                     Text(
-                        text = "ত্রুটি: ${audioPrepState.errorMessage}",
+                        text = if (isEn) "Error: ${audioPrepState.errorMessage}" else "ত্রুটি: ${audioPrepState.errorMessage}",
                         color = MaterialTheme.colorScheme.error,
                         fontSize = 12.5.sp
                     )
@@ -810,7 +827,11 @@ fun Step2AudioPreparation(
                                             )
                                         }
                                         Column {
-                                            val ayahTitle = if (prep.ayahNumber == 1 && config.surahNumber != 1) "বিসমিল্লাহ" else "আয়াত ${DateUtil.toBengaliNumerals(prep.numberInSurah)}"
+                                            val ayahTitle = if (prep.ayahNumber == 1 && config.surahNumber != 1) {
+                                                if (isEn) "Bismillah" else "বিসমিল্লাহ"
+                                            } else {
+                                                if (isEn) "Ayah ${prep.numberInSurah}" else "আয়াত ${DateUtil.toBengaliNumerals(prep.numberInSurah)}"
+                                            }
                                             Text(ayahTitle, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                             Text(prep.arabicPreview, fontSize = 11.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         }
@@ -821,7 +842,7 @@ fun Step2AudioPreparation(
                                         shape = RoundedCornerShape(6.dp)
                                     ) {
                                         Text(
-                                            text = "${String.format(java.util.Locale.US, "%.1f", prep.durationMs / 1000f)} সে.",
+                                            text = if (isEn) "${String.format(java.util.Locale.US, "%.1f", prep.durationMs / 1000f)} s" else "${String.format(java.util.Locale.US, "%.1f", prep.durationMs / 1000f)} সে.",
                                             fontSize = 11.5.sp,
                                             fontWeight = FontWeight.Medium,
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -851,7 +872,7 @@ fun Step2AudioPreparation(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (audioPrepState.isPrepared) "পুনরায় অডিও ডাউনলোড ও যাচাই করুন" else "📥 অডিও ডাউনলোড ও প্রিপারেশন শুরু করুন",
+                        text = if (audioPrepState.isPrepared) (if (isEn) "Re-download and Verify Audio" else "পুনরায় অডিও ডাউনলোড ও যাচাই করুন") else (if (isEn) "📥 Start Audio Download & Prep" else "📥 অডিও ডাউনলোড ও প্রিপারেশন শুরু করুন"),
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.5.sp
                     )
@@ -871,7 +892,7 @@ fun Step2AudioPreparation(
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Text("পরবর্তী ধাপ: টেমপ্লেট ও ডিজাইন প্রিভিউ ➔", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text(if (isEn) "Next: Template & Design Preview ➔" else "পরবর্তী ধাপ: টেমপ্লেট ও ডিজাইন প্রিভিউ ➔", fontWeight = FontWeight.Bold, fontSize = 15.sp)
         }
     }
 }
@@ -882,6 +903,7 @@ fun Step3DesignAndPreview(
     isPlaying: Boolean,
     playbackProgress: Float,
     currentAyahIndex: Int,
+    isEn: Boolean = false,
     onTogglePlayPause: () -> Unit,
     onSeek: (Float) -> Unit,
     onTemplateSelected: (QuranVideoTemplate) -> Unit,
@@ -995,9 +1017,9 @@ fun Step3DesignAndPreview(
                         if (config.showReference) {
                             val activeAyah = config.selectedAyahs.getOrNull(currentAyahIndex)
                             val refText = if (activeAyah != null && activeAyah.surahNumber == 1 && activeAyah.numberInSurah == 1 && config.surahNumber != 1) {
-                                "সূরা ${config.surahName} • বিসমিল্লাহ"
+                                if (isEn) "Surah ${config.surahName} • Bismillah" else "সূরা ${config.surahName} • বিসমিল্লাহ"
                             } else {
-                                "সূরা ${config.surahName} • আয়াত ${DateUtil.toBengaliNumerals(activeAyah?.numberInSurah ?: config.ayahStart)}"
+                                if (isEn) "Surah ${config.surahName} • Ayah ${activeAyah?.numberInSurah ?: config.ayahStart}" else "সূরা ${config.surahName} • আয়াত ${DateUtil.toBengaliNumerals(activeAyah?.numberInSurah ?: config.ayahStart)}"
                             }
                             Text(
                                 text = refText,
@@ -1122,7 +1144,7 @@ fun Step3DesignAndPreview(
 
         // 1. Template Picker
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("১. ভিডিও টেমপ্লেট নির্বাচন করুন", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(if (isEn) "1. Select Video Template" else "১. ভিডিও টেমপ্লেট নির্বাচন করুন", fontWeight = FontWeight.Bold, fontSize = 14.sp)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(QuranVideoTemplate.values()) { tmpl ->
                     val isSelected = config.template == tmpl
@@ -1175,7 +1197,7 @@ fun Step3DesignAndPreview(
 
         // 2. Aspect Ratio Picker
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("২. আসপেক্ট রেশিও (Aspect Ratio)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(if (isEn) "2. Aspect Ratio" else "২. আসপেক্ট রেশিও (Aspect Ratio)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1207,7 +1229,7 @@ fun Step3DesignAndPreview(
 
         // 3. Background Source & Overlay
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("৩. ব্যাকগ্রাউন্ড ছবি ও ওভারলে", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(if (isEn) "3. Background Image & Overlay" else "৩. ব্যাকগ্রাউন্ড ছবি ও ওভারলে", fontWeight = FontWeight.Bold, fontSize = 14.sp)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -1219,7 +1241,7 @@ fun Step3DesignAndPreview(
                 ) {
                     Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("গ্যালারি ছবি", fontSize = 13.sp)
+                    Text(if (isEn) "Gallery Image" else "গ্যালারি ছবি", fontSize = 13.sp)
                 }
 
                 if (config.customImageUri != null || config.backgroundPresetName != null) {
@@ -1230,7 +1252,7 @@ fun Step3DesignAndPreview(
                     ) {
                         Icon(Icons.Default.Clear, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("ডিফল্ট গ্রেডিয়েন্ট", fontSize = 13.sp)
+                        Text(if (isEn) "Default Gradient" else "ডিফল্ট গ্রেডিয়েন্ট", fontSize = 13.sp)
                     }
                 }
             }
@@ -1261,7 +1283,7 @@ fun Step3DesignAndPreview(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Default.Tune, contentDescription = null, tint = PrimaryGreen)
-                    Text("ফন্ট, লাইন স্পেসিং ও কাস্টমাইজেশন", fontWeight = FontWeight.Bold, fontSize = 13.5.sp)
+                    Text(if (isEn) "Fonts, Line Spacing & Customization" else "ফন্ট, লাইন স্পেসিং ও কাস্টমাইজেশন", fontWeight = FontWeight.Bold, fontSize = 13.5.sp)
                 }
                 Icon(if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null)
             }
@@ -1275,7 +1297,7 @@ fun Step3DesignAndPreview(
                     .padding(horizontal = 4.dp)
             ) {
                 // Animation Style
-                Text("টেক্সট অ্যানিমেশন", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text(if (isEn) "Text Animation" else "টেক্সট অ্যানিমেশন", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(TextAnimationStyle.values()) { anim ->
                         FilterChip(
@@ -1289,7 +1311,7 @@ fun Step3DesignAndPreview(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
 
                 // Arabic Font Selection Dropdown
-                Text("🕌 আরবি ফন্ট ও লাইন স্পেসিং", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text(if (isEn) "🕌 Arabic Font & Line Spacing" else "🕌 আরবি ফন্ট ও লাইন স্পেসিং", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 OutlinedCard(
                     onClick = { expandedArabicFontDropdown = true },
                     modifier = Modifier.fillMaxWidth(),
@@ -1305,7 +1327,7 @@ fun Step3DesignAndPreview(
                         Column {
                             val selectedArabic = arabicFontsList.find { it.first == config.arabicFontName }?.second ?: config.arabicFontName
                             Text(selectedArabic, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            Text("আরবি ফন্ট পরিবর্তন করতে ট্যাপ করুন", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(if (isEn) "Tap to change Arabic font" else "আরবি ফন্ট পরিবর্তন করতে ট্যাপ করুন", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = PrimaryGreen)
                     }
@@ -1338,7 +1360,7 @@ fun Step3DesignAndPreview(
                 }
 
                 // Arabic Font Size Slider
-                Text("আরবি ফন্ট সাইজ: ${config.arabicFontSize.toInt()}", fontSize = 13.sp)
+                Text(if (isEn) "Arabic Font Size: ${config.arabicFontSize.toInt()}" else "আরবি ফন্ট সাইজ: ${config.arabicFontSize.toInt()}", fontSize = 13.sp)
                 Slider(
                     value = config.arabicFontSize,
                     onValueChange = onArabicFontSizeChange,
@@ -1351,7 +1373,7 @@ fun Step3DesignAndPreview(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("আরবি লাইন স্পেস (Line Spacing):", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text(if (isEn) "Arabic Line Spacing:" else "আরবি লাইন স্পেস (Line Spacing):", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     Text("${String.format(java.util.Locale.US, "%.2f", config.arabicLineSpacing)}x", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
                 }
                 Slider(
@@ -1364,7 +1386,7 @@ fun Step3DesignAndPreview(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
 
                 // Bangla Font Selection Dropdown
-                Text("🇧🇩 বাংলা ফন্ট ও লাইন স্পেসিং", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text(if (isEn) "🇧🇩 Bengali Font & Line Spacing" else "🇧🇩 বাংলা ফন্ট ও লাইন স্পেসিং", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 OutlinedCard(
                     onClick = { expandedBengaliFontDropdown = true },
                     modifier = Modifier.fillMaxWidth(),
@@ -1380,7 +1402,7 @@ fun Step3DesignAndPreview(
                         Column {
                             val selectedBangla = banglaFontsList.find { it.first == config.bengaliFontName }?.second ?: config.bengaliFontName
                             Text(selectedBangla, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            Text("বাংলা ফন্ট পরিবর্তন করতে ট্যাপ করুন", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(if (isEn) "Tap to change Bengali font" else "বাংলা ফন্ট পরিবর্তন করতে ট্যাপ করুন", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = PrimaryGreen)
                     }
@@ -1412,7 +1434,7 @@ fun Step3DesignAndPreview(
                 }
 
                 // Translation Font Size Slider
-                Text("অনুবাদ ফন্ট সাইজ: ${config.translationFontSize.toInt()}", fontSize = 13.sp)
+                Text(if (isEn) "Translation Font Size: ${config.translationFontSize.toInt()}" else "অনুবাদ ফন্ট সাইজ: ${config.translationFontSize.toInt()}", fontSize = 13.sp)
                 Slider(
                     value = config.translationFontSize,
                     onValueChange = onTranslationFontSizeChange,
@@ -1425,7 +1447,7 @@ fun Step3DesignAndPreview(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("অনুবাদ লাইন স্পেস:", fontSize = 13.sp)
+                    Text(if (isEn) "Translation Line Spacing:" else "অনুবাদ লাইন স্পেস:", fontSize = 13.sp)
                     Text("${String.format(java.util.Locale.US, "%.2f", config.translationLineSpacing)}x", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
                 }
                 Slider(
@@ -1441,7 +1463,7 @@ fun Step3DesignAndPreview(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("বাংলা অনুবাদ প্রদর্শন করুন", fontSize = 13.sp)
+                    Text(if (isEn) "Show Bengali Translation" else "বাংলা অনুবাদ প্রদর্শন করুন", fontSize = 13.sp)
                     Switch(checked = config.showBanglaTranslation, onCheckedChange = onToggleBangla)
                 }
 
@@ -1450,7 +1472,7 @@ fun Step3DesignAndPreview(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("সূরা ও আয়াত রেফারেন্স দেখান", fontSize = 13.sp)
+                    Text(if (isEn) "Show Surah & Ayah Reference" else "সূরা ও আয়াত রেফারেন্স দেখান", fontSize = 13.sp)
                     Switch(checked = config.showReference, onCheckedChange = onToggleReference)
                 }
 
@@ -1460,8 +1482,8 @@ fun Step3DesignAndPreview(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("ওয়াকফ ও তাজবীদ চিহ্ন (Waqf Signs)", fontSize = 13.sp)
-                        Text("ইন্দো-পাক ওয়াকফ চিহ্ন প্রদর্শন নিয়ন্ত্রণ", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(if (isEn) "Waqf & Tajweed Signs" else "ওয়াকফ ও তাজবীদ চিহ্ন (Waqf Signs)", fontSize = 13.sp)
+                        Text(if (isEn) "Control display of Indo-Pak waqf signs" else "ইন্দো-পাক ওয়াকফ চিহ্ন প্রদর্শন নিয়ন্ত্রণ", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(checked = config.showWaqfSigns, onCheckedChange = onToggleWaqfSigns)
                 }
@@ -1471,7 +1493,7 @@ fun Step3DesignAndPreview(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("লোগো (Quran READER)", fontSize = 13.sp)
+                    Text(if (isEn) "Logo (Quran READER)" else "লোগো (Quran READER)", fontSize = 13.sp)
                     Switch(checked = config.showLogo, onCheckedChange = onToggleLogo)
                 }
 
@@ -1480,7 +1502,7 @@ fun Step3DesignAndPreview(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("ক্রেডিট (MuslimsLibrary)", fontSize = 13.sp)
+                    Text(if (isEn) "Credit (MuslimsLibrary)" else "ক্রেডিট (MuslimsLibrary)", fontSize = 13.sp)
                     Switch(checked = config.showCredit, onCheckedChange = onToggleCredit)
                 }
 
@@ -1488,7 +1510,7 @@ fun Step3DesignAndPreview(
                     OutlinedTextField(
                         value = config.creditText,
                         onValueChange = onCreditTextChange,
-                        label = { Text("ক্রেডিট টেক্সট", fontSize = 12.sp) },
+                        label = { Text(if (isEn) "Credit Text" else "ক্রেডিট টেক্সট", fontSize = 12.sp) },
                         placeholder = { Text("MuslimsLibrary") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
@@ -1511,7 +1533,7 @@ fun Step3DesignAndPreview(
         ) {
             Icon(Icons.Default.MovieCreation, contentDescription = null, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(8.dp))
-            Text("🎬 ৭২০p ভিডিও রেন্ডারিং ও শেয়ার শুরু করুন ➔", fontWeight = FontWeight.Bold, fontSize = 14.5.sp)
+            Text(if (isEn) "🎬 Render 720p Video & Share ➔" else "🎬 ৭২০p ভিডিও রেন্ডারিং ও শেয়ার শুরু করুন ➔", fontWeight = FontWeight.Bold, fontSize = 14.5.sp)
         }
     }
 }
@@ -1522,6 +1544,7 @@ fun Step4Export(
     progress: Float,
     exportedUri: Uri?,
     errorMessage: String?,
+    isEn: Boolean = false,
     onShare: () -> Unit,
     onCreateAnother: () -> Unit
 ) {
@@ -1541,20 +1564,20 @@ fun Step4Export(
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "ভিডিও রেন্ডার হচ্ছে...",
+                text = if (isEn) "Rendering video..." else "ভিডিও রেন্ডার হচ্ছে...",
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "${(progress * 100).toInt()}% সম্পন্ন",
+                text = if (isEn) "${(progress * 100).toInt()}% completed" else "${(progress * 100).toInt()}% সম্পন্ন",
                 fontSize = 14.sp,
                 color = PrimaryGreen,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "সঠিক অডিও টাইমিং ও ১.৮x আরবি স্পেসিং সমন্বয়ে ৭২০p কোয়ালিটিতে আপনার ভিডিও প্রস্তুত করা হচ্ছে।",
+                text = if (isEn) "Preparing your video in 720p with precise audio timing and 1.8x Arabic line spacing." else "সঠিক অডিও টাইমিং ও ১.৮x আরবি স্পেসিং সমন্বয়ে ৭২০p কোয়ালিটিতে আপনার ভিডিও প্রস্তুত করা হচ্ছে।",
                 fontSize = 12.5.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -1563,7 +1586,7 @@ fun Step4Export(
             Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(64.dp))
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "ভিডিও তৈরি করা সম্ভব হয়নি",
+                text = if (isEn) "Failed to create video" else "ভিডিও তৈরি করা সম্ভব হয়নি",
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 color = MaterialTheme.colorScheme.error
@@ -1581,7 +1604,7 @@ fun Step4Export(
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("আবার চেষ্টা করুন")
+                Text(if (isEn) "Try Again" else "আবার চেষ্টা করুন")
             }
         } else {
             // Success
@@ -1596,13 +1619,13 @@ fun Step4Export(
             }
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "মাশাআল্লাহ! ভিডিও প্রস্তুত!",
+                text = if (isEn) "Masha'Allah! Video is Ready!" else "মাশাআল্লাহ! ভিডিও প্রস্তুত!",
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "ভিডিওটি আপনার ফোনের গ্যালারিতে (Movies/QuranReader) সফলভাবে সংরক্ষিত হয়েছে।",
+                text = if (isEn) "The video was saved successfully to your gallery (Movies/QuranReader)." else "ভিডিওটি আপনার ফোনের গ্যালারিতে (Movies/QuranReader) সফলভাবে সংরক্ষিত হয়েছে।",
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -1620,7 +1643,7 @@ fun Step4Export(
             ) {
                 Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("ভিডিও শেয়ার করুন", fontWeight = FontWeight.Bold, fontSize = 14.5.sp)
+                Text(if (isEn) "Share Video" else "ভিডিও শেয়ার করুন", fontWeight = FontWeight.Bold, fontSize = 14.5.sp)
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -1634,7 +1657,7 @@ fun Step4Export(
             ) {
                 Icon(Icons.Default.AddCircleOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("নতুন ভিডিও বানান", fontSize = 14.sp)
+                Text(if (isEn) "Create Another Video" else "নতুন ভিডিও বানান", fontSize = 14.sp)
             }
         }
     }

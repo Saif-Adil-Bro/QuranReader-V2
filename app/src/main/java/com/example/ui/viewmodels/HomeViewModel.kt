@@ -108,6 +108,13 @@ class HomeViewModel(
             initialValue = "Light"
         )
 
+    val appLanguage: StateFlow<String> = settingsRepository.appLanguageFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Lazily,
+            initialValue = "bn"
+        )
+
     val hasAskedDownloadPrompt: StateFlow<Boolean> = settingsRepository.hasAskedDownloadPromptFlow
         .stateIn(
             scope = viewModelScope,

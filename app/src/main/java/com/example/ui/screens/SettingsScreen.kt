@@ -287,8 +287,9 @@ fun SettingsScreen(
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
+                                val bookmarkText = if (currentLanguage == "en") "${bookmarkList.size} Bookmarks" else "${bookmarkList.size} বুকমার্ক"
                                 Text(
-                                    text = "${bookmarkList.size} বুকমার্ক",
+                                    text = bookmarkText,
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -301,12 +302,22 @@ fun SettingsScreen(
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                val hoursText = if (readingTime >= 60) {
-                                    val hrs = readingTime / 60
-                                    val mins = readingTime % 60
-                                    if (mins > 0) "$hrs ঘণ্টা $mins মি. পড়া" else "$hrs ঘণ্টা পড়া"
+                                val hoursText = if (currentLanguage == "en") {
+                                    if (readingTime >= 60) {
+                                        val hrs = readingTime / 60
+                                        val mins = readingTime % 60
+                                        if (mins > 0) "$hrs hrs $mins mins read" else "$hrs hrs read"
+                                    } else {
+                                        "$readingTime mins read"
+                                    }
                                 } else {
-                                    "$readingTime মিনিট পড়া"
+                                    if (readingTime >= 60) {
+                                        val hrs = readingTime / 60
+                                        val mins = readingTime % 60
+                                        if (mins > 0) "$hrs ঘণ্টা $mins মি. পড়া" else "$hrs ঘণ্টা পড়া"
+                                    } else {
+                                        "$readingTime মিনিট পড়া"
+                                    }
                                 }
                                 Text(
                                     text = hoursText,
@@ -326,7 +337,7 @@ fun SettingsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowRight,
-                            contentDescription = "Edit Profile",
+                            contentDescription = if (currentLanguage == "en") "Edit Profile" else "প্রোফাইল সম্পাদনা",
                             tint = PrimaryGreen,
                             modifier = Modifier.size(20.dp)
                         )
@@ -376,13 +387,13 @@ fun SettingsScreen(
 
                         Column {
                             Text(
-                                text = "ইসলামিক ব্লগ ও ফটো কার্ড",
+                                text = if (currentLanguage == "en") "Islamic Blogs & Photo Cards" else "ইসলামিক ব্লগ ও ফটো কার্ড",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isDark) Color.White else Color(0xFF064E3B)
                             )
                             Text(
-                                text = "অনলাইন আপডেট, নসীহত ও কাস্টম ফটো কার্ড",
+                                text = if (currentLanguage == "en") "Online updates, insights & custom photo cards" else "অনলাইন আপডেট, নসীহত ও কাস্টম ফটো কার্ড",
                                 fontSize = 12.sp,
                                 color = if (isDark) Color(0xFFA7F3D0) else Color(0xFF047857)
                             )
@@ -398,7 +409,7 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "নতুন",
+                                text = if (currentLanguage == "en") "NEW" else "নতুন",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isDark) Color(0xFFA7F3D0) else Color(0xFF047857)
@@ -530,7 +541,7 @@ fun SettingsScreen(
             
             // 3. Settings Segment (Backward Compatibility)
             Text(
-                text = "অ্যাপ সেটিংস",
+                text = if (currentLanguage == "en") "App Settings" else "অ্যাপ সেটিংস",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -538,7 +549,6 @@ fun SettingsScreen(
             )
 
             // Language Selection Card
-            val currentLanguage by viewModel.appLanguage.collectAsState()
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -567,7 +577,7 @@ fun SettingsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Translate,
-                                contentDescription = "Language",
+                                contentDescription = if (currentLanguage == "en") "Language" else "ভাষা",
                                 tint = Color(0xFF2563EB),
                                 modifier = Modifier.size(22.dp)
                             )
@@ -582,7 +592,7 @@ fun SettingsScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = if (currentLanguage == "en") "English (International)" else "বাংলা (ডিফল্ট)",
+                                text = if (currentLanguage == "en") "English (International UI)" else "বাংলা (ডিফল্ট ইন্টারফেস)",
                                 fontSize = 12.sp,
                                 color = PrimaryGreen,
                                 fontWeight = FontWeight.SemiBold
@@ -636,14 +646,15 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "হিজরি তারিখ সমন্বয়",
+                            text = if (currentLanguage == "en") "Hijri Date Adjustment" else "হিজরি তারিখ সমন্বয়",
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "বর্তমান আরবি তারিখ: ${com.example.utils.DateUtil.getTodayHijriDateStr(combinedHijriOffset)}",
+                            text = if (currentLanguage == "en") "Current Hijri Date: ${com.example.utils.DateUtil.getTodayHijriDateStr(combinedHijriOffset)}" 
+                                   else "বর্তমান আরবি তারিখ: ${com.example.utils.DateUtil.getTodayHijriDateStr(combinedHijriOffset)}",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -658,12 +669,19 @@ fun SettingsScreen(
                                 .size(32.dp)
                                 .background(MaterialTheme.colorScheme.background, CircleShape)
                         ) {
-                            Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = PrimaryGreen, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Remove, contentDescription = if (currentLanguage == "en") "Decrease" else "কমান", tint = PrimaryGreen, modifier = Modifier.size(16.dp))
+                        }
+                        val offsetDisplay = if (currentLanguage == "en") {
+                            if (combinedHijriOffset > 0) "+$combinedHijriOffset"
+                            else if (combinedHijriOffset < 0) "$combinedHijriOffset"
+                            else "0"
+                        } else {
+                            if (combinedHijriOffset > 0) "+${com.example.utils.DateUtil.toBengaliNumerals(combinedHijriOffset)}" 
+                            else if (combinedHijriOffset < 0) "-${com.example.utils.DateUtil.toBengaliNumerals(-combinedHijriOffset)}" 
+                            else "০"
                         }
                         Text(
-                            text = if (combinedHijriOffset > 0) "+${com.example.utils.DateUtil.toBengaliNumerals(combinedHijriOffset)}" 
-                                   else if (combinedHijriOffset < 0) "-${com.example.utils.DateUtil.toBengaliNumerals(-combinedHijriOffset)}" 
-                                   else "০",
+                            text = offsetDisplay,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -674,7 +692,7 @@ fun SettingsScreen(
                                 .size(32.dp)
                                 .background(MaterialTheme.colorScheme.background, CircleShape)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Increase", tint = PrimaryGreen, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Add, contentDescription = if (currentLanguage == "en") "Increase" else "বাড়ান", tint = PrimaryGreen, modifier = Modifier.size(16.dp))
                         }
                     }
                 }
@@ -705,7 +723,7 @@ fun SettingsScreen(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = "দ্রষ্টব্য",
+                            text = if (currentLanguage == "en") "Important Note" else "দ্রষ্টব্য",
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             color = Color(0xFF2E7D32)
@@ -713,7 +731,10 @@ fun SettingsScreen(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "ইসলামী হিজরি তারিখ সূর্যাস্তের (~সন্ধ্যা ৬টা) পরেই পরবর্তী দিনের জন্য গণনা শুরু হয়। চাঁদ দেখার পার্থক্যের কারণে স্থানীয় তারিখের অমিল দেখা দিলে প্রয়োজনে তারিখ সমন্বয় (-/+) ব্যবহার করতে পারেন।",
+                        text = if (currentLanguage == "en") 
+                            "The Islamic Hijri date starts after sunset (~6 PM) for the next day. You can use (-/+) to adjust the date if local moon sighting differs."
+                        else 
+                            "ইসলামী হিজরি তারিখ সূর্যাস্তের (~সন্ধ্যা ৬টা) পরেই পরবর্তী দিনের জন্য গণনা শুরু হয়। চাঁদ দেখার পার্থক্যের কারণে স্থানীয় তারিখের অমিল দেখা দিলে প্রয়োজনে তারিখ সমন্বয় (-/+) ব্যবহার করতে পারেন।",
                         fontSize = 13.sp,
                         color = Color(0xFF424242),
                         lineHeight = 18.sp
@@ -722,7 +743,10 @@ fun SettingsScreen(
                     
                     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
                     Text(
-                        text = "🌙 নতুন চাঁদ ও হিজরি মাসের নির্ভরযোগ্য আপডেট পেতে আমাদের টেলিগ্রাম চ্যানেলে যুক্ত থাকুন:",
+                        text = if (currentLanguage == "en") 
+                            "🌙 Stay connected with our Telegram channel for reliable moon-sighting updates:"
+                        else 
+                            "🌙 নতুন চাঁদ ও হিজরি মাসের নির্ভরযোগ্য আপডেট পেতে আমাদের টেলিগ্রাম চ্যানেলে যুক্ত থাকুন:",
                         fontSize = 13.sp,
                         color = Color(0xFF424242),
                         lineHeight = 18.sp
@@ -764,14 +788,14 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "অনুবাদ প্রদর্শন করুন (Show Translation)",
+                            text = if (currentLanguage == "en") "Show Translation" else "অনুবাদ প্রদর্শন করুন (Show Translation)",
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "আরবি আয়াতের নিচে বাংলা অনুবাদ প্রদর্শন করুন",
+                            text = if (currentLanguage == "en") "Display translation below Arabic verses" else "আরবি আয়াতের নিচে বাংলা অনুবাদ প্রদর্শন করুন",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -802,14 +826,14 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "শব্দে শব্দে উচ্চারণ (Word Transliteration)",
+                            text = if (currentLanguage == "en") "Word Transliteration" else "শব্দে শব্দে উচ্চারণ (Word Transliteration)",
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "প্রতিটি শব্দের নিচে বাংলা উচ্চারণ প্রদর্শন করুন",
+                            text = if (currentLanguage == "en") "Display pronunciation below each word" else "প্রতিটি শব্দের নিচে বাংলা উচ্চারণ প্রদর্শন করুন",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -842,14 +866,14 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "তাজবীদ কালার (Tajweed Colors)",
+                            text = if (currentLanguage == "en") "Tajweed Colors" else "তাজবীদ কালার (Tajweed Colors)",
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "আরবি আয়াতে তাজবীদের নিয়ম অনুযায়ী বিভিন্ন রঙ প্রদর্শন করুন",
+                            text = if (currentLanguage == "en") "Color-code Arabic letters according to Tajweed rules" else "আরবি আয়াতে তাজবীদের নিয়ম অনুযায়ী বিভিন্ন রঙ প্রদর্শন করুন",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -879,14 +903,14 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "সবসময় ডিসপ্লে অন রাখুন",
+                            text = if (currentLanguage == "en") "Keep Display Always On" else "সবসময় ডিসপ্লে অন রাখুন",
                             fontWeight = FontWeight.Medium,
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "অ্যাপ ব্যবহার করার সময় স্ক্রিনের আলো নিভবে না",
+                            text = if (currentLanguage == "en") "Screen light will stay on while reading" else "অ্যাপ ব্যবহার করার সময় স্ক্রিনের আলো নিভবে না",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -904,8 +928,8 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             val availableTafsirs by viewModel.availableTafsirs.collectAsState()
-    val availableTranslations by viewModel.availableTranslations.collectAsState()
-    val selectedTranslationIds by viewModel.selectedTranslationIds.collectAsState()
+            val availableTranslations by viewModel.availableTranslations.collectAsState()
+            val selectedTranslationIds by viewModel.selectedTranslationIds.collectAsState()
             val selectedTafsirIds by viewModel.selectedTafsirIds.collectAsState()
             val downloadedTafsirIds by viewModel.downloadedTafsirIds.collectAsState()
             val downloadingTafsirIds by viewModel.downloadingTafsirIds.collectAsState()
@@ -927,7 +951,7 @@ fun SettingsScreen(
                 ) {
                     // Qari Selection
                     Text(
-                        text = "ক্বারী নির্বাচন করুন (Qari)",
+                        text = if (currentLanguage == "en") "Select Reciter (Qari)" else "ক্বারী নির্বাচন করুন (Qari)",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface
@@ -938,26 +962,28 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
                     ) {
-                        val selectedQariName = com.example.util.QariData.getQariDisplayName(selectedQariId)
+                        val selectedQariName = if (currentLanguage == "en") {
+                            com.example.util.QariData.list.find { it.id == selectedQariId }?.nameEnglish ?: com.example.util.QariData.getQariDisplayName(selectedQariId)
+                        } else {
+                            com.example.util.QariData.getQariDisplayName(selectedQariId)
+                        }
                         Text(text = selectedQariName, modifier = Modifier.weight(1f))
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Qari")
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = if (currentLanguage == "en") "Select Reciter" else "ক্বারী নির্বাচন করুন")
                     }
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    
-                    
                     if (showQariDialog) {
                         val selectionItems = com.example.util.QariData.list.map { item ->
                             com.example.ui.components.SelectionItem(
                                 id = item.id,
-                                title = item.nameEnglish,
-                                subtitle = item.nameBengali,
+                                title = if (currentLanguage == "en") item.nameEnglish else item.nameBengali,
+                                subtitle = if (currentLanguage == "en") item.nameBengali else item.nameEnglish,
                                 icon = androidx.compose.material.icons.Icons.Default.RecordVoiceOver
                             )
                         }
                         com.example.ui.components.SmartSelectionDialog(
-                            title = "ক্বারী নির্বাচন করুন",
-                            subtitle = "আপনার পছন্দের তেলাওয়াতকারী বেছে নিন",
+                            title = if (currentLanguage == "en") "Select Reciter" else "ক্বারী নির্বাচন করুন",
+                            subtitle = if (currentLanguage == "en") "Choose your preferred reciter" else "আপনার পছন্দের তেলাওয়াতকারী বেছে নিন",
                             headerIcon = androidx.compose.material.icons.Icons.Default.RecordVoiceOver,
                             items = selectionItems,
                             selectedId = selectedQariId,
@@ -967,11 +993,9 @@ fun SettingsScreen(
                             },
                             onDismiss = { showQariDialog = false },
                             showSearch = true,
-                            searchPlaceholder = "ক্বারী খুঁজুন..."
+                            searchPlaceholder = if (currentLanguage == "en") "Search reciter..." else "ক্বারী খুঁজুন..."
                         )
                     }
-
-                    
                 }
             }
 
@@ -996,7 +1020,7 @@ fun SettingsScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "তানজিল কুরআন স্ক্রিপ্ট স্টাইল",
+                            text = if (currentLanguage == "en") "Tanzil Quran Script Style" else "তানজিল কুরআন স্ক্রিপ্ট স্টাইল",
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             color = MaterialTheme.colorScheme.onSurface
@@ -1004,13 +1028,22 @@ fun SettingsScreen(
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "ডিফল্টভাবে অফলাইন ও অনলাইন উভয় অবস্থায় লোকাল quran.db (Indo-Pak) ব্যবহৃত হবে। প্রয়োজনে তানজিল স্ক্রিপ্ট নির্বাচন করতে পারেন।",
+                        text = if (currentLanguage == "en")
+                            "By default, local quran.db (Indo-Pak) is used offline. You can select Tanzil scripts when connected."
+                        else
+                            "ডিফল্টভাবে অফলাইন ও অনলাইন উভয় অবস্থায় লোকাল quran.db (Indo-Pak) ব্যবহৃত হবে। প্রয়োজনে তানজিল স্ক্রিপ্ট নির্বাচন করতে পারেন।",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    val scriptOptions = listOf(
+                    val scriptOptions = if (currentLanguage == "en") listOf(
+                        Pair("default-indopak", "Default Offline Script (Indo-Pak / Local DB)"),
+                        Pair("quran-uthmani", "Uthmani Script (Online)"),
+                        Pair("quran-simple", "Simple Script (Online)"),
+                        Pair("quran-simple-clean", "Simple Clean - No Harakat (Online)"),
+                        Pair("quran-simple-plain", "Simple Plain Script (Online)")
+                    ) else listOf(
                         Pair("default-indopak", "ডিফল্ট অফলাইন স্ক্রিপ্ট (Indo-Pak / Local DB)"),
                         Pair("quran-uthmani", "উসমানী স্ক্রিপ্ট (Uthmani - Online)"),
                         Pair("quran-simple", "সহজ স্ক্রিপ্ট (Simple - Online)"),
@@ -1318,7 +1351,7 @@ fun MenuDetailDialog(
                             onSelectedDuaChange = { selectedDuaForDuaTab = it },
                             isMorningEvening = false
                         )
-                        "qibla" -> QiblaDialogContent()
+                        "qibla" -> QiblaDialogContent(viewModel)
                         "morning_evening_dua" -> DuaDialogContent(
                             viewModel = viewModel,
                             selectedDua = selectedDuaForDuaTab,
@@ -1326,23 +1359,23 @@ fun MenuDetailDialog(
                             isMorningEvening = true
                         )
                         "game" -> GameDialogContent(viewModel)
-                        "player" -> PlayerDialogContent()
+                        "player" -> PlayerDialogContent(viewModel)
                         "hifz" -> HifzDialogContent(viewModel)
-                        "learn" -> LearnDialogContent()
+                        "learn" -> LearnDialogContent(viewModel)
                         "video" -> QuranVideoCreatorScreen(
                             onNavigateBack = { onDismiss() }
                         )
                         "offline_sync" -> OfflineSyncDialogContent(viewModel)
                         "language" -> LanguageDialogContent(viewModel = viewModel, onDismiss = onDismiss)
                         "font_settings" -> FontSettingsContent(viewModel = viewModel, onDismiss = onDismiss)
-                        "backup" -> BackupDialogContent()
+                        "backup" -> BackupDialogContent(viewModel)
                         "notifications" -> NotificationDialogContent(
                             viewModel = viewModel,
                             onOpenDhikr = { activeDhikrType = it }
                         )
                         "theme" -> ThemeDialogContent(viewModel)
-                        "about" -> AboutDialogContent()
-                        "contact" -> ContactDialogContent()
+                        "about" -> AboutDialogContent(viewModel)
+                        "contact" -> ContactDialogContent(viewModel)
                     }
                 }
             }
@@ -1357,6 +1390,8 @@ fun MenuDetailDialog(
 fun ProfileDialogContent(viewModel: SettingsViewModel) {
     val username by viewModel.username.collectAsState()
     val readingMins by viewModel.readingTimeMinutes.collectAsState()
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
     var tempName by remember { mutableStateOf(username) }
     
     Column(
@@ -1377,7 +1412,7 @@ fun ProfileDialogContent(viewModel: SettingsViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
         
         Text(
-            text = "প্রোফাইল পরিবর্তন করুন",
+            text = if (isEn) "Edit Profile" else "প্রোফাইল পরিবর্তন করুন",
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
             color = MaterialTheme.colorScheme.onSurface
@@ -1388,7 +1423,7 @@ fun ProfileDialogContent(viewModel: SettingsViewModel) {
         OutlinedTextField(
             value = tempName,
             onValueChange = { tempName = it },
-            label = { Text("ব্যবহারকারীর নাম") },
+            label = { Text(if (isEn) "User Name" else "ব্যবহারকারীর নাম") },
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = PrimaryGreen,
@@ -1404,7 +1439,7 @@ fun ProfileDialogContent(viewModel: SettingsViewModel) {
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("নাম পরিবর্তন করুন", color = Color.White)
+            Text(if (isEn) "Save Name" else "নাম পরিবর্তন করুন", color = Color.White)
         }
         
         Spacer(modifier = Modifier.height(24.dp))
@@ -1412,7 +1447,7 @@ fun ProfileDialogContent(viewModel: SettingsViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
         
         Text(
-            text = "পড়ার সময় বৃদ্ধি করুন (সিমুলেটর)",
+            text = if (isEn) "Increase Reading Time (Simulator)" else "পড়ার সময় বৃদ্ধি করুন (সিমুলেটর)",
             fontWeight = FontWeight.Bold,
             fontSize = 15.sp,
             color = MaterialTheme.colorScheme.onSurface
@@ -1429,21 +1464,21 @@ fun ProfileDialogContent(viewModel: SettingsViewModel) {
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
                 modifier = Modifier.weight(1f)
             ) {
-                Text("+১৫ মিনিট", color = Color.White, fontSize = 12.sp)
+                Text(if (isEn) "+15 Min" else "+১৫ মিনিট", color = Color.White, fontSize = 12.sp)
             }
             Button(
                 onClick = { viewModel.addReadingTime(30) },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
                 modifier = Modifier.weight(1f)
             ) {
-                Text("+৩০ মিনিট", color = Color.White, fontSize = 12.sp)
+                Text(if (isEn) "+30 Min" else "+৩০ মিনিট", color = Color.White, fontSize = 12.sp)
             }
             Button(
                 onClick = { viewModel.addReadingTime(60) },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6)),
                 modifier = Modifier.weight(1f)
             ) {
-                Text("+১ ঘণ্টা", color = Color.White, fontSize = 12.sp)
+                Text(if (isEn) "+1 Hour" else "+১ ঘণ্টা", color = Color.White, fontSize = 12.sp)
             }
         }
         
@@ -1455,10 +1490,15 @@ fun ProfileDialogContent(viewModel: SettingsViewModel) {
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
         ) {
             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("মোট অধ্যয়নকাল", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(if (isEn) "Total Reading Time" else "মোট অধ্যয়নকাল", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(4.dp))
+                val timeDisplay = if (isEn) {
+                    if (readingMins >= 60) "${readingMins / 60} hr ${readingMins % 60} min" else "$readingMins min"
+                } else {
+                    if (readingMins >= 60) "${readingMins / 60} ঘণ্টা ${readingMins % 60} মিনিট" else "$readingMins মিনিট"
+                }
                 Text(
-                    text = if (readingMins >= 60) "${readingMins / 60} ঘণ্টা ${readingMins % 60} মিনিট" else "$readingMins মিনিট",
+                    text = timeDisplay,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryGreen
@@ -1475,6 +1515,8 @@ fun BookmarkDialogContent(
     onBookmarkClick: (BookmarkEntity) -> Unit = {}
 ) {
     val bookmarks by viewModel.bookmarks.collectAsState(initial = emptyList())
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
     
     if (bookmarks.isEmpty()) {
         Column(
@@ -1490,14 +1532,14 @@ fun BookmarkDialogContent(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "কোনো বুকমার্ক পাওয়া যায়নি!",
+                text = if (isEn) "No bookmarks found!" else "কোনো বুকমার্ক পাওয়া যায়নি!",
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 16.sp
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "সুরা বা পৃষ্ঠা পড়ার সময় উপরে বুকমার্ক বাটনে ক্লিক করুন।",
+                text = if (isEn) "Tap the bookmark button while reading Surahs or Pages." else "সুরা বা পৃষ্ঠা পড়ার সময় উপরে বুকমার্ক বাটনে ক্লিক করুন।",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 textAlign = TextAlign.Center,
@@ -1533,15 +1575,15 @@ fun BookmarkDialogContent(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             val displayType = when (bookmark.type) {
-                                "SURAH" -> "সুরা"
-                                "PAGE" -> "পৃষ্ঠা (হাফেজী)"
-                                "MUSHAF_PAGE" -> "মুসহাফ পৃষ্ঠা"
-                                "JUZ" -> "পারা"
-                                "AYAH" -> "আয়াত"
+                                "SURAH" -> if (isEn) "Surah" else "সুরা"
+                                "PAGE" -> if (isEn) "Page (Hafezi)" else "পৃষ্ঠা (হাফেজী)"
+                                "MUSHAF_PAGE" -> if (isEn) "Mushaf Page" else "মুসহাফ পৃষ্ঠা"
+                                "JUZ" -> if (isEn) "Juz" else "পারা"
+                                "AYAH" -> if (isEn) "Ayah" else "আয়াত"
                                 else -> bookmark.type
                             }
                             Text(
-                                text = "প্রকার: $displayType • আইডি: ${bookmark.referenceId}",
+                                text = if (isEn) "Type: $displayType • ID: ${bookmark.referenceId}" else "প্রকার: $displayType • আইডি: ${bookmark.referenceId}",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1561,6 +1603,8 @@ fun BookmarkDialogContent(
 @Composable
 fun NotepadDialogContent(viewModel: SettingsViewModel) {
     val notes by viewModel.notes.collectAsState()
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
     
@@ -1574,12 +1618,17 @@ fun NotepadDialogContent(viewModel: SettingsViewModel) {
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                Text("নতুন নোট লিখুন", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    text = if (isEn) "Write New Note" else "নতুন নোট লিখুন",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    placeholder = { Text("নোটের শিরোনাম") },
+                    placeholder = { Text(if (isEn) "Note title" else "নোটের শিরোনাম") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryGreen),
                     singleLine = true
@@ -1588,7 +1637,7 @@ fun NotepadDialogContent(viewModel: SettingsViewModel) {
                 OutlinedTextField(
                     value = content,
                     onValueChange = { content = it },
-                    placeholder = { Text("এখানে বিস্তারিত লিখুন...") },
+                    placeholder = { Text(if (isEn) "Write details here..." else "এখানে বিস্তারিত লিখুন...") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(100.dp),
@@ -1608,14 +1657,14 @@ fun NotepadDialogContent(viewModel: SettingsViewModel) {
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("নোট যুক্ত করুন", color = Color.White)
+                    Text(if (isEn) "Add Note" else "নোট যুক্ত করুন", color = Color.White)
                 }
             }
         }
         
         // Notes List
         Text(
-            text = "নোটের তালিকা (${notes.size})",
+            text = if (isEn) "Notes List (${notes.size})" else "নোটের তালিকা (${notes.size})",
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurface,
@@ -1624,7 +1673,11 @@ fun NotepadDialogContent(viewModel: SettingsViewModel) {
         
         if (notes.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("কোনো নোট পাওয়া যায়নি!", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                Text(
+                    text = if (isEn) "No notes found!" else "কোনো নোট পাওয়া যায়নি!",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
             }
         } else {
             LazyColumn(
@@ -1674,6 +1727,8 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
     val startDate by viewModel.plannerStartDate.collectAsState()
     val streak by viewModel.plannerStreak.collectAsState()
     val reminderEnabled by viewModel.plannerReminderEnabled.collectAsState()
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val permissionGranted = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -1694,7 +1749,13 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
         }
     )
 
-    val khatamPlans = listOf(
+    val khatamPlans = if (isEn) listOf(
+        Pair("30 Days Khatam", 30),
+        Pair("60 Days Khatam", 60),
+        Pair("90 Days Khatam", 90),
+        Pair("6 Months Khatam", 180),
+        Pair("1 Year Khatam", 365)
+    ) else listOf(
         Pair("৩০ দিনে খতম", 30),
         Pair("৬০ দিনে খতম", 60),
         Pair("৯০ দিনে খতম", 90),
@@ -1702,7 +1763,7 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
         Pair("১ বছরে খতম", 365)
     )
     
-    val selectedPlan = khatamPlans.find { it.first == target } ?: khatamPlans.first()
+    val selectedPlan = khatamPlans.find { it.first == target || (isEn && target.contains("${it.second}")) } ?: khatamPlans.first()
     val totalDays = selectedPlan.second
     val passedDays = maxOf(0, ((System.currentTimeMillis() - startDate) / (1000 * 60 * 60 * 24)).toInt())
     val remainingDays = maxOf(1, totalDays - passedDays)
@@ -1756,13 +1817,22 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.MenuBook, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("মোট পড়া: $pagesRead / ৬০৪ পৃষ্ঠা", fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Text(
+                                text = if (isEn) "Total Read: $pagesRead / 604 pages" else "মোট পড়া: $pagesRead / ৬০৪ পৃষ্ঠা",
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFFF59E0B))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("টানা পড়া: $streak দিন (Streak)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Text(
+                                text = if (isEn) "Streak: $streak Days" else "টানা পড়া: $streak দিন (Streak)",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                         }
                     }
                 }
@@ -1772,7 +1842,7 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
         Spacer(modifier = Modifier.height(24.dp))
         
         // --- 2. Dynamic Daily Target ---
-        Text("আজকের লক্ষ্য", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(if (isEn) "Today's Target" else "আজকের লক্ষ্য", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
         Spacer(modifier = Modifier.height(12.dp))
         
         Card(
@@ -1793,9 +1863,9 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("পৃষ্ঠা পড়তে হবে", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text(if (isEn) "Pages to read" else "পৃষ্ঠা পড়তে হবে", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                         Text(
-                            text = "বাকি দিন: $remainingDays | বাকি পৃষ্ঠা: $remainingPages",
+                            text = if (isEn) "Remaining days: $remainingDays | Pages: $remainingPages" else "বাকি দিন: $remainingDays | বাকি পৃষ্ঠা: $remainingPages",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -1806,7 +1876,7 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("সম্পন্ন", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(if (isEn) "Done" else "সম্পন্ন", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -1815,7 +1885,7 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
         Spacer(modifier = Modifier.height(24.dp))
         
         // --- 3. Milestones & Badges ---
-        Text("মাইলফলক ও ব্যাজ", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(if (isEn) "Milestones & Badges" else "মাইলফলক ও ব্যাজ", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
         Spacer(modifier = Modifier.height(12.dp))
         
         val totalJuz = 30
@@ -1841,7 +1911,12 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text("${juzTarget} পারা", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isUnlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = if (isEn) "Juz $juzTarget" else "${juzTarget} পারা",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isUnlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -1849,7 +1924,7 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
         Spacer(modifier = Modifier.height(24.dp))
         
         // --- 4. Select Plan ---
-        Text("লক্ষ্য পরিবর্তন করুন", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(if (isEn) "Change Plan" else "লক্ষ্য পরিবর্তন করুন", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
         Spacer(modifier = Modifier.height(12.dp))
         
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1880,8 +1955,8 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text("স্মার্ট রিমাইন্ডার", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
-                Text("পড়ার সময় মনে করিয়ে দিতে নোটিফিকেশন", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(if (isEn) "Smart Reminder" else "স্মার্ট রিমাইন্ডার", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(if (isEn) "Notification to remind your daily reading" else "পড়ার সময় মনে করিয়ে দিতে নোটিফিকেশন", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Switch(
                 checked = reminderEnabled,
@@ -1912,7 +1987,7 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        "রিমাইন্ডারের সময় নির্ধারণ করুন:",
+                        if (isEn) "Set Reminder Time:" else "রিমাইন্ডারের সময় নির্ধারণ করুন:",
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface
@@ -1929,7 +2004,7 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
                         val formattedDisplayTime = String.format("%02d:%02d %s", displayHour, minute, amPm)
                         
                         Text(
-                            text = "বর্তমান সময়: $formattedDisplayTime",
+                            text = if (isEn) "Selected Time: $formattedDisplayTime" else "বর্তমান সময়: $formattedDisplayTime",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = PrimaryGreen
@@ -1947,7 +2022,7 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
                             modifier = Modifier.weight(1f),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("ঘণ্টা", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(if (isEn) "Hour" else "ঘণ্টা", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -1988,7 +2063,7 @@ fun PlannerDialogContent(viewModel: SettingsViewModel) {
                             modifier = Modifier.weight(1f),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("মিনিট", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(if (isEn) "Minute" else "মিনিট", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -2044,6 +2119,8 @@ fun SubjectwiseDialogContent(
     onRegisterManzilInfoAction: (((() -> Unit)?) -> Unit) = {}
 ) {
     val context = LocalContext.current
+    val currentLang = viewModel?.appLanguage?.collectAsState()?.value ?: com.example.utils.LocaleHelper.getLanguage(context)
+    val isEn = currentLang == "en"
     val arabicFontName = viewModel?.arabicFontName?.collectAsState()?.value ?: "Me Quran"
     val arabicFont = com.example.ui.theme.getArabicFont(arabicFontName)
     val subjectCategoryListState = rememberLazyListState()
@@ -2125,7 +2202,7 @@ fun SubjectwiseDialogContent(
                 CircularProgressIndicator(color = PrimaryGreen)
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    "অফলাইন ডাটাবেজ থেকে বিষয়ভিত্তিক আয়াত লোড হচ্ছে...",
+                    text = if (isEn) "Loading subject-wise verses from offline database..." else "অফলাইন ডাটাবেজ থেকে বিষয়ভিত্তিক আয়াত লোড হচ্ছে...",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2140,7 +2217,7 @@ fun SubjectwiseDialogContent(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("বিষয়, সূরা বা আয়াত অনুসন্ধান করুন...", fontSize = 13.sp) },
+                placeholder = { Text(if (isEn) "Search topic, surah or verse..." else "বিষয়, সূরা বা আয়াত অনুসন্ধান করুন...", fontSize = 13.sp) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = PrimaryGreen) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
@@ -2193,7 +2270,7 @@ fun SubjectwiseDialogContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "কোনো বিষয় পাওয়া যায়নি",
+                        text = if (isEn) "No topics found" else "কোনো বিষয় পাওয়া যায়নি",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
@@ -2257,7 +2334,7 @@ fun SubjectwiseDialogContent(
                                             shape = RoundedCornerShape(12.dp)
                                         ) {
                                             Text(
-                                                text = "${category.topics.size}টি বিষয়",
+                                                text = "${category.topics.size} ${if (isEn) "Topics" else "টি বিষয়"}",
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = PrimaryGreen,
@@ -2269,7 +2346,7 @@ fun SubjectwiseDialogContent(
                                     Spacer(modifier = Modifier.height(4.dp))
                                     val totalAyahs = category.topics.sumOf { it.verses.size }
                                     Text(
-                                        text = "মোট $totalAyahs টি কুরআনের আয়াত সংকলিত",
+                                        text = if (isEn) "Total $totalAyahs Quranic verses compiled" else "মোট $totalAyahs টি কুরআনের আয়াত সংকলিত",
                                         fontSize = 12.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -2308,7 +2385,7 @@ fun SubjectwiseDialogContent(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "মোট ${category.topics.size}টি বিষয়ের তালিকা",
+                        text = if (isEn) "List of ${category.topics.size} topics" else "মোট ${category.topics.size}টি বিষয়ের তালিকা",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -2362,7 +2439,7 @@ fun SubjectwiseDialogContent(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "${topic.verses.size}টি সম্পর্কিত আয়াত",
+                                    text = if (isEn) "${topic.verses.size} Related Verses" else "${topic.verses.size}টি সম্পর্কিত আয়াত",
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -2407,7 +2484,7 @@ fun SubjectwiseDialogContent(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "${category.categoryNameBn} • ${topic.verses.size}টি কার্ড (অফলাইন কুরআন থেকে)",
+                                text = "${category.categoryNameBn} • ${topic.verses.size} ${if (isEn) "Cards (Offline Quran)" else "টি কার্ড (অফলাইন কুরআন থেকে)"}",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -2415,7 +2492,7 @@ fun SubjectwiseDialogContent(
                     }
                 } else {
                     Text(
-                        text = "মানযিল • ${topic.verses.size}টি কার্ড (অফলাইন কুরআন থেকে)",
+                        text = "${if (isEn) "Manzil" else "মানযিল"} • ${topic.verses.size} ${if (isEn) "Cards (Offline Quran)" else "টি কার্ড (অফলাইন কুরআন থেকে)"}",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -2443,7 +2520,7 @@ fun SubjectwiseDialogContent(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = if (showTranslation) "অনুবাদ ON" else "অনুবাদ OFF",
+                            text = if (showTranslation) (if (isEn) "Translation ON" else "অনুবাদ ON") else (if (isEn) "Translation OFF" else "অনুবাদ OFF"),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (showTranslation) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant
@@ -2479,7 +2556,11 @@ fun SubjectwiseDialogContent(
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
                                     Text(
-                                        text = if (verse.verseNo.contains("-") || verse.verseNo.contains(",")) "আয়াত ${verse.verseNo}" else "আয়াত #${verse.verseNo}",
+                                        text = if (verse.verseNo.contains("-") || verse.verseNo.contains(",")) {
+                                            if (isEn) "Verse ${verse.verseNo}" else "আয়াত ${verse.verseNo}"
+                                        } else {
+                                            if (isEn) "Verse #${verse.verseNo}" else "আয়াত #${verse.verseNo}"
+                                        },
                                         color = PrimaryGreen,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
@@ -2488,7 +2569,7 @@ fun SubjectwiseDialogContent(
                                 }
 
                                 Text(
-                                    text = "${verse.surahName} • আয়াত ${verse.verseNo}",
+                                    text = "${verse.surahName} • ${if (isEn) "Verse" else "আয়াত"} ${verse.verseNo}",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -2546,7 +2627,7 @@ fun SubjectwiseDialogContent(
                             // Bangla Translation from Offline quran.db
                             if (showTranslation && verse.banglaTranslation.isNotEmpty()) {
                                 Text(
-                                    text = "বাংলা অনুবাদ:",
+                                    text = if (isEn) "Bengali Translation:" else "বাংলা অনুবাদ:",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
@@ -2586,11 +2667,11 @@ fun SubjectwiseDialogContent(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.ContentCopy,
-                                        contentDescription = "কপি",
+                                        contentDescription = if (isEn) "Copy" else "কপি",
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("কপি", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                    Text(if (isEn) "Copy" else "কপি", fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                 }
 
                                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -2612,11 +2693,11 @@ fun SubjectwiseDialogContent(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Share,
-                                            contentDescription = "টেক্সট শেয়ার",
+                                            contentDescription = if (isEn) "Share Text" else "টেক্সট শেয়ার",
                                             modifier = Modifier.size(14.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("টেক্সট", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                        Text(if (isEn) "Text" else "টেক্সট", fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                     }
 
                                     // Image Share Button
@@ -2637,11 +2718,11 @@ fun SubjectwiseDialogContent(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Image,
-                                            contentDescription = "ছবি শেয়ার",
+                                            contentDescription = if (isEn) "Share Image" else "ছবি শেয়ার",
                                             modifier = Modifier.size(14.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("ছবি", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                        Text(if (isEn) "Image" else "ছবি", fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                     }
                                 }
                             }
@@ -2661,6 +2742,8 @@ fun DuaDialogContent(
     onSelectedDuaChange: (com.example.data.DuaItem?) -> Unit,
     isMorningEvening: Boolean = false
 ) {
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
     val arabicFontName by viewModel.arabicFontName.collectAsState()
     val arabicFont = com.example.ui.theme.getArabicFont(arabicFontName)
     val allDuas = if (isMorningEvening) com.example.data.DuaData.morningEveningDuas else com.example.data.DuaData.richDuas
@@ -2698,7 +2781,7 @@ fun DuaDialogContent(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("দুআ খুঁজুন...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)) },
+                    placeholder = { Text(if (isEn) "Search Duas..." else "দুআ খুঁজুন...", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 12.dp),
@@ -2745,7 +2828,7 @@ fun DuaDialogContent(
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "কোনো দুআ পাওয়া যায়নি",
+                                text = if (isEn) "No duas found" else "কোনো দুআ পাওয়া যায়নি",
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                 fontSize = 15.sp
                             )
@@ -2762,6 +2845,7 @@ fun DuaDialogContent(
                         items(filteredDuas, key = { it.id }) { dua ->
                             val index = allDuas.indexOf(dua) + 1
                             val banglaIndex = formatToBanglaNumber(index)
+                            val displayIndex = if (isEn) index.toString() else banglaIndex
                             
                             Column(
                                 modifier = Modifier
@@ -2784,7 +2868,7 @@ fun DuaDialogContent(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = banglaIndex,
+                                            text = displayIndex,
                                             color = Color.White,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 14.sp
@@ -2883,7 +2967,7 @@ fun DuaDialogContent(
                                 .fillMaxWidth()
                                 .padding(bottom = 16.dp)
                         ) {
-                            val formattedIndex = formatToBanglaNumber(allDuas.indexOf(currentDua) + 1)
+                            val formattedIndex = if (isEn) (allDuas.indexOf(currentDua) + 1).toString() else formatToBanglaNumber(allDuas.indexOf(currentDua) + 1)
                             
                             // Title styled centered or structured beautifully like the screenshot
                             Text(
@@ -2982,15 +3066,14 @@ fun DuaDialogContent(
                                 }
                                 
                                 // Prekkhapot (Dua's context) exactly like the screenshot:
-                                // "দোয়ার প্রেক্ষাপট: এটি দুনিয়া-আখিরাত উভয় জগতে সফলতার জন্য..."
                                 if (segment.bottom.isNotEmpty() && segment.bottom != "null") {
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Column(modifier = Modifier.fillMaxWidth()) {
                                         val trimmed = segment.bottom.trim()
                                         val contextText = if (trimmed.startsWith("দোয়ার প্রেক্ষাপট") || trimmed.startsWith("দোয়ার প্রেক্ষাপট")) {
-                                            trimmed
+                                            if (isEn) trimmed.replace("দোয়ার প্রেক্ষাপট", "Dua Context").replace("দোয়ার প্রেক্ষাপট", "Dua Context") else trimmed
                                         } else {
-                                            "দোয়ার প্রেক্ষাপট: ${segment.bottom}"
+                                            if (isEn) "Dua Context: ${segment.bottom}" else "দোয়ার প্রেক্ষাপট: ${segment.bottom}"
                                         }
                                         Text(
                                             text = contextText,
@@ -3016,7 +3099,7 @@ fun DuaDialogContent(
                             }
                             
                             // Copy & Share Actions Row with App Credit
-                            DuaActionButtonsRow(dua = currentDua)
+                            DuaActionButtonsRow(dua = currentDua, isEn = isEn)
                         }
                     }
                 }
@@ -3028,6 +3111,7 @@ fun DuaDialogContent(
 private @Composable
 fun DuaActionButtonsRow(
     dua: com.example.data.DuaItem,
+    isEn: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -3061,13 +3145,13 @@ fun DuaActionButtonsRow(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Copy",
+                        contentDescription = if (isEn) "Copy" else "Copy",
                         tint = PrimaryGreen,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "কপি",
+                        text = if (isEn) "Copy" else "কপি",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -3092,13 +3176,13 @@ fun DuaActionButtonsRow(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Share,
-                            contentDescription = "Share",
+                            contentDescription = if (isEn) "Share" else "Share",
                             tint = PrimaryGreen,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "শেয়ার",
+                            text = if (isEn) "Share" else "শেয়ার",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -3128,7 +3212,7 @@ fun DuaActionButtonsRow(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = "টেক্সট শেয়ার",
+                                    text = if (isEn) "Share as Text" else "টেক্সট শেয়ার",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -3155,7 +3239,7 @@ fun DuaActionButtonsRow(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = "ছবি শেয়ার",
+                                    text = if (isEn) "Share as Image" else "ছবি শেয়ার",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -3188,7 +3272,7 @@ fun DuaActionButtonsRow(
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = "❝কুরআন রিডার❞ অ্যাপ",
+                text = if (isEn) "❝Quran Reader❞ App" else "❝কুরআন রিডার❞ অ্যাপ",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
@@ -3200,11 +3284,13 @@ fun DuaActionButtonsRow(
 // --- 7. WORD GAME DIALOG ---
 @Composable
 fun GameDialogContent(viewModel: SettingsViewModel) {
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
     val phase by viewModel.gamePhase.collectAsState()
     
     when (phase) {
         com.example.ui.viewmodels.GamePhase.SETUP -> GameSetupScreen(viewModel)
-        com.example.ui.viewmodels.GamePhase.LOADING -> GameLoadingScreen()
+        com.example.ui.viewmodels.GamePhase.LOADING -> GameLoadingScreen(isEn)
         com.example.ui.viewmodels.GamePhase.PLAYING -> GamePlayingScreen(viewModel)
         com.example.ui.viewmodels.GamePhase.RESULT -> GameResultScreen(viewModel)
     }
@@ -3212,6 +3298,8 @@ fun GameDialogContent(viewModel: SettingsViewModel) {
 
 @Composable
 fun GameSetupScreen(viewModel: SettingsViewModel) {
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
     val config by viewModel.gameConfig.collectAsState()
     val errorMessage by viewModel.gameErrorMessage.collectAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -3246,7 +3334,12 @@ fun GameSetupScreen(viewModel: SettingsViewModel) {
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.Start
     ) {
-        Text("১. কিসের উপর গেম খেলতে চান?", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            text = if (isEn) "1. What do you want to play on?" else "১. কিসের উপর গেম খেলতে চান?",
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         Spacer(modifier = Modifier.height(12.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             val isEntireSelected = config.source == com.example.ui.viewmodels.GameSource.ENTIRE_QURAN
@@ -3258,7 +3351,7 @@ fun GameSetupScreen(viewModel: SettingsViewModel) {
                 Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(androidx.compose.material.icons.Icons.Default.MenuBook, contentDescription = null, tint = if (isEntireSelected) amberActiveText else MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("সম্পূর্ণ কুরআন", fontSize = 13.sp, fontWeight = if (isEntireSelected) FontWeight.Bold else FontWeight.Medium, color = if (isEntireSelected) amberActiveText else textInactive)
+                    Text(if (isEn) "Full Quran" else "সম্পূর্ণ কুরআন", fontSize = 13.sp, fontWeight = if (isEntireSelected) FontWeight.Bold else FontWeight.Medium, color = if (isEntireSelected) amberActiveText else textInactive)
                 }
             }
             val isSpecificSelected = config.source == com.example.ui.viewmodels.GameSource.SPECIFIC_SURAH
@@ -3270,7 +3363,7 @@ fun GameSetupScreen(viewModel: SettingsViewModel) {
                 Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(androidx.compose.material.icons.Icons.Default.Description, contentDescription = null, tint = if (isSpecificSelected) amberActiveText else MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("নির্দিষ্ট সূরা", fontSize = 13.sp, fontWeight = if (isSpecificSelected) FontWeight.Bold else FontWeight.Medium, color = if (isSpecificSelected) amberActiveText else textInactive)
+                    Text(if (isEn) "Specific Surah" else "নির্দিষ্ট সূরা", fontSize = 13.sp, fontWeight = if (isSpecificSelected) FontWeight.Bold else FontWeight.Medium, color = if (isSpecificSelected) amberActiveText else textInactive)
                 }
             }
         }
@@ -3283,8 +3376,9 @@ fun GameSetupScreen(viewModel: SettingsViewModel) {
                 border = BorderStroke(1.dp, inactiveBorder)
             ) {
                 Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    val selectedName = surahs.find { it.first == config.selectedSurah }?.second?.arabicName ?: "সূরা নির্বাচন করুন"
-                    Text("নির্বাচিত সূরা: $selectedName", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                    val defaultLabel = if (isEn) "Select Surah" else "সূরা নির্বাচন করুন"
+                    val selectedName = surahs.find { it.first == config.selectedSurah }?.second?.arabicName ?: defaultLabel
+                    Text(if (isEn) "Selected Surah: $selectedName" else "নির্বাচিত সূরা: $selectedName", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                     Icon(androidx.compose.material.icons.Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -3305,7 +3399,12 @@ fun GameSetupScreen(viewModel: SettingsViewModel) {
         }
         
         Spacer(modifier = Modifier.height(24.dp))
-        Text("২. গেমের ধরণ নির্ধারণ করুন", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            text = if (isEn) "2. Select Game Mode" else "২. গেমের ধরণ নির্ধারণ করুন",
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         Spacer(modifier = Modifier.height(12.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             val isArToBn = config.type == com.example.ui.viewmodels.GameType.ARABIC_TO_BENGALI
@@ -3314,7 +3413,7 @@ fun GameSetupScreen(viewModel: SettingsViewModel) {
                 colors = CardDefaults.cardColors(containerColor = if (isArToBn) tealActiveBg else inactiveBg),
                 border = BorderStroke(1.dp, if (isArToBn) tealActiveBorder else inactiveBorder)
             ) {
-                Text("আরবি -> বাংলা", modifier = Modifier.padding(16.dp).fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 13.sp, fontWeight = if (isArToBn) FontWeight.Bold else FontWeight.Medium, color = if (isArToBn) tealActiveText else textInactive)
+                Text(if (isEn) "Arabic -> Meaning" else "আরবি -> বাংলা", modifier = Modifier.padding(16.dp).fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 13.sp, fontWeight = if (isArToBn) FontWeight.Bold else FontWeight.Medium, color = if (isArToBn) tealActiveText else textInactive)
             }
             val isBnToAr = config.type == com.example.ui.viewmodels.GameType.BENGALI_TO_ARABIC
             Card(
@@ -3322,12 +3421,17 @@ fun GameSetupScreen(viewModel: SettingsViewModel) {
                 colors = CardDefaults.cardColors(containerColor = if (isBnToAr) tealActiveBg else inactiveBg),
                 border = BorderStroke(1.dp, if (isBnToAr) tealActiveBorder else inactiveBorder)
             ) {
-                Text("বাংলা -> আরবি", modifier = Modifier.padding(16.dp).fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 13.sp, fontWeight = if (isBnToAr) FontWeight.Bold else FontWeight.Medium, color = if (isBnToAr) tealActiveText else textInactive)
+                Text(if (isEn) "Meaning -> Arabic" else "বাংলা -> আরবি", modifier = Modifier.padding(16.dp).fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 13.sp, fontWeight = if (isBnToAr) FontWeight.Bold else FontWeight.Medium, color = if (isBnToAr) tealActiveText else textInactive)
             }
         }
         
         Spacer(modifier = Modifier.height(24.dp))
-        Text("৩. মোট কতটি প্রশ্ন?", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            text = if (isEn) "3. How many questions?" else "৩. মোট কতটি প্রশ্ন?",
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         Spacer(modifier = Modifier.height(12.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(5, 10, 20, 30).forEach { count ->
@@ -3337,19 +3441,19 @@ fun GameSetupScreen(viewModel: SettingsViewModel) {
                     colors = CardDefaults.cardColors(containerColor = if (isCountSelected) amberActiveBg else inactiveBg),
                     border = BorderStroke(1.dp, if (isCountSelected) amberActiveBorder else inactiveBorder)
                 ) {
-                    Text("$count টি", modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 13.sp, fontWeight = if (isCountSelected) FontWeight.Bold else FontWeight.Medium, color = if (isCountSelected) amberActiveText else textInactive)
+                    val countLabel = if (isEn) "$count Qs" else "$count টি"
+                    Text(countLabel, modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 13.sp, fontWeight = if (isCountSelected) FontWeight.Bold else FontWeight.Medium, color = if (isCountSelected) amberActiveText else textInactive)
                 }
             }
         }
         
-
         Spacer(modifier = Modifier.height(32.dp))
         Button(
             onClick = { viewModel.startDynamicGame() },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)) // Orange like in image
         ) {
-            Text("গেম শুরু করুন", fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(vertical = 8.dp))
+            Text(if (isEn) "Start Game" else "গেম শুরু করুন", fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(vertical = 8.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Icon(androidx.compose.material.icons.Icons.Default.ArrowForward, contentDescription = null, tint = Color.White)
         }
@@ -3357,18 +3461,20 @@ fun GameSetupScreen(viewModel: SettingsViewModel) {
 }
 
 @Composable
-fun GameLoadingScreen() {
+fun GameLoadingScreen(isEn: Boolean = false) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularProgressIndicator(color = PrimaryGreen)
             Spacer(modifier = Modifier.height(16.dp))
-            Text("কুরআন থেকে শব্দ সংগ্রহ করা হচ্ছে...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if (isEn) "Loading vocabulary from Quran..." else "কুরআন থেকে শব্দ সংগ্রহ করা হচ্ছে...", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
 @Composable
 fun GamePlayingScreen(viewModel: SettingsViewModel) {
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
     val score by viewModel.gameScore.collectAsState()
     val currentIndex by viewModel.currentQuestionIndex.collectAsState()
     val lastCorrect by viewModel.lastAnswerCorrect.collectAsState()
@@ -3401,8 +3507,8 @@ fun GamePlayingScreen(viewModel: SettingsViewModel) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("স্কোর: $score", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = PrimaryGreen)
-            Text("প্রশ্ন: ${currentIndex + 1}/${questions.size}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if (isEn) "Score: $score" else "স্কোর: $score", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = PrimaryGreen)
+            Text(if (isEn) "Question: ${currentIndex + 1}/${questions.size}" else "প্রশ্ন: ${currentIndex + 1}/${questions.size}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         
         Spacer(modifier = Modifier.height(20.dp))
@@ -3419,7 +3525,12 @@ fun GamePlayingScreen(viewModel: SettingsViewModel) {
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("নিচের শব্দটির সঠিক অর্থ নির্বাচন করুন:", fontFamily = bengaliFont, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = if (isEn) "Select the correct meaning of the word below:" else "নিচের শব্দটির সঠিক অর্থ নির্বাচন করুন:",
+                    fontFamily = if (isEn) androidx.compose.ui.text.font.FontFamily.Default else bengaliFont,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = question.question,
@@ -3509,7 +3620,8 @@ fun GamePlayingScreen(viewModel: SettingsViewModel) {
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
             ) {
-                Text(if (currentIndex == questions.size - 1) "ফলাফল দেখুন" else "পরবর্তী প্রশ্ন", fontWeight = FontWeight.Bold, color = Color.White)
+                val nextLabel = if (isEn) (if (currentIndex == questions.size - 1) "View Results" else "Next Question") else (if (currentIndex == questions.size - 1) "ফলাফল দেখুন" else "পরবর্তী প্রশ্ন")
+                Text(nextLabel, fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
     }
@@ -3548,6 +3660,8 @@ fun shareBitmap(context: android.content.Context, bitmap: android.graphics.Bitma
 
 @Composable
 fun GameResultScreen(viewModel: SettingsViewModel) {
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
     val score by viewModel.gameScore.collectAsState()
     val total = viewModel.dynamicQuestions.value.size
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -3555,10 +3669,10 @@ fun GameResultScreen(viewModel: SettingsViewModel) {
     val graphicsLayer = androidx.compose.ui.graphics.rememberGraphicsLayer()
     
     val comment = when {
-        score == total -> "মাশাআল্লাহ! অসাধারণ!"
-        score >= total * 0.8 -> "আলহামদুলিল্লাহ! খুব ভালো!"
-        score >= total * 0.5 -> "ভালো চেষ্টা, আরো চর্চা করুন!"
-        else -> "ইনশাআল্লাহ! পরবর্তীতে আরো ভালো হবে।"
+        score == total -> if (isEn) "Masha'Allah! Excellent!" else "মাশাআল্লাহ! অসাধারণ!"
+        score >= total * 0.8 -> if (isEn) "Alhamdulillah! Very Good!" else "আলহামদুলিল্লাহ! খুব ভালো!"
+        score >= total * 0.5 -> if (isEn) "Good effort, keep practicing!" else "ভালো চেষ্টা, আরো চর্চা করুন!"
+        else -> if (isEn) "Insha'Allah! You will do better next time." else "ইনশাআল্লাহ! পরবর্তীতে আরো ভালো হবে।"
     }
     
     val isDark = androidx.compose.material3.MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -3583,8 +3697,8 @@ fun GameResultScreen(viewModel: SettingsViewModel) {
                 modifier = Modifier.fillMaxWidth().padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("কুরআন শব্দ গেইম", fontWeight = FontWeight.Bold, fontSize = 24.sp, color = PrimaryGreen)
-                Text("কুরআন রিডার", fontSize = 12.sp, color = PrimaryGreen.copy(alpha = 0.7f))
+                Text(if (isEn) "Quran Vocabulary Game" else "কুরআন শব্দ গেইম", fontWeight = FontWeight.Bold, fontSize = 24.sp, color = PrimaryGreen)
+                Text(if (isEn) "Quran Reader" else "কুরআন রিডার", fontSize = 12.sp, color = PrimaryGreen.copy(alpha = 0.7f))
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 Card(
@@ -3593,7 +3707,7 @@ fun GameResultScreen(viewModel: SettingsViewModel) {
                     border = BorderStroke(1.dp, PrimaryGreen.copy(alpha=0.2f))
                 ) {
                    Column(modifier = Modifier.padding(24.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                       Text("আপনার স্কোর", fontSize = 16.sp, color = PrimaryGreen)
+                       Text(if (isEn) "Your Score" else "আপনার স্কোর", fontSize = 16.sp, color = PrimaryGreen)
                        Spacer(modifier = Modifier.height(8.dp))
                        Row(verticalAlignment = Alignment.Bottom) {
                            Text("$score", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
@@ -3610,7 +3724,7 @@ fun GameResultScreen(viewModel: SettingsViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(32.dp)
                 ) {
-                    Text("আপনিও খেলুন: ❝কুরআন রিডার❞ অ্যাপ-এ", fontSize = 12.sp, color = Color.White)
+                    Text(if (isEn) "Play on ❝Quran Reader❞ app" else "আপনিও খেলুন: ❝কুরআন রিডার❞ অ্যাপ-এ", fontSize = 12.sp, color = Color.White)
                 }
             }
         }
@@ -3618,14 +3732,14 @@ fun GameResultScreen(viewModel: SettingsViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = { 
-                android.widget.Toast.makeText(context, "শেয়ারের প্রস্তুতি চলছে...", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(context, if (isEn) "Preparing to share..." else "শেয়ারের প্রস্তুতি চলছে...", android.widget.Toast.LENGTH_SHORT).show()
                 coroutineScope.launch {
                     try {
                         val bitmap = graphicsLayer.toImageBitmap().asAndroidBitmap()
                         shareBitmap(context, bitmap)
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        android.widget.Toast.makeText(context, "শেয়ার ব্যর্থ হয়েছে", android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(context, if (isEn) "Share failed" else "শেয়ার ব্যর্থ হয়েছে", android.widget.Toast.LENGTH_SHORT).show()
                     }
                 }
             },
@@ -3634,7 +3748,7 @@ fun GameResultScreen(viewModel: SettingsViewModel) {
         ) {
             Icon(androidx.compose.material.icons.Icons.Default.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(8.dp))
-            Text("ফলাফল কার্ড শেয়ার করুন", color = Color.White, fontWeight = FontWeight.Bold)
+            Text(if (isEn) "Share Result Card" else "ফলাফল কার্ড শেয়ার করুন", color = Color.White, fontWeight = FontWeight.Bold)
         }
         
         Spacer(modifier = Modifier.height(12.dp))
@@ -3644,27 +3758,39 @@ fun GameResultScreen(viewModel: SettingsViewModel) {
             colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen),
             border = BorderStroke(1.dp, PrimaryGreen)
         ) {
-            Text("পুনরায় খেলুন", fontWeight = FontWeight.Bold)
+            Text(if (isEn) "Play Again" else "পুনরায় খেলুন", fontWeight = FontWeight.Bold)
         }
     }
 }
 
 // --- 8. AUDIO PLAYER DIALOG ---
 @Composable
-fun PlayerDialogContent() {
+fun PlayerDialogContent(viewModel: SettingsViewModel? = null) {
+    val context = LocalContext.current
+    val currentLang = viewModel?.appLanguage?.collectAsState()?.value ?: com.example.utils.LocaleHelper.getLanguage(context)
+    val isEn = currentLang == "en"
+
     var isPlaying by remember { mutableStateOf(false) }
-    var currentReciter by remember { mutableStateOf("মিশারি রাশিদ আল-আফাসি") }
+    var currentReciter by remember { mutableStateOf(if (isEn) "Mishary Rashid Alafasy" else "মিশারি রাশিদ আল-আফাসি") }
     var speed by remember { mutableStateOf(1f) }
     var sliderVal by remember { mutableStateOf(0.3f) }
     
-    val reciters = listOf("মিশারি রাশিদ আল-আফাসি", "আব্দুল বাসিত আব্দুস সামাদ", "মাহের আল-মুআইকিলী")
+    val reciters = if (isEn) listOf(
+        "Mishary Rashid Alafasy", "Abdul Basit Abdus Samad", "Maher Al-Muaiqly"
+    ) else listOf(
+        "মিশারি রাশিদ আল-আফাসি", "আব্দুল বাসিত আব্দুস সামাদ", "মাহের আল-মুআইকিলী"
+    )
     
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("ক্বারী বা তেলাওয়াতকারী নির্বাচন করুন", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = if (isEn) "Select Preferred Reciter" else "ক্বারী বা তেলাওয়াতকারী নির্বাচন করুন",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         Spacer(modifier = Modifier.height(6.dp))
         reciters.forEach { r ->
             val isSel = currentReciter == r
@@ -3695,7 +3821,12 @@ fun PlayerDialogContent() {
                 modifier = Modifier.padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("সুরা আল-ফাতিহা", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    text = if (isEn) "Surah Al-Fatihah" else "সুরা আল-ফাতিহা",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 Text(currentReciter, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(16.dp))
                 
@@ -3744,7 +3875,11 @@ fun PlayerDialogContent() {
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("গতি: ${String.format("%.1fx", speed)}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = if (isEn) "Speed: ${String.format("%.1fx", speed)}" else "গতি: ${String.format("%.1fx", speed)}",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
                     Slider(
                         value = speed,
@@ -3763,18 +3898,28 @@ fun PlayerDialogContent() {
 @Composable
 fun HifzDialogContent(viewModel: SettingsViewModel) {
     val hifzProgress by viewModel.hifzProgress.collectAsState()
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
     
     val surahs = listOf(
-        "সুরা আল-ফাতিহা", "সুরা আন-নাস", "সুরা আল-ফালাক", "সুরা আল-ইখলাস",
-        "সুরা আল-লাহাব", "সুরা আন-নসর", "সুরা আল-কাফিরুন", "সুরা আল-কাওসার"
+        Pair("সুরা আল-ফাতিহা", "Surah Al-Fatihah"),
+        Pair("সুরা আন-নাস", "Surah An-Nas"),
+        Pair("সুরা আল-ফালাক", "Surah Al-Falaq"),
+        Pair("সুরা আল-ইখলাস", "Surah Al-Ikhlas"),
+        Pair("সুরা আল-লাহাব", "Surah Al-Lahab"),
+        Pair("সুরা আন-নসর", "Surah An-Nasr"),
+        Pair("সুরা আল-কাফিরুন", "Surah Al-Kafirun"),
+        Pair("সুরা আল-কাওসার", "Surah Al-Kawthar")
     )
     
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxSize()
     ) {
-        items(surahs) { surah ->
-            val status = hifzProgress[surah] ?: "শুরু করা হয়নি"
+        items(surahs) { (surahBn, surahEn) ->
+            val surahKey = surahBn
+            val displayName = if (isEn) surahEn else surahBn
+            val status = hifzProgress[surahKey] ?: "শুরু করা হয়নি"
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -3787,25 +3932,30 @@ fun HifzDialogContent(viewModel: SettingsViewModel) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(surah, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text(displayName, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                     
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        listOf("চলছে", "হিফজ").forEach { label ->
-                            val activeLabel = if (label == "হিফজ") "হিফজ করা হয়েছে" else "চলছে"
-                            val active = status == activeLabel
-                            val col = if (label == "হিফজ") Color(0xFF10B981) else Color(0xFFFBBF24)
+                        val inProgressLabel = if (isEn) "In Progress" else "চলছে"
+                        val memorizedLabel = if (isEn) "Memorized" else "হিফজ"
+                        
+                        listOf(
+                            Pair("চলছে", inProgressLabel),
+                            Pair("হিফজ করা হয়েছে", memorizedLabel)
+                        ).forEach { (internalKey, uiLabel) ->
+                            val active = status == internalKey
+                            val col = if (internalKey == "হিফজ করা হয়েছে") Color(0xFF10B981) else Color(0xFFFBBF24)
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
                                     .background(if (active) col else MaterialTheme.colorScheme.surfaceVariant)
                                     .border(1.dp, if (active) col else Border, RoundedCornerShape(6.dp))
                                     .clickable {
-                                        val newStatus = if (active) "শুরু করা হয়নি" else activeLabel
-                                        viewModel.updateHifzProgress(surah, newStatus)
+                                        val newStatus = if (active) "শুরু করা হয়নি" else internalKey
+                                        viewModel.updateHifzProgress(surahKey, newStatus)
                                     }
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
-                                Text(label, fontSize = 11.sp, color = if (active) Color.White else GrayText, fontWeight = FontWeight.Medium)
+                                Text(uiLabel, fontSize = 11.sp, color = if (active) Color.White else GrayText, fontWeight = FontWeight.Medium)
                             }
                         }
                     }
@@ -3817,9 +3967,18 @@ fun HifzDialogContent(viewModel: SettingsViewModel) {
 
 // --- 10. LEARN DIALOG ---
 @Composable
-fun LearnDialogContent() {
-    val lessons = listOf(
-        Pair("পাঠ ১: আরবী হরফ পরিচিতি", "আরবী ভাষার হরফ বা বর্ণ মোট ২৯টি। এগুলো ডানদিক থেকে বামদিকে পড়তে হয়। যেমন: আলিফ (ا), বা (ب), তা (ت), ছা (ث), জীম (ج), হা (ح), খা (خ)..."),
+fun LearnDialogContent(viewModel: SettingsViewModel? = null) {
+    val context = LocalContext.current
+    val currentLang = viewModel?.appLanguage?.collectAsState()?.value ?: com.example.utils.LocaleHelper.getLanguage(context)
+    val isEn = currentLang == "en"
+
+    val lessons = if (isEn) listOf(
+        Pair("Lesson 1: Introduction to Arabic Letters", "The Arabic alphabet consists of 29 letters written and read from right to left. For example: Alif (ا), Ba (ب), Ta (ت), Tha (ث), Jeem (ج), Haa (ح), Khaa (خ)..."),
+        Pair("Lesson 2: Vowel Marks (Harakat)", "Kasrah ( ِ ), Fathah ( َ ), and Dammah ( ُ ) are called Harakat. Single short vowels are pronounced swiftly: a, i, u."),
+        Pair("Lesson 3: Tanween (Nunation)", "Double fathah, double kasrah, and double dammah are called Tanween, producing an 'n' sound at the end: an, in, un."),
+        Pair("Lesson 4: Makharij (Articulation Points)", "There are 17 specific articulation points (Makharij) in the throat and mouth for producing Arabic letters accurately.")
+    ) else listOf(
+        Pair("পাঠ ১: আরবী হরফ পরিচিতি", "আরবী ভাষার হরফ বা বর্ণ মোট ২৯টি। এগুলো ডানদিক থেকে বামদিকে পড়তে হয়। যেমন: আলিফ (ا), বা (ব), তা (ت), ছা (ث), জীম (ج), হা (ح), খা (خ)..."),
         Pair("পাঠ ২: হরকত শিক্ষা", "জের ( ِ ), জবর ( َ ), পেশ ( ُ ) কে হরকত বলা হয়। এক জবর, এক জের ও এক পেশের উচ্চারণ তাড়াতাড়ি করতে হয়। যেমন: আ, ই, উ।"),
         Pair("পাঠ ৩: তানভীন পরিচয়", "দুই জবর, দুই জের ও দুই পেশকে তানভীন বলা হয়। তানভীনের উচ্চারণে শেষে 'ন' ধ্বনি আসে। যেমন: আন, ইন, উন।"),
         Pair("পাঠ ৪: মাখরাজ ও উচ্চারণস্থল", "আরবী হরফ উচ্চারণের মোট ১৭টি সুনির্দিষ্ট স্থান রয়েছে, একে মাখরাজ বলে। যেমন: ১ নং মাখরাজ- হলকের (কণ্ঠনালীর) শুরু হইতে হামযাহ ও হা উচ্চারিত হয়।")
@@ -3844,15 +4003,22 @@ fun LearnDialogContent() {
 
 // --- 11. VIDEO CLASSES DIALOG ---
 @Composable
-fun VideoDialogContent() {
-    val classes = listOf(
+fun VideoDialogContent(viewModel: SettingsViewModel? = null) {
+    val context = LocalContext.current
+    val currentLang = viewModel?.appLanguage?.collectAsState()?.value ?: com.example.utils.LocaleHelper.getLanguage(context)
+    val isEn = currentLang == "en"
+
+    val classes = if (isEn) listOf(
+        Pair("Tajweed Lesson 1: Rules of Arabic Pronunciation", "10:15 min • Instructor: Hafez Maulana Abdur Rahman"),
+        Pair("Tajweed Lesson 2: Makharij Made Easy", "12:40 min • Instructor: Hafez Maulana Abdur Rahman"),
+        Pair("Tafsir: Analysis of Surah Al-Fatiha", "25:30 min • Lecturer: Dr. Abu Bakr Muhammad Zakaria"),
+        Pair("Quran Recitation Workshop", "18:45 min • Reciter: Qari Ashraf Ali")
+    ) else listOf(
         Pair("তাজবিদ পাঠ ১: আরবী উচ্চারণের নিয়মাবলী", "১০:১৫ মিনিট • ট্রেইনার: হাফেজ মাওলানা আব্দুর রহমান"),
         Pair("তাজবিদ পাঠ ২: সহজ উপায়ে মাখরাজ শিক্ষা", "১২:৪০ মিনিট • ট্রেইনার: হাফেজ মাওলানা আব্দুর রহমান"),
         Pair("তাফসির: সুরা ফাতিহার তাফসির ও বিশ্লেষণ", "২৫:৩০ মিনিট • তাফসিরকারী: ড. আবু বকর মুহাম্মাদ যাকারিয়া"),
         Pair("কুরআন তিলাওয়াত শুদ্ধিকরণ কর্মশালা", "১৮:৪৫ মিনিট • তেলাওয়াতকারী: ক্বারী আশরাফ আলী")
     )
-    
-    val context = LocalContext.current
     
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxSize()) {
         items(classes) { (title, subtitle) ->
@@ -3884,7 +4050,7 @@ fun VideoDialogContent() {
                         Text(subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     
-                    IconButton(onClick = { Toast.makeText(context, "ভিডিও লোড হচ্ছে...", Toast.LENGTH_SHORT).show() }) {
+                    IconButton(onClick = { Toast.makeText(context, if (isEn) "Loading video..." else "ভিডিও লোড হচ্ছে...", Toast.LENGTH_SHORT).show() }) {
                         Icon(Icons.Default.PlayCircle, contentDescription = "Play", tint = PrimaryGreen)
                     }
                 }
@@ -3895,9 +4061,12 @@ fun VideoDialogContent() {
 
 // --- 12. CLOUD BACKUP DIALOG ---
 @Composable
-fun BackupDialogContent() {
+fun BackupDialogContent(viewModel: SettingsViewModel? = null) {
+    val context = LocalContext.current
+    val currentLang = viewModel?.appLanguage?.collectAsState()?.value ?: com.example.utils.LocaleHelper.getLanguage(context)
+    val isEn = currentLang == "en"
     var isBackingUp by remember { mutableStateOf(false) }
-    var lastBackupTime by remember { mutableStateOf("আজ সকাল ১০:৩০") }
+    var lastBackupTime by remember { mutableStateOf(if (isEn) "Today, 10:30 AM" else "আজ সকাল ১০:৩০") }
     val scope = rememberCoroutineScope()
     
     Column(
@@ -3907,9 +4076,19 @@ fun BackupDialogContent() {
     ) {
         Icon(Icons.Default.Cloud, contentDescription = null, tint = PrimaryGreen, modifier = Modifier.size(64.dp))
         Spacer(modifier = Modifier.height(16.dp))
-        Text("ক্লাউড ব্যাকআপ অ্যান্ড রিস্টোর", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            text = if (isEn) "Cloud Backup & Restore" else "ক্লাউড ব্যাকআপ অ্যান্ড রিস্টোর",
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         Spacer(modifier = Modifier.height(4.dp))
-        Text("আপনার বুকমার্ক ও নোট সুরক্ষিত রাখতে ব্যাকআপ নিন।", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, textAlign = TextAlign.Center)
+        Text(
+            text = if (isEn) "Backup your bookmarks and notes to keep them safe." else "আপনার বুকমার্ক ও নোট সুরক্ষিত রাখতে ব্যাকআপ নিন।",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp,
+            textAlign = TextAlign.Center
+        )
         
         Spacer(modifier = Modifier.height(24.dp))
         
@@ -3919,7 +4098,11 @@ fun BackupDialogContent() {
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
         ) {
             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("সর্বশেষ ব্যাকআপের সময়:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = if (isEn) "Last Backup Time:" else "সর্বশেষ ব্যাকআপের সময়:",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(lastBackupTime, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface)
             }
@@ -3930,7 +4113,11 @@ fun BackupDialogContent() {
         if (isBackingUp) {
             CircularProgressIndicator(color = PrimaryGreen)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("সার্ভারে ডাটা পাঠানো হচ্ছে...", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = if (isEn) "Uploading data to server..." else "সার্ভারে ডাটা পাঠানো হচ্ছে...",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         } else {
             Button(
                 onClick = {
@@ -3946,7 +4133,7 @@ fun BackupDialogContent() {
             ) {
                 Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("ব্যাকআপ নিন", color = Color.White)
+                Text(if (isEn) "Backup Now" else "ব্যাকআপ নিন", color = Color.White)
             }
         }
     }
@@ -3955,6 +4142,8 @@ fun BackupDialogContent() {
 // --- OFFLINE SYNC DIALOG ---
 @Composable
 fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
     val isDownloading by viewModel.isDownloadingQuran.collectAsState()
     val progress by viewModel.quranDownloadProgress.collectAsState()
     val error by viewModel.quranDownloadError.collectAsState()
@@ -3970,7 +4159,6 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
 
     var showSurahSelectorSheet by remember { mutableStateOf(false) }
 
-
     // Tafsir States
     val availableTafsirs by viewModel.availableTafsirs.collectAsState()
     val availableTranslations by viewModel.availableTranslations.collectAsState()
@@ -3984,7 +4172,6 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
 
     // Refresh states
     LaunchedEffect(Unit) {
-        
         viewModel.updateAudioCacheSize()
         viewModel.loadSurahList()
     }
@@ -4005,7 +4192,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "কুরআন অফলাইন ডাউনলোড ও ক্যাশ",
+            text = if (isEn) "Quran Offline Download & Cache" else "কুরআন অফলাইন ডাউনলোড ও ক্যাশ",
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
             color = MaterialTheme.colorScheme.onSurface
@@ -4013,9 +4200,11 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-
         Text(
-            text = "আপনার কুরআন অডিও অফলাইন ব্যবহারের জন্য ডাউনলোড করে রাখুন যাতে ইন্টারনেট না থাকলেও শুনতে পারেন। কুরআন টেক্সট (আরবি ও বাংলা) ইতিমধ্যেই অ্যাপে অফলাইনে দেওয়া আছে।",
+            text = if (isEn)
+                "Download Quran audio for offline use so you can listen even without an internet connection. Quran text (Arabic and translations) is already stored offline."
+            else
+                "আপনার কুরআন অডিও অফলাইন ব্যবহারের জন্য ডাউনলোড করে রাখুন যাতে ইন্টারনেট না থাকলেও শুনতে পারেন। কুরআন টেক্সট (আরবি ও বাংলা) ইতিমধ্যেই অ্যাপে অফলাইনে দেওয়া আছে।",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             textAlign = TextAlign.Center,
@@ -4052,13 +4241,13 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "কুরআন টেক্সট ও শব্দে শব্দে অর্থ (WbW)",
+                            text = if (isEn) "Quran Text & Word by Word (WbW)" else "কুরআন টেক্সট ও শব্দে শব্দে অর্থ (WbW)",
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "১১৪টি সুরার প্রতিটি শব্দের বাংলা অর্থ সম্পূর্ণ অফলাইন সক্রিয়",
+                            text = if (isEn) "114 Surahs with complete word-by-word meaning offline active" else "১১৪টি সুরার প্রতিটি শব্দের বাংলা অর্থ সম্পূর্ণ অফলাইন সক্রিয়",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -4089,7 +4278,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                                 modifier = Modifier.size(18.dp)
                             )
                             Text(
-                                text = "১০০% সম্পূর্ণ অফলাইন প্রস্তুত (১১৪টি সুরা)",
+                                text = if (isEn) "100% Fully Offline Ready (114 Surahs)" else "১০০% সম্পূর্ণ অফলাইন প্রস্তুত (১১৪টি সুরা)",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = PrimaryGreen
@@ -4098,7 +4287,10 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
 
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "পুরো কুরআনের প্রতিটি আয়াতের আরবি, বাংলা অনুবাদ এবং ৮৩,০০০+ শব্দের শব্দার্থ লোকাল ডাটাবেজে সংরক্ষিত রয়েছে। কোনো অতিরিক্ত ডাউনলোডের প্রয়োজন নেই।",
+                            text = if (isEn)
+                                "Complete Quran Arabic text, translations, and 83,000+ word meanings are stored directly in local database. No additional downloads needed."
+                            else
+                                "পুরো কুরআনের প্রতিটি আয়াতের আরবি, বাংলা অনুবাদ এবং ৮৩,০০০+ শব্দের শব্দার্থ লোকাল ডাটাবেজে সংরক্ষিত রয়েছে। কোনো অতিরিক্ত ডাউনলোডের প্রয়োজন নেই।",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 16.sp
@@ -4136,13 +4328,13 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "অডিও প্লেব্যাক অফলাইন ক্যাশ",
+                            text = if (isEn) "Audio Playback Offline Cache" else "অডিও প্লেব্যাক অফলাইন ক্যাশ",
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "প্লে হওয়া আয়াতে অফলাইন ফাইল সংরক্ষণ",
+                            text = if (isEn) "Save offline audio files for played verses" else "প্লে হওয়া আয়াতে অফলাইন ফাইল সংরক্ষণ",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -4166,7 +4358,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                 ) {
                     Column {
                         Text(
-                            text = "ব্যবহৃত ক্যাশ মেমোরি:",
+                            text = if (isEn) "Used Cache Memory:" else "ব্যবহৃত ক্যাশ মেমোরি:",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -4188,7 +4380,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                         ) {
                             Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("ক্যাশ মুছুন", fontSize = 12.sp, color = Color.Red)
+                            Text(if (isEn) "Clear Cache" else "ক্যাশ মুছুন", fontSize = 12.sp, color = Color.Red)
                         }
                     }
                 }
@@ -4207,7 +4399,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                             .padding(12.dp)
                     ) {
                         Text(
-                            text = audioDownloadStatus ?: "অডিও ফাইল ডাউনলোড করা হচ্ছে...",
+                            text = audioDownloadStatus ?: (if (isEn) "Downloading audio files..." else "অডিও ফাইল ডাউনলোড করা হচ্ছে..."),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
@@ -4219,7 +4411,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "অগ্রগতি:",
+                                text = if (isEn) "Progress:" else "অগ্রগতি:",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -4244,7 +4436,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                             border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.3f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("ডাউনলোড বাতিল করুন", fontSize = 12.sp)
+                            Text(if (isEn) "Cancel Download" else "ডাউনলোড বাতিল করুন", fontSize = 12.sp)
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
@@ -4276,7 +4468,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                                 .padding(horizontal = 12.dp, vertical = 10.dp)
                         ) {
                             Text(
-                                text = "ত্রুটি: $err",
+                                text = if (isEn) "Error: $err" else "ত্রুটি: $err",
                                 color = Color.Red,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
@@ -4294,13 +4486,16 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                     ) {
                         Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("ম্যানুয়ালি সুরা অডিও ডাউনলোড করুন", fontSize = 12.sp, color = Color.White)
+                        Text(if (isEn) "Manually Download Surah Audio" else "ম্যানুয়ালি সুরা অডিও ডাউনলোড করুন", fontSize = 12.sp, color = Color.White)
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
                 Text(
-                    text = "নিয়ম: অ্যাপে যেকোনো সুরা বা আয়াত শোনার সময় সেটি স্বয়ংক্রিয়ভাবে ব্যাকগ্রাউন্ডে ক্যাশ হয়ে যাবে। তবে আপনি চাইলে উপরোক্ত বাটন ব্যবহার করে যেকোনো সুরার সম্পূর্ণ অডিও আগে থেকেই অফলাইনে প্লে করার জন্য ডাউনলোড করে রাখতে পারবেন।",
+                    text = if (isEn)
+                        "Note: Listening to any verse or surah in the app will automatically cache it in the background. You can also pre-download full surahs for offline listening using the button above."
+                    else
+                        "নিয়ম: অ্যাপে যেকোনো সুরা বা আয়াত শোনার সময় সেটি স্বয়ংক্রিয়ভাবে ব্যাকগ্রাউন্ডে ক্যাশ হয়ে যাবে। তবে আপনি চাইলে উপরোক্ত বাটন ব্যবহার করে যেকোনো সুরার সম্পূর্ণ অডিও আগে থেকেই অফলাইনে প্লে করার জন্য ডাউনলোড করে রাখতে পারবেন।",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 16.sp
@@ -4341,13 +4536,13 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "অনুবাদ ডাটা",
+                            text = if (isEn) "Translation Data" else "অনুবাদ ডাটা",
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "আপনার পছন্দের বাংলা অনুবাদ নির্বাচন করুন",
+                            text = if (isEn) "Select your preferred translations" else "আপনার পছন্দের বাংলা অনুবাদ নির্বাচন করুন",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -4363,7 +4558,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                     Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "আপনি চাইলে একাধিক অনুবাদ একসাথে নির্বাচন করতে পারেন।",
+                    text = if (isEn) "You can select multiple translations simultaneously." else "আপনি চাইলে একাধিক অনুবাদ একসাথে নির্বাচন করতে পারেন।",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -4466,7 +4661,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                     }
                     if (availableTranslations.isEmpty()) {
                         Text(
-                            text = "অনুবাদ ডাটা লোড হচ্ছে...",
+                            text = if (isEn) "Loading translation data..." else "অনুবাদ ডাটা লোড হচ্ছে...",
                             modifier = Modifier.padding(16.dp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -4507,13 +4702,13 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "তাফসীর ডাটা",
+                            text = if (isEn) "Tafsir Data" else "তাফসীর ডাটা",
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "অফলাইনে পড়ার জন্য তাফসীর ডাউনলোড করুন",
+                            text = if (isEn) "Download Tafsir for offline reading" else "অফলাইনে পড়ার জন্য তাফসীর ডাউনলোড করুন",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -4529,7 +4724,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                     Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "একসাথে সর্বোচ্চ ৩টি তাফসীর নির্বাচন করতে পারবেন",
+                    text = if (isEn) "You can select up to 3 Tafsirs simultaneously" else "একসাথে সর্বোচ্চ ৩টি তাফসীর নির্বাচন করতে পারবেন",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -4666,13 +4861,13 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "অফলাইনে কি কি সুবিধা পাবেন?",
+                            text = if (isEn) "What features are available offline?" else "অফলাইনে কি কি সুবিধা পাবেন?",
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "ইন্টারনেট ছাড়াই অ্যাপের সকল প্রধান ফিচার ব্যবহার করতে পারবেন",
+                            text = if (isEn) "All core app features can be used without an internet connection" else "ইন্টারনেট ছাড়াই অ্যাপের সকল প্রধান ফিচার ব্যবহার করতে পারবেন",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -4691,7 +4886,14 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 Spacer(modifier = Modifier.height(14.dp))
 
-                val offlineFeatures = listOf(
+                val offlineFeatures = if (isEn) listOf(
+                    Triple(Icons.Default.MenuBook, "Quran Text & Translation", "Read all 114 Surahs with Arabic text, translations and Tajweed colors completely offline."),
+                    Triple(Icons.Default.Translate, "Word by Word Meaning", "Every word of 114 Surahs has meanings available offline without needing internet."),
+                    Triple(Icons.Default.Headphones, "Audio Recitation", "Cached or pre-downloaded surahs can be listened to completely offline."),
+                    Triple(Icons.Default.LibraryBooks, "Tafsir & Subjectwise Quran", "Downloaded tafsir and all subjectwise topics and verses are accessible offline."),
+                    Triple(Icons.Default.Favorite, "Duas, Bookmarks & Hifz", "Quranic duas, daily masnoon duas, bookmarks, and memorization progress work offline."),
+                    Triple(Icons.Default.Sync, "Auto Background Sync", "App automatically syncs newly available content in background when internet reconnects.")
+                ) else listOf(
                     Triple(Icons.Default.MenuBook, "কুরআন টেক্সট ও অনুবাদ", "১১৪টি সুরার সুপাঠ্য আরবি টেক্সট, বাংলা অনুবাদ ও তাজবীদ কালার সম্পূর্ণ অফলাইনে দেখতে ও পড়তে পারবেন।"),
                     Triple(Icons.Default.Translate, "শব্দে শব্দে অর্থ (Word by Word)", "১১৪টি সুরার প্রতিটি শব্দের বাংলা অর্থ সম্পূর্ণ অফলাইনে দেওয়া রয়েছে, ইন্টারনেট ছাড়াই তৎক্ষণাৎ দেখা যাবে।"),
                     Triple(Icons.Default.Headphones, "অডিও তিলাওয়াত", "পূর্বে ব্যাকগ্রাউন্ডে ক্যাশ হওয়া বা আগে থেকে ডাউনলোড করা সুরার অডিও ইন্টারনেট ছাড়াই অফলাইনে শুনতে পারবেন।"),
@@ -4774,13 +4976,13 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "অনলাইন কানেকশনে কি কি পাবেন?",
+                            text = if (isEn) "What features require an online connection?" else "অনলাইন কানেকশনে কি কি পাবেন?",
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "ইন্টারনেট থাকলে যেসব সুবিধা পাওয়া যাবে ও নতুন তথ্য আপডেট হবে",
+                            text = if (isEn) "Features available and data updated when connected to internet" else "ইন্টারনেট থাকলে যেসব সুবিধা পাওয়া যাবে ও নতুন তথ্য আপডেট হবে",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -4799,7 +5001,12 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 Spacer(modifier = Modifier.height(14.dp))
 
-                val onlineFeatures = listOf(
+                val onlineFeatures = if (isEn) listOf(
+                    Triple(Icons.Default.CloudDownload, "On-Demand Audio Streaming", "Stream any verse or surah instantly online; audio is automatically saved to offline cache."),
+                    Triple(Icons.Default.MenuBook, "Mushaf Pages Download", "Download high-resolution printed Mushaf pages and scans for offline reading."),
+                    Triple(Icons.Default.Update, "Latest Tafsir & Translations Sync", "Instantly load and sync newly chosen tafsir and translations from server."),
+                    Triple(Icons.Default.Sync, "Background Auto Sync", "Automatically sync bookmarks, settings, and updates when online.")
+                ) else listOf(
                     Triple(Icons.Default.CloudDownload, "অন-ডিমান্ড অডিও স্ট্রিমিং", "যেসব আয়াতের অডিও পূর্বে ডাউনলোড করা থাকবে না, অনলাইনে প্লে করলে তা সাথে সাথে শুনতে পাবেন এবং অফলাইনের জন্য সেভ হবে।"),
                     Triple(Icons.Default.MenuBook, "মুসহাফ পেজ ডাউনলোড", "বিভিন্ন স্টাইলের প্রিন্টেড মুসহাফের পেজ ও উচ্চমানের স্ক্যান প্রথমবারের মত অনলাইন থেকে ডাউনলোড করতে হবে।"),
                     Triple(Icons.Default.Update, "সর্বশেষ তাফসীর ও অনুবাদ সিংক", "সেটিংস থেকে নতুন কোনো তাফসীর বা অনুবাদ নির্বাচন করলে তা সার্ভার থেকে ইনস্ট্যান্ট লোড হবে।"),
@@ -4885,7 +5092,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
             title = {
                 Column {
                     Text(
-                        text = "অডিও ডাউনলোডের জন্য সুরা নির্বাচন",
+                        text = if (isEn) "Select Surah for Audio Download" else "অডিও ডাউনলোডের জন্য সুরা নির্বাচন",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.onSurface
@@ -4894,7 +5101,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("সুরা খুঁজুন (যেমন: ফাতিহা বা 1)", fontSize = 12.sp) },
+                        placeholder = { Text(if (isEn) "Search Surah (e.g. Fatiha or 1)" else "সুরা খুঁজুন (যেমন: ফাতিহা বা 1)", fontSize = 12.sp) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -4913,7 +5120,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                             .height(150.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("কোনো সুরা পাওয়া যায়নি", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                        Text(if (isEn) "No surah found" else "কোনো সুরা পাওয়া যায়নি", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     }
                 } else {
                     LazyColumn(
@@ -4945,7 +5152,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = surah.number.toString(),
+                                            text = if (isEn) surah.number.toString() else com.example.utils.DateUtil.toBengaliNumerals(surah.number),
                                             color = Color(0xFF06B6D4),
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold
@@ -4959,7 +5166,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
-                                            text = "${surah.englishName} • ${surah.numberOfAyahs} আয়াত",
+                                            text = if (isEn) "${surah.englishName} • ${surah.numberOfAyahs} verses" else "${surah.englishName} • ${com.example.utils.DateUtil.toBengaliNumerals(surah.numberOfAyahs)} আয়াত",
                                             fontSize = 11.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -4979,7 +5186,7 @@ fun OfflineSyncDialogContent(viewModel: SettingsViewModel) {
             },
             confirmButton = {
                 TextButton(onClick = { showSurahSelectorSheet = false }) {
-                    Text("বন্ধ করুন", color = Color(0xFF06B6D4))
+                    Text(if (isEn) "Close" else "বন্ধ করুন", color = Color(0xFF06B6D4))
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface,
@@ -4998,7 +5205,11 @@ fun formatBytesLocal(bytes: Long): String {
 
 
 @Composable
-fun AboutDialogContent() {
+fun AboutDialogContent(viewModel: SettingsViewModel? = null) {
+    val context = LocalContext.current
+    val currentLang = viewModel?.appLanguage?.collectAsState()?.value ?: com.example.utils.LocaleHelper.getLanguage(context)
+    val isEn = currentLang == "en"
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -5012,14 +5223,14 @@ fun AboutDialogContent() {
             modifier = Modifier.size(64.dp).padding(bottom = 16.dp)
         )
         Text(
-            text = "কুরআন রিডার",
+            text = if (isEn) "Quran Reader" else "কুরআন রিডার",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "সংস্করণ: 1.0.0",
+            text = if (isEn) "Version: 1.0.0" else "সংস্করণ: 1.0.0",
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -5034,14 +5245,17 @@ fun AboutDialogContent() {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "আমাদের সম্পর্কে",
+                    text = if (isEn) "About Us" else "আমাদের সম্পর্কে",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = PrimaryGreen
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "এই অ্যাপটি ডেভেলপ করা হয়েছে কুরআন তেলাওয়াত, হিফজ, এবং তাফসীর অধ্যয়নের সুবিধার্থে। এখানে শব্দে শব্দে অর্থ, তাজবীদ কালার, একাধিক ক্বারী এর অডিও, এবং সম্পূর্ণ অফলাইন সুবিধা যুক্ত করা হয়েছে। আমাদের লক্ষ্য হলো কুরআন শিক্ষাকে আরও সহজ ও সুন্দর করে তোলা।",
+                    text = if (isEn)
+                        "This app is dedicated to facilitating Quran recitation, memorization (Hifz), and Tafsir study with word-by-word translations, Tajweed coloring, multiple reciter audios, and 100% offline capability. Our goal is to make learning and contemplating the Holy Quran easy, distraction-free, and spiritually rewarding."
+                    else
+                        "এই অ্যাপটি ডেভেলপ করা হয়েছে কুরআন তেলাওয়াত, হিফজ, এবং তাফসীর অধ্যয়নের সুবিধার্থে। এখানে শব্দে শব্দে অর্থ, তাজবীদ কালার, একাধিক ক্বারী এর অডিও, এবং সম্পূর্ণ অফলাইন সুবিধা যুক্ত করা হয়েছে। আমাদের লক্ষ্য হলো কুরআন শিক্ষাকে আরও সহজ ও সুন্দর করে তোলা।",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 20.sp,
@@ -5060,14 +5274,17 @@ fun AboutDialogContent() {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "প্রাইভেসি পলিসি (Privacy Policy)",
+                    text = if (isEn) "Privacy Policy" else "প্রাইভেসি পলিসি (Privacy Policy)",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = PrimaryGreen
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "এই অ্যাপটি ব্যবহারকারীর কোনো ব্যক্তিগত তথ্য (Personal Data) সংগ্রহ বা সংরক্ষণ করে না। অ্যাপের বুকমার্ক, হিফজ প্রগ্রেস এবং ইউজার সেটিংস সম্পূর্ণভাবে আপনার ডিভাইসে লোকালি সংরক্ষিত হয়। অ্যাপের কোনো ডেটা কোনো থার্ড-পার্টির সার্ভারে পাঠানো হয় না বা শেয়ার করা হয় না।\n\nকোরআনের অডিও ডাউনলোড এবং অফলাইন সুবিধার জন্য শুধুমাত্র ইন্টারনেট পারমিশন ব্যবহার করা হয়।",
+                    text = if (isEn)
+                        "This application does not collect, sell, or share any personal user data. Your reading progress, bookmarks, notes, and preferences remain strictly stored on your local device.\n\nInternet access is only used for downloading Quran recitations and optional cloud backups."
+                    else
+                        "এই অ্যাপটি ব্যবহারকারীর কোনো ব্যক্তিগত তথ্য (Personal Data) সংগ্রহ বা সংরক্ষণ করে না। অ্যাপের বুকমার্ক, হিফজ প্রগ্রেস এবং ইউজার সেটিংস সম্পূর্ণভাবে আপনার ডিভাইসে লোকালি সংরক্ষিত হয়। অ্যাপের কোনো ডেটা কোনো থার্ড-পার্টির সার্ভারে পাঠানো হয় না বা শেয়ার করা হয় না।\n\nকোরআনের অডিও ডাউনলোড এবং অফলাইন সুবিধার জন্য শুধুমাত্র ইন্টারনেট পারমিশন ব্যবহার করা হয়।",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 20.sp,
@@ -5090,8 +5307,10 @@ fun AboutDialogContent() {
 
 
 @Composable
-fun ContactDialogContent() {
+fun ContactDialogContent(viewModel: SettingsViewModel? = null) {
     val context = LocalContext.current
+    val currentLang = viewModel?.appLanguage?.collectAsState()?.value ?: com.example.utils.LocaleHelper.getLanguage(context)
+    val isEn = currentLang == "en"
     
     Column(
         modifier = Modifier
@@ -5106,14 +5325,14 @@ fun ContactDialogContent() {
             modifier = Modifier.size(64.dp).padding(bottom = 16.dp)
         )
         Text(
-            text = "আমাদের সাথে যোগাযোগ করুন",
+            text = if (isEn) "Contact Us" else "আমাদের সাথে যোগাযোগ করুন",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "যেকোনো পরামর্শ বা প্রশ্নের জন্য",
+            text = if (isEn) "For any feedback, advice or queries" else "যেকোনো পরামর্শ বা প্রশ্নের জন্য",
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -5122,7 +5341,7 @@ fun ContactDialogContent() {
         
         // Email
         ContactCard(
-            title = "ইমেইল",
+            title = if (isEn) "Email" else "ইমেইল",
             value = "ammamun94@gmail.com",
             icon = Icons.Default.Email,
             color = Color(0xFFEA4335),
@@ -5140,7 +5359,7 @@ fun ContactDialogContent() {
         
         // Mobile
         ContactCard(
-            title = "মোবাইল নম্বর",
+            title = if (isEn) "Mobile Number" else "মোবাইল নম্বর",
             value = "+880 1600-989555",
             icon = Icons.Default.Phone,
             color = Color(0xFF34A853),
@@ -5158,8 +5377,8 @@ fun ContactDialogContent() {
         
         // WhatsApp
         ContactCard(
-            title = "হোয়াটসঅ্যাপ (WhatsApp)",
-            value = "মেসেজ করুন",
+            title = if (isEn) "WhatsApp" else "হোয়াটসঅ্যাপ (WhatsApp)",
+            value = if (isEn) "Send Message" else "মেসেজ করুন",
             icon = Icons.Default.Chat,
             color = Color(0xFF25D366),
             onClick = {
@@ -5176,7 +5395,7 @@ fun ContactDialogContent() {
         
         // Facebook
         ContactCard(
-            title = "ফেসবুক (Facebook)",
+            title = if (isEn) "Facebook" else "ফেসবুক (Facebook)",
             value = "MuslimsLibrary",
             icon = Icons.Default.ThumbUp,
             color = Color(0xFF1877F2),
@@ -5266,6 +5485,8 @@ fun ContactCard(
 @Composable
 fun ThemeDialogContent(viewModel: SettingsViewModel) {
     val currentTheme by viewModel.themeState.collectAsState()
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
     
     Column(
         modifier = Modifier
@@ -5281,7 +5502,7 @@ fun ThemeDialogContent(viewModel: SettingsViewModel) {
             modifier = Modifier.size(64.dp).padding(bottom = 16.dp)
         )
         Text(
-            text = "থিম নির্বাচন করুন",
+            text = if (isEn) "Select App Theme" else "থিম নির্বাচন করুন",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
@@ -5289,19 +5510,19 @@ fun ThemeDialogContent(viewModel: SettingsViewModel) {
         Spacer(modifier = Modifier.height(24.dp))
         
         ThemeOption(
-            title = "সিস্টেম ডিফল্ট (System)",
+            title = if (isEn) "System Default" else "সিস্টেম ডিফল্ট (System)",
             isSelected = currentTheme == "System",
             onClick = { viewModel.setTheme("System") }
         )
         
         ThemeOption(
-            title = "লাইট থিম (Light)",
+            title = if (isEn) "Light Theme" else "লাইট থিম (Light)",
             isSelected = currentTheme == "Light",
             onClick = { viewModel.setTheme("Light") }
         )
         
         ThemeOption(
-            title = "ডার্ক থিম (Dark)",
+            title = if (isEn) "Dark Theme" else "ডার্ক থিম (Dark)",
             isSelected = currentTheme == "Dark",
             onClick = { viewModel.setTheme("Dark") }
         )
@@ -5356,6 +5577,8 @@ fun NotificationDialogContent(
     val dailyEnabled by viewModel.dailyMessageEnabled.collectAsState()
     val dailyHour by viewModel.dailyMessageHour.collectAsState()
     val dailyMinute by viewModel.dailyMessageMinute.collectAsState()
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
 
     val context = LocalContext.current
 
@@ -5372,7 +5595,7 @@ fun NotificationDialogContent(
         if (isGranted) {
             viewModel.toggleDailyMessage(true)
         } else {
-            android.widget.Toast.makeText(context, "নোটিফিকেশন পারমিশন প্রয়োজন", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, if (isEn) "Notification permission is required" else "নোটিফিকেশন পারমিশন প্রয়োজন", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -5391,12 +5614,12 @@ fun NotificationDialogContent(
                     viewModel.updateDailyMessageTime(timeState.hour, timeState.minute)
                     showTimePicker = false
                 }) {
-                    Text("সংরক্ষণ করুন")
+                    Text(if (isEn) "Save" else "সংরক্ষণ করুন")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showTimePicker = false }) {
-                    Text("বাতিল")
+                    Text(if (isEn) "Cancel" else "বাতিল")
                 }
             },
             text = {
@@ -5435,13 +5658,13 @@ fun NotificationDialogContent(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "দৈনিক ইসলামিক বার্তা",
+                            text = if (isEn) "Daily Islamic Message" else "দৈনিক ইসলামিক বার্তা",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "প্রতিদিন আয়াত বা হাদিস রিমাইন্ডার পান",
+                            text = if (isEn) "Receive daily Ayah or Hadith reminder" else "প্রতিদিন আয়াত বা হাদিস রিমাইন্ডার পান",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -5476,7 +5699,7 @@ fun NotificationDialogContent(
                         Icon(Icons.Default.Schedule, contentDescription = null, tint = PrimaryGreen)
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("রিমাইন্ডারের সময়", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                            Text(if (isEn) "Reminder Time" else "রিমাইন্ডারের সময়", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                             val timeStr = String.format("%02d:%02d %s", if (dailyHour % 12 == 0) 12 else dailyHour % 12, dailyMinute, if (dailyHour >= 12) "PM" else "AM")
                             Text(timeStr, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
                         }
@@ -5508,14 +5731,17 @@ fun NotificationDialogContent(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "সোম-বৃহস্পতি, আইয়ামে বীজ ও দিবস রিমাইন্ডার",
+                            text = if (isEn) "Fasting & Islamic Events" else "সোম-বৃহস্পতি, আইয়ামে বীজ ও দিবস রিমাইন্ডার",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "রবি ও বুধবার বিকেলে (আসরের পর) সোম-বৃহস্পতিবারের রোজা, ১২ হিজরী বিকেলে আইয়ামে বীজ ও বিশেষ দিবসের নোটিফিকেশন আসবে।",
+                            text = if (isEn)
+                                "Timely notifications for Sunnah Monday-Thursday fasts, 13-15 Hijri white days, and holy Islamic events."
+                            else
+                                "রবি ও বুধবার বিকেলে (আসরের পর) সোম-বৃহস্পতিবারের রোজা, ১২ হিজরী বিকেলে আইয়ামে বীজ ও বিশেষ দিবসের নোটিফিকেশন আসবে।",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -5573,21 +5799,26 @@ fun NotificationDialogContent(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "দুরুদ রিমাইন্ডার",
+                            text = if (isEn) "Durood Sharif Reminder" else "দুরুদ রিমাইন্ডার",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(2.dp))
+                        val duroodStatusText = if (isEn) {
+                            if (duroodConfig.isEnabled) "Enabled (Every ${duroodConfig.intervalMinutes} mins)" else "Disabled • Tap to configure"
+                        } else {
+                            if (duroodConfig.isEnabled) "চালু (${duroodConfig.intervalMinutes} মিনিট পরপর)" else "বন্ধ • সেটিংস পরিবর্তন করতে ট্যাপ করুন"
+                        }
                         Text(
-                            text = if (duroodConfig.isEnabled) "চালু (${duroodConfig.intervalMinutes} মিনিট পরপর)" else "বন্ধ • সেটিংস পরিবর্তন করতে ট্যাপ করুন",
+                            text = duroodStatusText,
                             fontSize = 12.sp,
                             color = if (duroodConfig.isEnabled) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Icon(
                         imageVector = Icons.Default.ArrowForward,
-                        contentDescription = "বিস্তারিত",
+                        contentDescription = "Details",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
@@ -5622,21 +5853,26 @@ fun NotificationDialogContent(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "ইস্তিগফার রিমাইন্ডার",
+                            text = if (isEn) "Istighfar Reminder" else "ইস্তিগফার রিমাইন্ডার",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(2.dp))
+                        val istighfarStatusText = if (isEn) {
+                            if (istighfarConfig.isEnabled) "Enabled (Every ${istighfarConfig.intervalMinutes} mins)" else "Disabled • Tap to configure"
+                        } else {
+                            if (istighfarConfig.isEnabled) "চালু (${istighfarConfig.intervalMinutes} মিনিট পরপর)" else "বন্ধ • সেটিংস পরিবর্তন করতে ট্যাপ করুন"
+                        }
                         Text(
-                            text = if (istighfarConfig.isEnabled) "চালু (${istighfarConfig.intervalMinutes} মিনিট পরপর)" else "বন্ধ • সেটিংস পরিবর্তন করতে ট্যাপ করুন",
+                            text = istighfarStatusText,
                             fontSize = 12.sp,
                             color = if (istighfarConfig.isEnabled) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Icon(
                         imageVector = Icons.Default.ArrowForward,
-                        contentDescription = "বিস্তারিত",
+                        contentDescription = "Details",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
@@ -5902,6 +6138,8 @@ fun FontSettingsContent(
     val bengaliFontName by viewModel.bengaliFontName.collectAsState()
     val arabicFontSize by viewModel.arabicFontSize.collectAsState()
     val bengaliFontSize by viewModel.bengaliFontSize.collectAsState()
+    val currentLang by viewModel.appLanguage.collectAsState()
+    val isEn = currentLang == "en"
 
     var selectedTab by remember { mutableStateOf(0) } // 0: Arabic, 1: Bengali
 
@@ -5950,7 +6188,7 @@ fun FontSettingsContent(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "কুরআন ও অনুবাদ প্রিভিউ",
+                    text = if (isEn) "Quran & Translation Preview" else "কুরআন ও অনুবাদ প্রিভিউ",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryGreen,
@@ -5976,11 +6214,14 @@ fun FontSettingsContent(
                     modifier = Modifier.padding(vertical = 6.dp)
                 )
 
-                // Bengali Sample
+                // Translation Sample
                 Text(
-                    text = "পরওয়ারদেগার! আমাদের থেকে কবুল কর। নিশ্চয়ই তুমি শ্রবণকারী, সর্বজ্ঞ।",
+                    text = if (isEn) 
+                        "Our Lord, accept [this] from us. Indeed You are the Hearing, the Knowing."
+                    else 
+                        "পরওয়ারদেগার! আমাদের থেকে কবুল কর। নিশ্চয়ই তুমি শ্রবণকারী, সর্বজ্ঞ।",
                     fontSize = bengaliFontSize.sp,
-                    fontFamily = com.example.ui.theme.getBengaliFont(bengaliFontName),
+                    fontFamily = if (isEn) androidx.compose.ui.text.font.FontFamily.Default else com.example.ui.theme.getBengaliFont(bengaliFontName),
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center,
                     lineHeight = (bengaliFontSize * 1.4f).sp,
@@ -5989,11 +6230,14 @@ fun FontSettingsContent(
                         .padding(bottom = 6.dp)
                 )
 
-                // Bengali Tafsir Sample
+                // Tafsir Sample
                 Text(
-                    text = "কাদের প্রতি আল্লাহর অনুগ্রহ হয়েছে, সে সম্পর্কে সূরা নিসায় এরশাদ হয়েছে, কেউ আল্লাহ ও রাসূলের আনুগত্য করলে সে নবীগণ, সিদ্দীকগণ...",
+                    text = if (isEn)
+                        "Whoever obeys Allah and the Messenger will be in the company of those upon whom Allah has bestowed favor: the prophets, the steadfast affirmers of truth..."
+                    else
+                        "কাদের প্রতি আল্লাহর অনুগ্রহ হয়েছে, সে সম্পর্কে সূরা নিসায় এরশাদ হয়েছে, কেউ আল্লাহ ও রাসূলের আনুগত্য করলে সে নবীগণ, সিদ্দীকগণ...",
                     fontSize = (bengaliFontSize * 0.85f).coerceAtLeast(11f).sp,
-                    fontFamily = com.example.ui.theme.getBengaliFont(bengaliFontName),
+                    fontFamily = if (isEn) androidx.compose.ui.text.font.FontFamily.Default else com.example.ui.theme.getBengaliFont(bengaliFontName),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     lineHeight = (bengaliFontSize * 1.2f).sp,
@@ -6018,7 +6262,7 @@ fun FontSettingsContent(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "আরবি হরফের আকার",
+                        text = if (isEn) "Arabic Font Size" else "আরবি হরফের আকার",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
@@ -6036,7 +6280,7 @@ fun FontSettingsContent(
                             Text("-", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Text(
-                            text = "${arabicFontSize.toInt()}".toBengaliNumerals(),
+                            text = if (isEn) "${arabicFontSize.toInt()}" else "${arabicFontSize.toInt()}".toBengaliNumerals(),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 12.dp),
@@ -6058,14 +6302,14 @@ fun FontSettingsContent(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Bengali Font Size
+                // Bengali / Translation Font Size
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "বাংলা হরফের আকার",
+                        text = if (isEn) "Translation Font Size" else "বাংলা হরফের আকার",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
@@ -6083,7 +6327,7 @@ fun FontSettingsContent(
                             Text("-", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Text(
-                            text = "${bengaliFontSize.toInt()}".toBengaliNumerals(),
+                            text = if (isEn) "${bengaliFontSize.toInt()}" else "${bengaliFontSize.toInt()}".toBengaliNumerals(),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 12.dp),
@@ -6125,7 +6369,7 @@ fun FontSettingsContent(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "আরবি ফন্ট",
+                    text = if (isEn) "Arabic Font" else "আরবি ফন্ট",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (selectedTab == 0) White else MaterialTheme.colorScheme.onSurface
@@ -6144,7 +6388,7 @@ fun FontSettingsContent(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "বাংলা ফন্ট",
+                    text = if (isEn) "Translation Font" else "বাংলা ফন্ট",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (selectedTab == 1) White else MaterialTheme.colorScheme.onSurface
@@ -6228,9 +6472,9 @@ fun FontSettingsContent(
                                 )
                             }
                             Text(
-                                text = "পরওয়ারদেগার!",
+                                text = if (isEn) "All Praise to Allah" else "পরওয়ারদেগার!",
                                 fontSize = 15.sp,
-                                fontFamily = com.example.ui.theme.getBengaliFont(fontKey),
+                                fontFamily = if (isEn) androidx.compose.ui.text.font.FontFamily.Default else com.example.ui.theme.getBengaliFont(fontKey),
                                 color = if (isSelected) PrimaryGreen else MaterialTheme.colorScheme.onSurface,
                                 textAlign = TextAlign.End
                             )
@@ -6251,7 +6495,7 @@ fun FontSettingsContent(
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
         ) {
             Text(
-                text = "সম্পন্ন",
+                text = if (isEn) "Done" else "সম্পন্ন",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = White

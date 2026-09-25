@@ -60,11 +60,12 @@ object PrayerTimesShareUtil {
             append("🌾 বাংলা: $banglaStr\n")
             append("─────────────────\n")
             append("【 ওয়াক্তের সময়সূচি 】\n")
+            val dhuhrLabel = if (schedule.isFriday) "জুমুআ" else "যোহর"
             append("🌅 ফজর: শুরু ${fajrItem?.timeDigits ?: "০৪:১০"} - শেষ $sunrise\n")
-            append("☀️ যুহর: শুরু ${dhuhrItem?.timeDigits ?: "১২:০৪"} - শেষ ${asrItem?.timeDigits ?: "০৪:৩৭"}\n")
+            append("☀️ $dhuhrLabel: শুরু ${dhuhrItem?.timeDigits ?: "১২:০৪"} - শেষ ${asrItem?.timeDigits ?: "০৪:৩৭"}\n")
             append("🌤️ আসর: শুরু ${asrItem?.timeDigits ?: "০৪:৩৮"} - শেষ ${maghribItem?.timeDigits ?: "০৬:৩১"}\n")
             append("🌇 মাগরিব: শুরু ${maghribItem?.timeDigits ?: "০৬:৩২"} - শেষ ${ishaItem?.timeDigits ?: "০৭:৫১"}\n")
-            append("🌙 ইশা: শুরু ${ishaItem?.timeDigits ?: "০৭:৫২"} - শেষ ${fajrItem?.timeDigits ?: "০৪:১০"}\n")
+            append("🌙 এশা: শুরু ${ishaItem?.timeDigits ?: "০৭:৫২"} - শেষ ${fajrItem?.timeDigits ?: "০৪:১০"}\n")
             append("─────────────────\n")
             append("🌙 সাহরি শেষ: ${schedule.sahriTimeDigits.ifEmpty { schedule.sahriEndTimeFormatted }}\n")
             append("🌇 ইফতার শুরু: ${schedule.iftarTimeDigits.ifEmpty { schedule.iftarTimeFormatted }}\n")
@@ -441,12 +442,13 @@ object PrayerTimesShareUtil {
         }
 
         data class TableRowItem(val name: String, val start: String, val end: String)
+        val dhuhrTableRowName = if (schedule.isFriday) "জুমুআ" else "যোহর"
         val t1Rows = listOf(
             TableRowItem("ফজর", fajrItem?.timeDigits ?: "০৪:১০", sunrise),
-            TableRowItem("যুহর", dhuhrItem?.timeDigits ?: "১২:০৪", asrItem?.timeDigits ?: "০৪:৩৭"),
+            TableRowItem(dhuhrTableRowName, dhuhrItem?.timeDigits ?: "১২:০৪", asrItem?.timeDigits ?: "০৪:৩৭"),
             TableRowItem("আসর", asrItem?.timeDigits ?: "০৪:৩৮", maghribItem?.timeDigits ?: "০৬:৩১"),
             TableRowItem("মাগরিব", maghribItem?.timeDigits ?: "০৬:৩২", ishaItem?.timeDigits ?: "০৭:৫১"),
-            TableRowItem("ইশা", ishaItem?.timeDigits ?: "০৭:৫২", fajrItem?.timeDigits ?: "০৪:১০"),
+            TableRowItem("এশা", ishaItem?.timeDigits ?: "০৭:৫২", fajrItem?.timeDigits ?: "০৪:১০"),
             TableRowItem("দুহা", duhaStart, duhaEnd),
             TableRowItem("তাহাজ্জুদ", ishaItem?.timeDigits ?: "০৭:৫২", sahri)
         )

@@ -58,8 +58,9 @@ class IslamicEventReceiver : BroadcastReceiver() {
             e.printStackTrace()
         }
 
+        val isEnglish = com.example.utils.NotificationLocalization.isEnglish(context)
         val today = LocalDate.now()
-        val eventInfo = IslamicEventGuidanceHelper.checkNotificationForDate(today, hijriOffset)
+        val eventInfo = IslamicEventGuidanceHelper.checkNotificationForDate(today, hijriOffset, isEnglish)
 
         if (eventInfo != null) {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -68,10 +69,10 @@ class IslamicEventReceiver : BroadcastReceiver() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel(
                     channelId,
-                    "ইসলামিক দিবস ও রোজা রিমাইন্ডার",
+                    if (isEnglish) "Islamic Events & Sunnah Fasts" else "ইসলামিক দিবস ও রোজা রিমাইন্ডার",
                     NotificationManager.IMPORTANCE_HIGH
                 ).apply {
-                    description = "সোম-বৃহস্পতিবারের সুন্নাত রোজা, আইয়ামে বীজ ও ইসলামিক দিবসের নোটিফিকেশন"
+                    description = if (isEnglish) "Reminders for Monday/Thursday Sunnah fasts, Ayyam al-Bidh, and Islamic events" else "সোম-বৃহস্পতিবারের সুন্নাত রোজা, আইয়ামে বীজ ও ইসলামিক দিবসের নোটিফিকেশন"
                 }
                 notificationManager.createNotificationChannel(channel)
             }

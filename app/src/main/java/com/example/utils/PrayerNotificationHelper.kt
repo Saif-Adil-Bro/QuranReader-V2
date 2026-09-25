@@ -464,6 +464,7 @@ object PrayerNotificationHelper {
             putExtra("prayer_end_formatted", prayer.endTimeFormatted)
             putExtra("prayer_range_formatted", prayer.timeRangeFormatted)
             putExtra("district_name_bn", district.nameBn)
+            putExtra("district_name_en", district.nameEn)
             putExtra("offset_minutes", config.offsetMinutes)
             putExtra("sound_type", config.soundType.id)
             putExtra("vibration_enabled", config.isVibrationEnabled)

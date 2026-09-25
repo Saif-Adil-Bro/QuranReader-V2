@@ -55,14 +55,15 @@ class DhikrReminderReceiver : BroadcastReceiver() {
     private fun showNotification(context: Context, type: DhikrType, audioId: String) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "dhikr_continuous_reminder_channel"
+        val isEnglish = com.example.utils.NotificationLocalization.isEnglish(context)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "Dhikr & Salawat Reminders",
+                com.example.utils.NotificationLocalization.getDhikrChannelName(isEnglish),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Regular reminders for Durood and Istighfar"
+                description = com.example.utils.NotificationLocalization.getDhikrChannelDesc(isEnglish)
                 enableVibration(true)
             }
             notificationManager.createNotificationChannel(channel)
@@ -77,9 +78,9 @@ class DhikrReminderReceiver : BroadcastReceiver() {
         val selectedOption = optionsList.find { it.id == audioId } ?: optionsList.first()
 
         val notifTitle = if (type == DhikrType.DUROOD) {
-            "দুরুদ পাঠের স্মরণিকা ✨"
+            com.example.utils.NotificationLocalization.getDuroodReminderTitle(isEnglish)
         } else {
-            "ইস্তিগফারের স্মরণিকা 🤲"
+            com.example.utils.NotificationLocalization.getIstighfarReminderTitle(isEnglish)
         }
 
         val notifContent = "${selectedOption.arabicText}\n${selectedOption.phoneticText}\n(${selectedOption.translationText})"

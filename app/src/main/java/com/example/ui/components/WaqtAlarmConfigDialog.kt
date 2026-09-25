@@ -99,6 +99,7 @@ fun WaqtAlarmConfigDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val isEn = com.example.utils.LocaleHelper.getLanguage(context) == "en"
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // Load initial config from helper
@@ -139,11 +140,13 @@ fun WaqtAlarmConfigDialog(
             if (uri != null) {
                 customRingtoneUri = uri.toString()
                 val ringtone = RingtoneManager.getRingtone(context, uri)
-                val title = ringtone?.getTitle(context) ?: "কাস্টম রিংটোন"
+                val defaultRingtoneTitle = if (isEn) "Custom Ringtone" else "কাস্টম রিংটোন"
+                val title = ringtone?.getTitle(context) ?: defaultRingtoneTitle
                 customRingtoneTitle = title
                 selectedSoundType = PrayerAlarmSoundType.CUSTOM_RINGTONE
                 selectedCategory = AlertCategory.ALARM
-                Toast.makeText(context, "রিংটোন নির্বাচিত: $title", Toast.LENGTH_SHORT).show()
+                val msg = if (isEn) "Ringtone selected: $title" else "রিংটোন নির্বাচিত: $title"
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -156,7 +159,7 @@ fun WaqtAlarmConfigDialog(
     val goldColor = Color(0xFFFBBF24)
 
     // Calculate dynamic time display based on baseTimestampMillis & offset
-    val calculatedTimeDisplay = remember(baseTimestampMillis, baseTimeFormatted, offsetMinutes) {
+    val calculatedTimeDisplay = remember(baseTimestampMillis, baseTimeFormatted, offsetMinutes, isEn) {
         if (baseTimestampMillis > 0L) {
             val adjustedMillis = baseTimestampMillis + (offsetMinutes * 60 * 1000L)
             val time = java.time.Instant.ofEpochMilli(adjustedMillis)
@@ -164,13 +167,14 @@ fun WaqtAlarmConfigDialog(
                 .toLocalTime()
             val hour = if (time.hour == 0) 12 else if (time.hour > 12) time.hour - 12 else time.hour
             val minute = time.minute
-            val hourStr = DateUtil.toBengaliNumerals(String.format(java.util.Locale.US, "%02d", hour))
-            val minStr = DateUtil.toBengaliNumerals(String.format(java.util.Locale.US, "%02d", minute))
-            "$hourStr:$minStr"
+            val hourStr = if (isEn) String.format(java.util.Locale.US, "%02d", hour) else DateUtil.toBengaliNumerals(String.format(java.util.Locale.US, "%02d", hour))
+            val minStr = if (isEn) String.format(java.util.Locale.US, "%02d", minute) else DateUtil.toBengaliNumerals(String.format(java.util.Locale.US, "%02d", minute))
+            val amPmStr = if (time.hour >= 12) "PM" else "AM"
+            "$hourStr:$minStr $amPmStr"
         } else if (baseTimeFormatted.isNotBlank()) {
             baseTimeFormatted
         } else {
-            "ওয়াক্তের সময়"
+            if (isEn) "Waqt Time" else "ওয়াক্তের সময়"
         }
     }
 
@@ -208,7 +212,7 @@ fun WaqtAlarmConfigDialog(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "ফিরে যান",
+                        contentDescription = if (isEn) "Back" else "ফিরে যান",
                         tint = Color.White
                     )
                 }
@@ -217,14 +221,14 @@ fun WaqtAlarmConfigDialog(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = prayerName.nameBn,
+                        text = if (isEn) prayerName.nameEn else prayerName.nameBn,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        text = "অ্যালার্ট ও রিংটোন সেটিংস",
+                        text = if (isEn) "Alert & Ringtone Settings" else "অ্যালার্ট ও রিংটোন সেটিংস",
                         fontSize = 12.sp,
                         color = Color.LightGray.copy(alpha = 0.7f)
                     )
@@ -271,14 +275,18 @@ fun WaqtAlarmConfigDialog(
 
                         Column {
                             Text(
-                                text = "ওয়াক্তের সতর্কবার্তা",
+                                text = if (isEn) "Waqt Alert" else "ওয়াক্তের সতর্কবার্তা",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = if (isAlarmEnabled) "সতর্কবার্তা চালু আছে" else "সতর্কবার্তা বন্ধ",
+                                text = if (isAlarmEnabled) {
+                                    if (isEn) "Alert is active" else "সতর্কবার্তা চালু আছে"
+                                } else {
+                                    if (isEn) "Alert is disabled" else "সতর্কবার্তা বন্ধ"
+                                },
                                 fontSize = 13.sp,
                                 color = if (isAlarmEnabled) emeraldGreen else Color.LightGray.copy(alpha = 0.7f)
                             )
@@ -349,7 +357,7 @@ fun WaqtAlarmConfigDialog(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "অ্যালার্ম ও আযান",
+                                text = AlertCategory.ALARM.getTitle(isEn),
                                 fontSize = 13.5.sp,
                                 fontWeight = if (isAlarmTab) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isAlarmTab) Color.White else Color.LightGray
@@ -388,7 +396,7 @@ fun WaqtAlarmConfigDialog(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "নোটিফিকেশন",
+                                text = AlertCategory.NOTIFICATION.getTitle(isEn),
                                 fontSize = 13.5.sp,
                                 fontWeight = if (isNotifTab) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isNotifTab) Color.White else Color.LightGray
@@ -500,7 +508,7 @@ fun WaqtAlarmConfigDialog(
                                                     text = if (soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE && !customRingtoneTitle.isNullOrBlank()) {
                                                         customRingtoneTitle!!
                                                     } else {
-                                                        soundType.titleBn
+                                                        soundType.getTitle(isEn)
                                                     },
                                                     fontSize = 14.sp,
                                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
@@ -514,7 +522,7 @@ fun WaqtAlarmConfigDialog(
                                                         border = BorderStroke(0.5.dp, goldColor.copy(alpha = 0.4f))
                                                     ) {
                                                         Text(
-                                                            text = "ফোন রিংটোন",
+                                                            text = if (isEn) "Phone Ringtone" else "ফোন রিংটোন",
                                                             fontSize = 10.sp,
                                                             color = goldColor,
                                                             modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
@@ -525,8 +533,10 @@ fun WaqtAlarmConfigDialog(
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = if (soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE) {
-                                                    if (customRingtoneTitle != null) "ফোনের নিজস্ব রিংটোন সেট করা হয়েছে" else soundType.subtitleBn
-                                                } else soundType.subtitleBn,
+                                                    if (customRingtoneTitle != null) {
+                                                        if (isEn) "Custom phone ringtone is set" else "ফোনের নিজস্ব রিংটোন সেট করা হয়েছে"
+                                                    } else soundType.getSubtitle(isEn)
+                                                } else soundType.getSubtitle(isEn),
                                                 fontSize = 11.5.sp,
                                                 color = Color.LightGray.copy(alpha = 0.65f)
                                             )
@@ -542,7 +552,7 @@ fun WaqtAlarmConfigDialog(
                                                     previewPlayingSoundType = null
                                                     val pickerIntent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
                                                         putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM or RingtoneManager.TYPE_RINGTONE)
-                                                        putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "ওয়াক্তের অ্যালার্ম রিংটোন নির্বাচন করুন")
+                                                        putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, if (isEn) "Select Prayer Alarm Ringtone" else "ওয়াক্তের অ্যালার্ম রিংটোন নির্বাচন করুন")
                                                         putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
                                                         putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
                                                         if (!customRingtoneUri.isNullOrBlank()) {
@@ -565,7 +575,7 @@ fun WaqtAlarmConfigDialog(
                                                 )
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Text(
-                                                    text = "রিংটোন বাছুন",
+                                                    text = if (isEn) "Pick Tone" else "রিংটোন বাছুন",
                                                     fontSize = 11.5.sp,
                                                     fontWeight = FontWeight.SemiBold
                                                 )
@@ -601,7 +611,7 @@ fun WaqtAlarmConfigDialog(
                                         ) {
                                             Icon(
                                                 imageVector = if (isPlaying) Icons.Filled.Stop else Icons.Filled.PlayArrow,
-                                                contentDescription = if (isPlaying) "থামান" else "বাজিয়ে শুনুন",
+                                                contentDescription = if (isPlaying) (if (isEn) "Stop" else "থামান") else (if (isEn) "Preview" else "বাজিয়ে শুনুন"),
                                                 tint = if (isPlaying) Color(0xFFEF4444) else emeraldGreen,
                                                 modifier = Modifier.size(18.dp)
                                             )
@@ -678,14 +688,14 @@ fun WaqtAlarmConfigDialog(
 
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = soundType.titleBn,
+                                                text = soundType.getTitle(isEn),
                                                 fontSize = 14.sp,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                                 color = if (isSelected) Color.White else Color.White.copy(alpha = 0.85f)
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
-                                                text = soundType.subtitleBn,
+                                                text = soundType.getSubtitle(isEn),
                                                 fontSize = 11.5.sp,
                                                 color = Color.LightGray.copy(alpha = 0.65f)
                                             )
@@ -721,7 +731,7 @@ fun WaqtAlarmConfigDialog(
                                         ) {
                                             Icon(
                                                 imageVector = if (isPlaying) Icons.Filled.Stop else Icons.Filled.PlayArrow,
-                                                contentDescription = if (isPlaying) "থামান" else "বাজিয়ে শুনুন",
+                                                contentDescription = if (isPlaying) (if (isEn) "Stop" else "থামান") else (if (isEn) "Preview" else "বাজিয়ে শুনুন"),
                                                 tint = if (isPlaying) Color(0xFFEF4444) else Color(0xFF38BDF8),
                                                 modifier = Modifier.size(18.dp)
                                             )
@@ -758,7 +768,7 @@ fun WaqtAlarmConfigDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "সময় সমন্বয় (Offset)",
+                            text = if (isEn) "Time Adjustment (Offset)" else "সময় সমন্বয় (Offset)",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White.copy(alpha = 0.9f)
@@ -814,18 +824,22 @@ fun WaqtAlarmConfigDialog(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "-৩০ মি.",
+                            text = if (isEn) "-30m" else "-৩০ মি.",
                             fontSize = 12.sp,
                             color = Color.LightGray.copy(alpha = 0.7f)
                         )
                         Text(
-                            text = if (offsetMinutes == 0) "ঠিক ওয়াক্তের শুরুতে" else "${DateUtil.toBengaliNumerals(kotlin.math.abs(offsetMinutes))} মিনিট ${if (offsetMinutes < 0) "আগে" else "পরে"}",
+                            text = if (isEn) {
+                                if (offsetMinutes == 0) "Exact waqt start" else "${kotlin.math.abs(offsetMinutes)} min ${if (offsetMinutes < 0) "before" else "after"}"
+                            } else {
+                                if (offsetMinutes == 0) "ঠিক ওয়াক্তের শুরুতে" else "${DateUtil.toBengaliNumerals(kotlin.math.abs(offsetMinutes))} মিনিট ${if (offsetMinutes < 0) "আগে" else "পরে"}"
+                            },
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (offsetMinutes == 0) emeraldGreen else Color(0xFF38BDF8)
                         )
                         Text(
-                            text = "+৩০ মি.",
+                            text = if (isEn) "+30m" else "+৩০ মি.",
                             fontSize = 12.sp,
                             color = Color.LightGray.copy(alpha = 0.7f)
                         )
@@ -833,10 +847,18 @@ fun WaqtAlarmConfigDialog(
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = when {
-                            offsetMinutes == 0 -> "ঠিক ওয়াক্ত শুরু হওয়ার মুহূর্তে সতর্কবার্তা দেওয়া হবে।"
-                            offsetMinutes < 0 -> "ওয়াক্ত শুরু হওয়ার ${DateUtil.toBengaliNumerals(-offsetMinutes)} মিনিট আগে প্রস্তুতি নেওয়ার জন্য সতর্কবার্তা দেওয়া হবে।"
-                            else -> "ওয়াক্ত শুরু হওয়ার ${DateUtil.toBengaliNumerals(offsetMinutes)} মিনিট পর সতর্কবার্তা দেওয়া হবে।"
+                        text = if (isEn) {
+                            when {
+                                offsetMinutes == 0 -> "Alert will sound at the exact start of waqt."
+                                offsetMinutes < 0 -> "Alert will sound ${kotlin.math.abs(offsetMinutes)} minutes before waqt starts to prepare."
+                                else -> "Alert will sound $offsetMinutes minutes after waqt starts."
+                            }
+                        } else {
+                            when {
+                                offsetMinutes == 0 -> "ঠিক ওয়াক্ত শুরু হওয়ার মুহূর্তে সতর্কবার্তা দেওয়া হবে।"
+                                offsetMinutes < 0 -> "ওয়াক্ত শুরু হওয়ার ${DateUtil.toBengaliNumerals(-offsetMinutes)} মিনিট আগে প্রস্তুতি নেওয়ার জন্য সতর্কবার্তা দেওয়া হবে।"
+                                else -> "ওয়াক্ত শুরু হওয়ার ${DateUtil.toBengaliNumerals(offsetMinutes)} মিনিট পর সতর্কবার্তা দেওয়া হবে।"
+                            }
                         },
                         fontSize = 11.5.sp,
                         color = Color.LightGray.copy(alpha = 0.6f)
@@ -883,14 +905,14 @@ fun WaqtAlarmConfigDialog(
 
                         Column {
                             Text(
-                                text = "ভাইব্রেশন",
+                                text = if (isEn) "Vibration" else "ভাইব্রেশন",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "অ্যালার্টের সাথে ভাইব্রেশন হবে",
+                                text = if (isEn) "Vibrate with alert" else "অ্যালার্টের সাথে ভাইব্রেশন হবে",
                                 fontSize = 12.5.sp,
                                 color = Color.LightGray.copy(alpha = 0.7f)
                             )
@@ -934,7 +956,8 @@ fun WaqtAlarmConfigDialog(
                     if (isAlarmEnabled && !DeviceSettingsHelper.isBatteryOptimizationIgnored(context)) {
                         DeviceSettingsHelper.openBatteryOptimizationSettings(context)
                     }
-                    Toast.makeText(context, "${prayerName.nameBn} অ্যালার্ট সেটিংস সংরক্ষিত হয়েছে", Toast.LENGTH_SHORT).show()
+                    val msg = if (isEn) "${prayerName.name} alert settings saved" else "${prayerName.nameBn} অ্যালার্ট সেটিংস সংরক্ষিত হয়েছে"
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                     onDismiss()
                 },
                 shape = RoundedCornerShape(16.dp),
@@ -944,7 +967,7 @@ fun WaqtAlarmConfigDialog(
                     .height(52.dp)
             ) {
                 Text(
-                    text = "সংরক্ষণ করুন",
+                    text = if (isEn) "Save Settings" else "সংরক্ষণ করুন",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White

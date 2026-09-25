@@ -46,18 +46,19 @@ object JumuahReminderHelper {
             return
         }
 
-        val title = "জুমুআর দিনের বিশেষ গুরুত্ব ও ফজিলত"
-        val message = "প্রতি কদমে এক বছরের সওয়াব! 🕌✨"
+        val isEnglish = NotificationLocalization.isEnglish(context)
+        val title = NotificationLocalization.getJumuahReminderTitle(isEnglish)
+        val message = NotificationLocalization.getJumuahReminderMessage(isEnglish)
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "জুমুআ রিমাইন্ডার",
+                NotificationLocalization.getJumuahChannelName(isEnglish),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "প্রতি শুক্রবার জুমুআর দিনের বিশেষ গুরুত্ব ও ফজিলত নোটিফিকেশন"
+                description = NotificationLocalization.getJumuahChannelDesc(isEnglish)
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -83,8 +84,8 @@ object JumuahReminderHelper {
             putExtra("blog_post_id", TARGET_POST_ID)
             putExtra("blog_post_title", title)
             putExtra("blog_post_content", "")
-            putExtra("blog_post_category", "নোটিফিকেশন")
-            putExtra("blog_post_author", "জুমুআ মোবারক")
+            putExtra("blog_post_category", if (isEnglish) "Notification" else "নোটিফিকেশন")
+            putExtra("blog_post_author", if (isEnglish) "Jumu'ah Mubarak" else "জুমুআ মোবারক")
             putExtra("blog_post_timestamp", timestamp)
         }
 

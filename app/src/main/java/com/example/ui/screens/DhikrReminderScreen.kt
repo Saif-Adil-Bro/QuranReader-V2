@@ -45,6 +45,7 @@ fun DhikrReminderScreen(
     onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val isEn = com.example.utils.LocaleHelper.getLanguage(context) == "en"
     val initialConfig = remember { DhikrReminderManager.getConfig(context, type) }
 
     var isEnabled by remember { mutableStateOf(initialConfig.isEnabled) }
@@ -76,23 +77,29 @@ fun DhikrReminderScreen(
         }
     }
 
-    val screenTitle = if (type == DhikrType.DUROOD) "দুরুদ রিমাইন্ডার" else "ইস্তিগফার রিমাইন্ডার"
-    val screenDescription = if (type == DhikrType.DUROOD) {
-        "সারাদিন নবীজী (ﷺ)-এর ওপর দুরুদ পড়ার সওয়াব অর্জনে নিয়মিত রিমাইন্ডার পেতে পারেন।"
+    val screenTitle = if (type == DhikrType.DUROOD) {
+        if (isEn) "Durood Reminder" else "দুরুদ রিমাইন্ডার"
     } else {
-        "সারাদিন মহান আল্লাহর কাছে ক্ষমা প্রার্থনার সওয়াব অর্জনে নিয়মিত রিমাইন্ডার পেতে পারেন।"
+        if (isEn) "Istighfar Reminder" else "ইস্তিগফার রিমাইন্ডার"
+    }
+    val screenDescription = if (type == DhikrType.DUROOD) {
+        if (isEn) "Receive regular reminders throughout the day to earn rewards by reciting Durood on Prophet Muhammad (ﷺ)."
+        else "সারাদিন নবীজী (ﷺ)-এর ওপর দুরুদ পড়ার সওয়াব অর্জনে নিয়মিত রিমাইন্ডার পেতে পারেন।"
+    } else {
+        if (isEn) "Receive regular reminders throughout the day to earn rewards by seeking forgiveness from Almighty Allah."
+        else "সারাদিন মহান আল্লাহর কাছে ক্ষমা প্রার্থনার সওয়াব অর্জনে নিয়মিত রিমাইন্ডার পেতে পারেন।"
     }
 
     val intervalDisplayStr = when (intervalMinutes) {
-        15 -> "15 মিনিট"
-        20 -> "20 মিনিট"
-        30 -> "30 মিনিট"
-        45 -> "45 মিনিট"
-        60 -> "1 ঘণ্টা"
-        120 -> "2 ঘণ্টা"
-        180 -> "3 ঘণ্টা"
-        240 -> "4 ঘণ্টা"
-        else -> "$intervalMinutes মিনিট"
+        15 -> if (isEn) "15 Minutes" else "15 মিনিট"
+        20 -> if (isEn) "20 Minutes" else "20 মিনিট"
+        30 -> if (isEn) "30 Minutes" else "30 মিনিট"
+        45 -> if (isEn) "45 Minutes" else "45 মিনিট"
+        60 -> if (isEn) "1 Hour" else "1 ঘণ্টা"
+        120 -> if (isEn) "2 Hours" else "2 ঘণ্টা"
+        180 -> if (isEn) "3 Hours" else "3 ঘণ্টা"
+        240 -> if (isEn) "4 Hours" else "4 ঘণ্টা"
+        else -> if (isEn) "$intervalMinutes Minutes" else "$intervalMinutes মিনিট"
     }
 
     Scaffold(
@@ -113,7 +120,7 @@ fun DhikrReminderScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "পিছনে যান",
+                            contentDescription = if (isEn) "Go Back" else "পিছনে যান",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -156,7 +163,7 @@ fun DhikrReminderScreen(
                         )
                     ) {
                         Text(
-                            text = "বাতিল",
+                            text = if (isEn) "Cancel" else "বাতিল",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -176,7 +183,8 @@ fun DhikrReminderScreen(
                                 quietEndMinute = quietEndMinute
                             )
                             DhikrReminderManager.saveConfig(context, type, newConfig)
-                            Toast.makeText(context, "$screenTitle সফলভাবে সংরক্ষণ করা হয়েছে", Toast.LENGTH_SHORT).show()
+                            val toastMsg = if (isEn) "$screenTitle saved successfully" else "$screenTitle সফলভাবে সংরক্ষণ করা হয়েছে"
+                            Toast.makeText(context, toastMsg, Toast.LENGTH_SHORT).show()
                             onBackClick()
                         },
                         modifier = Modifier
@@ -189,7 +197,7 @@ fun DhikrReminderScreen(
                         )
                     ) {
                         Text(
-                            text = "সংরক্ষণ করুন",
+                            text = if (isEn) "Save" else "সংরক্ষণ করুন",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -273,7 +281,7 @@ fun DhikrReminderScreen(
                                 .padding(horizontal = 16.dp, vertical = 14.dp)
                         ) {
                             Text(
-                                text = "রিমাইন্ডার ব্যবধান",
+                                text = if (isEn) "Reminder Interval" else "রিমাইন্ডার ব্যবধান",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -293,7 +301,7 @@ fun DhikrReminderScreen(
                 item {
                     Spacer(modifier = Modifier.height(14.dp))
                     Text(
-                        text = "রিমাইন্ডার অডিও",
+                        text = if (isEn) "Reminder Audio" else "রিমাইন্ডার অডিও",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -429,14 +437,14 @@ fun DhikrReminderScreen(
                                 .padding(16.dp)
                         ) {
                             Text(
-                                text = "রিমাইন্ডার বিরতির সময়",
+                                text = if (isEn) "Quiet Hours / Do Not Disturb" else "রিমাইন্ডার বিরতির সময়",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "ব্যস্ততা কিংবা বিশ্রামের সময়গুলোতে রিমাইন্ডার বন্ধ রাখতে রিমাইন্ডার বিরতির সময় সেট করুন।",
+                                text = if (isEn) "Set quiet hours to pause reminders during busy times or sleep." else "ব্যস্ততা কিংবা বিশ্রামের সময়গুলোতে রিমাইন্ডার বন্ধ রাখতে রিমাইন্ডার বিরতির সময় সেট করুন।",
                                 fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 lineHeight = 18.sp
@@ -473,7 +481,7 @@ fun DhikrReminderScreen(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,
-                                            contentDescription = "মুছুন",
+                                            contentDescription = if (isEn) "Delete" else "মুছুন",
                                             tint = Color(0xFFEF5350),
                                             modifier = Modifier.size(20.dp)
                                         )
@@ -497,7 +505,11 @@ fun DhikrReminderScreen(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = if (isQuietHoursEnabled) "বিরতির সময় পরিবর্তন করুন" else "বিরতির সময় যোগ করুন",
+                                    text = if (isQuietHoursEnabled) {
+                                        if (isEn) "Change Quiet Hours" else "বিরতির সময় পরিবর্তন করুন"
+                                    } else {
+                                        if (isEn) "Add Quiet Hours" else "বিরতির সময় যোগ করুন"
+                                    },
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = PrimaryGreen
@@ -516,7 +528,16 @@ fun DhikrReminderScreen(
 
     // Interval Picker Dialog
     if (showIntervalDialog) {
-        val intervalOptions = listOf(
+        val intervalOptions = if (isEn) listOf(
+            15 to "15 Minutes",
+            20 to "20 Minutes",
+            30 to "30 Minutes",
+            45 to "45 Minutes",
+            60 to "1 Hour",
+            120 to "2 Hours",
+            180 to "3 Hours",
+            240 to "4 Hours"
+        ) else listOf(
             15 to "15 মিনিট",
             20 to "20 মিনিট",
             30 to "30 মিনিট",
@@ -532,7 +553,7 @@ fun DhikrReminderScreen(
             containerColor = MaterialTheme.colorScheme.surface,
             title = {
                 Text(
-                    text = "রিমাইন্ডার ব্যবধান নির্বাচন করুন",
+                    text = if (isEn) "Select Reminder Interval" else "রিমাইন্ডার ব্যবধান নির্বাচন করুন",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -573,7 +594,7 @@ fun DhikrReminderScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showIntervalDialog = false }) {
-                    Text("বন্ধ করুন", color = PrimaryGreen)
+                    Text(if (isEn) "Close" else "বন্ধ করুন", color = PrimaryGreen)
                 }
             }
         )
@@ -591,7 +612,7 @@ fun DhikrReminderScreen(
             containerColor = MaterialTheme.colorScheme.surface,
             title = {
                 Text(
-                    text = "বিরতির সময় নির্ধারণ করুন",
+                    text = if (isEn) "Set Quiet Hours" else "বিরতির সময় নির্ধারণ করুন",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -603,7 +624,7 @@ fun DhikrReminderScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Text(
-                        text = "যে সময়ে রিমাইন্ডার বন্ধ রাখতে চান:",
+                        text = if (isEn) "Time period when reminders will be muted:" else "যে সময়ে রিমাইন্ডার বন্ধ রাখতে চান:",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -632,7 +653,7 @@ fun DhikrReminderScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "শুরুর সময়:",
+                            text = if (isEn) "Start Time:" else "শুরুর সময়:",
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -668,7 +689,7 @@ fun DhikrReminderScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "শেষের সময়:",
+                            text = if (isEn) "End Time:" else "শেষের সময়:",
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -693,12 +714,12 @@ fun DhikrReminderScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
                 ) {
-                    Text("ঠিক আছে", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(if (isEn) "OK" else "ঠিক আছে", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showTimeRangeDialog = false }) {
-                    Text("বাতিল", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(if (isEn) "Cancel" else "বাতিল", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )

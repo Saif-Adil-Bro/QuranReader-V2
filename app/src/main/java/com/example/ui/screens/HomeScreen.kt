@@ -269,6 +269,8 @@ fun HomeScreen(
     val combinedHijriOffset by viewModel.combinedHijriOffset.collectAsState()
     val surahList by viewModel.surahs.collectAsState()
     val currentTheme by viewModel.theme.collectAsState()
+    val currentLanguage by viewModel.appLanguage.collectAsState()
+    val isEnglish = currentLanguage == "en"
     val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
     val isDark = when (currentTheme) {
         "Dark" -> true
@@ -322,6 +324,7 @@ fun HomeScreen(
         DuaDetailDialog(
             dua = selectedDuaForDetail!!,
             arabicFontName = arabicFontName,
+            isEnglish = isEnglish,
             onDismiss = { selectedDuaForDetail = null }
         )
     }
@@ -523,14 +526,14 @@ fun HomeScreen(
                             Icon(Icons.Default.MenuBook, contentDescription = null, tint = PrimaryGreen, modifier = Modifier.size(20.dp))
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("কুরআন রিডার", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp)
+                        Text(if (isEnglish) "Quran Reader" else "কুরআন রিডার", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp)
                         Spacer(modifier = Modifier.width(8.dp))
                         Box(
                             modifier = Modifier
                                 .background(PrimaryGreen, RoundedCornerShape(12.dp))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
-                            Text("BN", color = White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Text(if (isEnglish) "EN" else "BN", color = White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 },
@@ -551,14 +554,14 @@ fun HomeScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Notifications,
-                                    contentDescription = "নোটিফিকেশন সেন্টার",
+                                    contentDescription = if (isEnglish) "Notification Center" else "নোটিফিকেশন সেন্টার",
                                     tint = Color(0xFF10B981)
                                 )
                             }
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Notifications,
-                                contentDescription = "নোটিফিকেশন সেন্টার",
+                                contentDescription = if (isEnglish) "Notification Center" else "নোটিফিকেশন সেন্টার",
                                 tint = Color(0xFF10B981)
                             )
                         }
@@ -594,19 +597,27 @@ fun HomeScreen(
             ) {
                 item {
                     Box(modifier = Modifier.fillMaxWidth()) {
-                        val lastReadSurahNameForHero = QuranData.surahNames.find { it.first == lastReadSurah }?.second?.first ?: "আল ফাতিহা"
+                        val lastReadSurahNameForHero = if (isEnglish) {
+                            QuranData.surahNames.find { it.first == lastReadSurah }?.second?.second ?: "Al-Fatihah"
+                        } else {
+                            QuranData.surahNames.find { it.first == lastReadSurah }?.second?.first ?: "আল ফাতিহা"
+                        }
                         
                         val actionTextForHero = when (lastReadMode) {
-                            "HAFEZI" -> "সর্বশেষ পঠিত পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(lastReadPage)}"
-                            "TAJWEED" -> "সর্বশেষ পঠিত পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(lastReadPage)} (সূরা $lastReadSurahNameForHero)"
-                            "MUSHAF" -> "সর্বশেষ পঠিত পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(lastReadMushafPage)}"
-                            "READING" -> "সর্বশেষ পঠিত রিডিং মোড"
-                            else -> "সর্বশেষ পঠিত সূরা"
+                            "HAFEZI" -> if (isEnglish) "Last Read Page: $lastReadPage" else "সর্বশেষ পঠিত পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(lastReadPage)}"
+                            "TAJWEED" -> if (isEnglish) "Last Read Page: $lastReadPage (Surah $lastReadSurahNameForHero)" else "সর্বশেষ পঠিত পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(lastReadPage)} (সূরা $lastReadSurahNameForHero)"
+                            "MUSHAF" -> if (isEnglish) "Last Read Page: $lastReadMushafPage" else "সর্বশেষ পঠিত পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(lastReadMushafPage)}"
+                            "READING" -> if (isEnglish) "Last Read in Reading Mode" else "সর্বশেষ পঠিত রিডিং মোড"
+                            else -> if (isEnglish) "Last Read Surah" else "সর্বশেষ পঠিত সূরা"
                         }
                         val subTextForHero = when (lastReadMode) {
-                            "HAFEZI" -> "হাফেজী কুরআন (১৫ লাইন)"
-                            "TAJWEED" -> "রঙিন তাজবীদ কুরআন"
-                            "MUSHAF" -> viewModel.getMushafStyle(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)?.nameBengali ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)
+                            "HAFEZI" -> if (isEnglish) "Hafezi Quran (15 Lines)" else "হাফেজী কুরআন (১৫ লাইন)"
+                            "TAJWEED" -> if (isEnglish) "Color Tajweed Quran" else "রঙিন তাজবীদ কুরআন"
+                            "MUSHAF" -> {
+                                val style = viewModel.getMushafStyle(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)
+                                if (isEnglish) (style?.name ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId))
+                                else (style?.nameBengali ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId))
+                            }
                             else -> lastReadSurahNameForHero
                         }
                         
@@ -615,6 +626,7 @@ fun HomeScreen(
                             lastReadSubtitle = subTextForHero,
                             hijriOffset = combinedHijriOffset,
                             prayerSchedule = prayerSchedule,
+                            isEnglish = isEnglish,
                             onResumeClick = {
                                 when (lastReadMode) {
                                     "HAFEZI" -> onNavigateToHafeziMode(lastReadPage)
@@ -635,13 +647,14 @@ fun HomeScreen(
                                 .align(Alignment.BottomCenter)
                                 .offset(y = 24.dp)
                         ) {
-                            SearchSection(onNavigateToSearch)
+                            SearchSection(isEnglish = isEnglish, onClick = onNavigateToSearch)
                         }
                     }
                 }
                 item {
                     Spacer(modifier = Modifier.height(36.dp))
                     QuickSurahPills(
+                        isEnglish = isEnglish,
                         onNavigateToSurahWithAyah = onNavigateToSurahWithAyah
                     )
                 }
@@ -650,6 +663,7 @@ fun HomeScreen(
                     ModesGridSection(
                         isHafeziDownloaded = viewModel.isMushafDownloaded(defaultMushafId),
                         isDark = isDark,
+                        isEnglish = isEnglish,
                         onHafeziPdfClick = {
                             onNavigateToMushafPoriciti()
                         },
@@ -663,6 +677,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     TopFeaturesGridSection(
                         isDark = isDark,
+                        isEnglish = isEnglish,
                         onQiblaClick = onNavigateToQibla,
                         onMosqueClick = onNavigateToMosque,
                         onDuaClick = { onNavigateToDua(null) },
@@ -679,6 +694,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(20.dp))
                     NearbyMosqueHomeBanner(
                         isDark = isDark,
+                        isEnglish = isEnglish,
                         onMosqueClick = onNavigateToMosque
                     )
                 }
@@ -686,6 +702,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     DailyDuaFeaturedSection(
                         isDark = isDark,
+                        isEnglish = isEnglish,
                         arabicFontName = arabicFontName,
                         onReadDua = { duaItem -> selectedDuaForDetail = duaItem },
                         onViewAllDuas = { onNavigateToDua(null) }
@@ -695,6 +712,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     DhikrHabitSection(
                         isDark = isDark,
+                        isEnglish = isEnglish,
                         onNavigateToDhikrReminder = onNavigateToDhikrReminder
                     )
                 }
@@ -702,6 +720,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     SubjectwiseTopCategoriesSection(
                         isDark = isDark,
+                        isEnglish = isEnglish,
                         onCategoryClick = { categoryName -> onNavigateToSubjectwise(categoryName) },
                         onViewAllClick = { onNavigateToSubjectwise(null) }
                     )
@@ -710,6 +729,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     FeaturedIslamicMediaSection(
                         isDark = isDark,
+                        isEnglish = isEnglish,
                         blogPosts = rawBlogPosts.filter { it.category != "নোটিফিকেশন" && it.category != "নোটিশ" },
                         onPostClick = { post ->
                             postsViewModel?.setPendingBlogPost(post)
@@ -727,11 +747,16 @@ fun HomeScreen(
                             lastReadMode = lastReadMode,
                             lastReadMushafId = lastReadMushafId,
                             lastReadMushafPage = lastReadMushafPage,
-                            lastReadMushafName = viewModel.getMushafStyle(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)?.nameBengali ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId),
+                            lastReadMushafName = if (isEnglish) {
+                                (viewModel.getMushafStyle(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)?.name ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId))
+                            } else {
+                                (viewModel.getMushafStyle(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)?.nameBengali ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId))
+                            },
                             defaultMushafId = defaultMushafId,
                             bookmarks = bookmarks,
                             lastReadAyah = lastReadAyah,
                             recentReads = recentReads,
+                            isEnglish = isEnglish,
                             onSurahClick = onNavigateToSurah,
                             onNavigateToHafeziMode = onNavigateToHafeziMode,
                             onNavigateToReadingMode = onNavigateToReadingMode,
@@ -761,7 +786,7 @@ fun HomeScreen(
                         .padding(24.dp)
                 ) {
                     Text(
-                        text = "হিজরি তারিখ সমন্বয়",
+                        text = if (isEnglish) "Hijri Date Adjustment" else "হিজরি তারিখ সমন্বয়",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -770,7 +795,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = "হিজরি তারিখ একদিন বা কয়েকদিন আগে-পিছে করতে পারেন।",
+                        text = if (isEnglish) "You can adjust the Hijri calendar date forward or backward by one or more days." else "হিজরি তারিখ একদিন বা কয়েকদিন আগে-পিছে করতে পারেন।",
                         fontSize = 14.sp,
                         color = Color.White.copy(alpha = 0.85f),
                         lineHeight = 20.sp
@@ -793,7 +818,7 @@ fun HomeScreen(
                             modifier = Modifier.size(16.dp).padding(top = 2.dp)
                         )
                         Text(
-                            text = "ইসলামী নিয়ম অনুযায়ী সূর্যাস্তের (~সন্ধ্যা ৬টা) পরেই পরবর্তী দিনের জন্য হিজরি তারিখ গণনা শুরু হয়। প্রয়োজনে নিচে + / - চেপে সমন্বয় করতে পারেন।",
+                            text = if (isEnglish) "According to Islamic rules, the next Hijri date begins right after sunset (~6:00 PM). Adjust using + / - below if needed." else "ইসলামী নিয়ম অনুযায়ী সূর্যাস্তের (~সন্ধ্যা ৬টা) পরেই পরবর্তী দিনের জন্য হিজরি তারিখ গণনা শুরু হয়। প্রয়োজনে নিচে + / - চেপে সমন্বয় করতে পারেন।",
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.9f),
                             lineHeight = 17.sp
@@ -802,8 +827,15 @@ fun HomeScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
+                    val todayHijriStr = if (isEnglish) {
+                        val hijri = com.example.utils.HijriCalendarUtil.getHijriDate(java.time.LocalDate.now(), combinedHijriOffset)
+                        "${hijri.hijriDay} ${hijri.hijriMonthNameEn} ${hijri.hijriYear} AH"
+                    } else {
+                        com.example.utils.DateUtil.getTodayHijriDateStr(combinedHijriOffset)
+                    }
+
                     Text(
-                        text = "বর্তমান তারিখ: ${com.example.utils.DateUtil.getTodayHijriDateStr(combinedHijriOffset)}",
+                        text = if (isEnglish) "Current Date: $todayHijriStr" else "বর্তমান তারিখ: $todayHijriStr",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF2DD4BF)
@@ -830,12 +862,18 @@ fun HomeScreen(
                             )
                         }
 
-                        val offsetDisplay = if (combinedHijriOffset > 0) "+${com.example.utils.DateUtil.toBengaliNumerals(combinedHijriOffset)}"
-                                           else if (combinedHijriOffset < 0) "-${com.example.utils.DateUtil.toBengaliNumerals(-combinedHijriOffset)}"
-                                           else com.example.utils.DateUtil.toBengaliNumerals(0)
+                        val offsetDisplay = if (isEnglish) {
+                            if (combinedHijriOffset > 0) "+$combinedHijriOffset day(s)"
+                            else if (combinedHijriOffset < 0) "$combinedHijriOffset day(s)"
+                            else "0 day(s)"
+                        } else {
+                            if (combinedHijriOffset > 0) "+${com.example.utils.DateUtil.toBengaliNumerals(combinedHijriOffset)} দিন"
+                            else if (combinedHijriOffset < 0) "-${com.example.utils.DateUtil.toBengaliNumerals(-combinedHijriOffset)} দিন"
+                            else "${com.example.utils.DateUtil.toBengaliNumerals(0)} দিন"
+                        }
 
                         Text(
-                            text = "$offsetDisplay দিন",
+                            text = offsetDisplay,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -861,7 +899,7 @@ fun HomeScreen(
                         contentAlignment = Alignment.CenterEnd
                     ) {
                         Text(
-                            text = "বন্ধ করুন",
+                            text = if (isEnglish) "Close" else "বন্ধ করুন",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFF2DD4BF),
@@ -883,6 +921,7 @@ fun HeroSection(
     lastReadSubtitle: String = "",
     hijriOffset: Int,
     prayerSchedule: com.example.data.model.DailyPrayerSchedule,
+    isEnglish: Boolean = false,
     onResumeClick: () -> Unit = {},
     onHijriDateClick: () -> Unit = {},
     onDuaClick: (com.example.data.DuaItem) -> Unit = {},
@@ -966,6 +1005,18 @@ fun HeroSection(
                             1 -> {
                                 // Slide 2: Quick Info (Today's Date & Calendars)
                                 val bengaliDate = com.example.utils.DateUtil.getTodayBengaliDateStr()
+                                val hijriInfo = com.example.utils.HijriCalendarUtil.getHijriDate(java.time.LocalDate.now(), hijriOffset)
+                                val hijriDateStr = if (isEnglish) {
+                                    "${hijriInfo.hijriDay} ${hijriInfo.hijriMonthNameEn} ${hijriInfo.hijriYear} AH"
+                                } else {
+                                    com.example.utils.DateUtil.getTodayHijriDateStr(hijriOffset)
+                                }
+                                val hijriNoteStr = if (isEnglish) {
+                                    "Lunar Calendar"
+                                } else {
+                                    com.example.utils.DateUtil.getHijriNoteStr(hijriOffset)
+                                }
+
                                 Column(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1007,7 +1058,7 @@ fun HeroSection(
                                             modifier = Modifier.weight(1f)
                                         ) {
                                             Text(
-                                                text = "🌾 বাংলা ক্যালেন্ডার",
+                                                text = if (isEnglish) "🌾 Bangla Calendar" else "🌾 বাংলা ক্যালেন্ডার",
                                                 color = White.copy(alpha = 0.82f),
                                                 fontSize = 11.sp,
                                                 lineHeight = 13.sp
@@ -1038,21 +1089,21 @@ fun HeroSection(
                                             modifier = Modifier.weight(1f)
                                         ) {
                                             Text(
-                                                text = "🌙 হিজরি ক্যালেন্ডার",
+                                                text = if (isEnglish) "🌙 Hijri Calendar" else "🌙 হিজরি ক্যালেন্ডার",
                                                 color = White.copy(alpha = 0.82f),
                                                 fontSize = 11.sp,
                                                 lineHeight = 13.sp
                                             )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
-                                                text = com.example.utils.DateUtil.getTodayHijriDateStr(hijriOffset),
+                                                text = hijriDateStr,
                                                 color = White,
                                                 fontSize = 13.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 lineHeight = 17.sp
                                             )
                                             Text(
-                                                text = com.example.utils.DateUtil.getHijriNoteStr(hijriOffset),
+                                                text = hijriNoteStr,
                                                 color = White.copy(alpha = 0.82f),
                                                 fontSize = 10.5.sp,
                                                 lineHeight = 13.sp
@@ -1064,10 +1115,8 @@ fun HeroSection(
                             2 -> {
                                 // Slide 3: Dua of the day
                                 val duaItem = com.example.data.DuaData.getDuaItemOfTheDay()
-                                val banglaDigits = charArrayOf('০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯')
-                                val banglaNumber = duaItem.id.toString().map { char ->
-                                    if (char.isDigit()) banglaDigits[char - '0'] else char
-                                }.joinToString("")
+                                val duaNumStr = if (isEnglish) duaItem.id.toString() else com.example.utils.DateUtil.toBengaliNumerals(duaItem.id)
+                                val duaTitle = duaItem.title
 
                                 Column(
                                     modifier = Modifier
@@ -1083,7 +1132,7 @@ fun HeroSection(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = "আজকের দোয়া",
+                                            text = if (isEnglish) "Dua of the Day" else "আজকের দোয়া",
                                             color = White,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold
@@ -1091,7 +1140,7 @@ fun HeroSection(
                                     }
                                     
                                     Text(
-                                        text = "[$banglaNumber] ${duaItem.title}",
+                                        text = "[$duaNumStr] $duaTitle",
                                         color = White,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
@@ -1110,7 +1159,7 @@ fun HeroSection(
                                         horizontalArrangement = Arrangement.Center
                                     ) {
                                         Text(
-                                            text = "বিস্তারিত পড়ুন",
+                                            text = if (isEnglish) "Read Details" else "বিস্তারিত পড়ুন",
                                             color = White.copy(alpha = 0.9f),
                                             fontWeight = FontWeight.SemiBold,
                                             fontSize = 12.sp
@@ -1140,7 +1189,7 @@ fun HeroSection(
                                             .padding(horizontal = 12.dp, vertical = 4.dp)
                                     ) {
                                         Text(
-                                            text = "আজকের আয়াত",
+                                            text = if (isEnglish) "Ayah of the Day" else "আজকের আয়াত",
                                             color = White,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold
@@ -1186,7 +1235,7 @@ fun HeroSection(
 }
 
 @Composable
-fun SearchSection(onClick: () -> Unit) {
+fun SearchSection(isEnglish: Boolean = false, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1199,7 +1248,7 @@ fun SearchSection(onClick: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Search, contentDescription = "Search", tint = GrayText)
             Spacer(modifier = Modifier.width(12.dp))
-            Text("সূরা, পারা বা আয়াত খুঁজুন...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 16.sp)
+            Text(if (isEnglish) "Search Surah, Juz or Ayah..." else "সূরা, পারা বা আয়াত খুঁজুন...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 16.sp)
         }
     }
 }
@@ -1213,6 +1262,7 @@ fun QuickAccessSection(
     lastReadMushafId: String?,
     lastReadMushafPage: Int,
     defaultMushafId: String,
+    isEnglish: Boolean = false,
     onTabSelected: (Int) -> Unit,
     onSurahClick: (Int) -> Unit,
     onNavigateToHafeziMode: (Int) -> Unit,
@@ -1220,7 +1270,11 @@ fun QuickAccessSection(
     onNavigateToTajweedMode: (Int) -> Unit,
     onNavigateToMushafPage: (String, Int, Boolean) -> Unit
 ) {
-    val lastReadSurahName = QuranData.surahNames.find { it.first == lastReadSurah }?.second?.first ?: "আল ফাতিহা"
+    val lastReadSurahName = if (isEnglish) {
+        QuranData.surahNames.find { it.first == lastReadSurah }?.second?.second ?: "Al-Fatihah"
+    } else {
+        QuranData.surahNames.find { it.first == lastReadSurah }?.second?.first ?: "আল ফাতিহা"
+    }
 
     Row(
         modifier = Modifier
@@ -1260,14 +1314,24 @@ fun QuickAccessSection(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
-                    val subtitleText = when (lastReadMode) {
-                        "HAFEZI" -> "হাফেজী: ${lastReadPage.toBengaliNumerals()}"
-                        "TAJWEED" -> "তাজবীদ: ${lastReadPage.toBengaliNumerals()} • সূরা: $lastReadSurahName"
-                        "MUSHAF" -> "মুসহাফ: ${lastReadMushafPage.toBengaliNumerals()}"
-                        "READING" -> "রিডিং: $lastReadSurahName"
-                        else -> "বিস্তারিত: $lastReadSurahName"
+                    val subtitleText = if (isEnglish) {
+                        when (lastReadMode) {
+                            "HAFEZI" -> "Hafezi: $lastReadPage"
+                            "TAJWEED" -> "Tajweed: $lastReadPage • Surah: $lastReadSurahName"
+                            "MUSHAF" -> "Mushaf: $lastReadMushafPage"
+                            "READING" -> "Reading: $lastReadSurahName"
+                            else -> "Detail: $lastReadSurahName"
+                        }
+                    } else {
+                        when (lastReadMode) {
+                            "HAFEZI" -> "হাফেজী: ${lastReadPage.toBengaliNumerals()}"
+                            "TAJWEED" -> "তাজবীদ: ${lastReadPage.toBengaliNumerals()} • সূরা: $lastReadSurahName"
+                            "MUSHAF" -> "মুসহাফ: ${lastReadMushafPage.toBengaliNumerals()}"
+                            "READING" -> "রিডিং: $lastReadSurahName"
+                            else -> "বিস্তারিত: $lastReadSurahName"
+                        }
                     }
-                    Text("সর্বশেষ পঠিত", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp, lineHeight = 10.sp, maxLines = 1)
+                    Text(if (isEnglish) "Last Read" else "সর্বশেষ পঠিত", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp, lineHeight = 10.sp, maxLines = 1)
                     Text(subtitleText, color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, lineHeight = 12.sp)
                 }
                 Icon(Icons.Default.ChevronRight, contentDescription = null, tint = GrayText, modifier = Modifier.size(16.dp))
@@ -1301,7 +1365,7 @@ fun QuickAccessSection(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.MenuBook, contentDescription = null, tint = if (selectedTab == 0) White else GrayText, modifier = Modifier.size(12.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("সূরা", color = if (selectedTab == 0) White else GrayText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(if (isEnglish) "Surah" else "সূরা", color = if (selectedTab == 0) White else GrayText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
                 Box(
@@ -1318,7 +1382,7 @@ fun QuickAccessSection(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Menu, contentDescription = null, tint = if (selectedTab == 1) White else GrayText, modifier = Modifier.size(12.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("পারা", color = if (selectedTab == 1) White else GrayText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(if (isEnglish) "Juz" else "পারা", color = if (selectedTab == 1) White else GrayText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -1337,6 +1401,7 @@ data class AmaliSurah(
 
 @Composable
 fun QuickSurahPills(
+    isEnglish: Boolean = false,
     onNavigateToSurahWithAyah: (Int, String, Int) -> Unit
 ) {
     var currentTime by remember { mutableStateOf(Calendar.getInstance()) }
@@ -1350,11 +1415,11 @@ fun QuickSurahPills(
     
     val isDark = MaterialTheme.colorScheme.surface.let { (it.red + it.green + it.blue) < 1.5f }
     
-    val amaliList = remember {
+    val amaliList = remember(isEnglish) {
         listOf(
             AmaliSurah(
-                title = "সূরা কাহফ",
-                subtitle = "জুমার আমল",
+                title = if (isEnglish) "Surah Al-Kahf" else "সূরা কাহফ",
+                subtitle = if (isEnglish) "Friday Deed" else "জুমার আমল",
                 surahId = 18,
                 dotColor = OrangeAccent,
                 isActive = { cal ->
@@ -1365,8 +1430,8 @@ fun QuickSurahPills(
                 }
             ),
             AmaliSurah(
-                title = "আয়াতুল কুরসী",
-                subtitle = "ফরজ সালাত পর",
+                title = if (isEnglish) "Ayatul Kursi" else "আয়াতুল কুরসী",
+                subtitle = if (isEnglish) "After Fard Prayer" else "ফরজ সালাত পর",
                 surahId = 2,
                 startAyah = 255,
                 dotColor = BlueDot,
@@ -1382,8 +1447,8 @@ fun QuickSurahPills(
                 }
             ),
             AmaliSurah(
-                title = "সূরা ইয়াসিন",
-                subtitle = "ফজরের আমল",
+                title = if (isEnglish) "Surah Ya-Sin" else "সূরা ইয়াসিন",
+                subtitle = if (isEnglish) "Fajr Deed" else "ফজরের আমল",
                 surahId = 36,
                 dotColor = Color(0xFF8B5CF6),
                 isActive = { cal ->
@@ -1393,8 +1458,8 @@ fun QuickSurahPills(
                 }
             ),
             AmaliSurah(
-                title = "সূরা আর-রহমান",
-                subtitle = "আসর আমল",
+                title = if (isEnglish) "Surah Ar-Rahman" else "সূরা আর-রহমান",
+                subtitle = if (isEnglish) "Asr Deed" else "আসর আমল",
                 surahId = 55,
                 dotColor = Color(0xFFF97316),
                 isActive = { cal ->
@@ -1404,8 +1469,8 @@ fun QuickSurahPills(
                 }
             ),
             AmaliSurah(
-                title = "সূরা ওয়াক্বিয়া",
-                subtitle = "মাগরিবের আমল",
+                title = if (isEnglish) "Surah Al-Waqi'ah" else "সূরা ওয়াক্বিয়া",
+                subtitle = if (isEnglish) "Maghrib Deed" else "মাগরিবের আমল",
                 surahId = 56,
                 dotColor = Color(0xFFEC4899),
                 isActive = { cal ->
@@ -1415,8 +1480,8 @@ fun QuickSurahPills(
                 }
             ),
             AmaliSurah(
-                title = "সূরা মুলক",
-                subtitle = "ঘুমানোর আমল",
+                title = if (isEnglish) "Surah Al-Mulk" else "সূরা মুলক",
+                subtitle = if (isEnglish) "Before Sleep" else "ঘুমানোর আমল",
                 surahId = 67,
                 dotColor = GreenDot,
                 isActive = { cal ->
@@ -1425,8 +1490,8 @@ fun QuickSurahPills(
                 }
             ),
             AmaliSurah(
-                title = "সূরা দুখান",
-                subtitle = "বৃহস্পতিবার রাত",
+                title = if (isEnglish) "Surah Ad-Dukhan" else "সূরা দুখান",
+                subtitle = if (isEnglish) "Thursday Night" else "বৃহস্পতিবার রাত",
                 surahId = 44,
                 dotColor = Color(0xFF06B6D4),
                 isActive = { cal ->
@@ -1437,8 +1502,8 @@ fun QuickSurahPills(
                 }
             ),
             AmaliSurah(
-                title = "বাকারার শেষ ২ আয়াত",
-                subtitle = "রাতের আমল",
+                title = if (isEnglish) "Last 2 Verses of Baqarah" else "বাকারার শেষ ২ আয়াত",
+                subtitle = if (isEnglish) "Night Deed" else "রাতের আমল",
                 surahId = 2,
                 startAyah = 285,
                 dotColor = Color(0xFF14B8A6),
@@ -1479,7 +1544,7 @@ fun QuickSurahPills(
         label = "borderAlpha"
     )
 
-    val sortedAmaliList = remember(currentTime) {
+    val sortedAmaliList = remember(currentTime, amaliList) {
         amaliList.sortedByDescending { it.isActive(currentTime) }
     }
 
@@ -1556,10 +1621,11 @@ fun QuickSurahPills(
                                 Box(
                                     modifier = Modifier
                                         .background(item.dotColor.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-                                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = "চলমান",
+                                        text = if (isEnglish) "ACTIVE" else "চলমান",
                                         color = item.dotColor,
                                         fontSize = 8.sp,
                                         fontWeight = FontWeight.ExtraBold,
@@ -1913,6 +1979,7 @@ fun BookmarksAndLastReadSection(
     bookmarks: List<com.example.data.local.entity.BookmarkEntity>,
     lastReadAyah: Int = 1,
     recentReads: List<RecentReadTrack> = emptyList(),
+    isEnglish: Boolean = false,
     onSurahClick: (Int) -> Unit,
     onNavigateToHafeziMode: (Int) -> Unit,
     onNavigateToReadingMode: (Int) -> Unit,
@@ -1921,7 +1988,6 @@ fun BookmarksAndLastReadSection(
     onNavigateToSurahWithAyah: (Int, String, Int) -> Unit,
     onDeleteBookmark: (com.example.data.local.entity.BookmarkEntity) -> Unit
 ) {
-    val lastReadSurahName = QuranData.surahNames.find { it.first == lastReadSurah }?.second?.first ?: "আল ফাতিহা"
     val displayRecentReads = recentReads.take(5)
     
     Column(
@@ -1947,7 +2013,7 @@ fun BookmarksAndLastReadSection(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "সর্বশেষ পঠিত",
+                        text = if (isEnglish) "Recent Reads" else "সর্বশেষ পঠিত",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
@@ -1959,7 +2025,7 @@ fun BookmarksAndLastReadSection(
                         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
                     ) {
                         Text(
-                            text = "${com.example.utils.DateUtil.toBengaliNumerals(displayRecentReads.size)}টি সাম্প্রতিক",
+                            text = if (isEnglish) "${displayRecentReads.size} Recent" else "${com.example.utils.DateUtil.toBengaliNumerals(displayRecentReads.size)}টি সাম্প্রতিক",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = PrimaryGreen,
@@ -1975,6 +2041,7 @@ fun BookmarksAndLastReadSection(
                     track = track,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     defaultMushafId = defaultMushafId,
+                    isEnglish = isEnglish,
                     onNavigateToHafeziMode = onNavigateToHafeziMode,
                     onNavigateToReadingMode = onNavigateToReadingMode,
                     onNavigateToTajweedMode = onNavigateToTajweedMode,
@@ -1991,6 +2058,7 @@ fun BookmarksAndLastReadSection(
                             track = track,
                             modifier = Modifier.width(260.dp),
                             defaultMushafId = defaultMushafId,
+                            isEnglish = isEnglish,
                             onNavigateToHafeziMode = onNavigateToHafeziMode,
                             onNavigateToReadingMode = onNavigateToReadingMode,
                             onNavigateToTajweedMode = onNavigateToTajweedMode,
@@ -2005,7 +2073,7 @@ fun BookmarksAndLastReadSection(
         if (bookmarks.isNotEmpty()) {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "বুকমার্ক সমূহ",
+                text = if (isEnglish) "Bookmarks" else "বুকমার্ক সমূহ",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -2078,36 +2146,61 @@ fun RecentReadCardItem(
     track: RecentReadTrack,
     modifier: Modifier = Modifier,
     defaultMushafId: String,
+    isEnglish: Boolean = false,
     onNavigateToHafeziMode: (Int) -> Unit,
     onNavigateToReadingMode: (Int) -> Unit,
     onNavigateToTajweedMode: (Int) -> Unit,
     onNavigateToMushafPage: (String, Int, Boolean) -> Unit,
     onNavigateToSurahWithAyah: (Int, String, Int) -> Unit
 ) {
-    val surahName = QuranData.surahNames.find { it.first == track.surahNumber }?.second?.first ?: "সূরা ${track.surahNumber}"
+    val surahName = if (isEnglish) {
+        QuranData.surahNames.find { it.first == track.surahNumber }?.second?.second ?: "Surah ${track.surahNumber}"
+    } else {
+        QuranData.surahNames.find { it.first == track.surahNumber }?.second?.first ?: "সূরা ${track.surahNumber}"
+    }
     
     val (badgeText, badgeColor, icon) = when (track.mode) {
-        "TAJWEED" -> Triple("কালার তাজবীদ", Color(0xFF8B5CF6), Icons.Default.Palette)
-        "HAFEZI" -> Triple("হাফেজী কুরআন", Color(0xFF10B981), Icons.Outlined.MenuBook)
-        "MUSHAF" -> Triple("মুসহাফ ভিউয়ার", Color(0xFF0D9488), Icons.Outlined.Book)
-        "READING" -> Triple("প্যারাগ্রাফ রিডিং", Color(0xFFF59E0B), Icons.Outlined.AutoStories)
-        else -> Triple("অনুবাদ ও তাফসীর", Color(0xFF059669), Icons.Outlined.Translate)
+        "TAJWEED" -> Triple(if (isEnglish) "Color Tajweed" else "কালার তাজবীদ", Color(0xFF8B5CF6), Icons.Default.Palette)
+        "HAFEZI" -> Triple(if (isEnglish) "Hafezi Quran" else "হাফেজী কুরআন", Color(0xFF10B981), Icons.Outlined.MenuBook)
+        "MUSHAF" -> Triple(if (isEnglish) "Mushaf Viewer" else "মুসহাফ ভিউয়ার", Color(0xFF0D9488), Icons.Outlined.Book)
+        "READING" -> Triple(if (isEnglish) "Paragraph Reading" else "প্যারাগ্রাফ রিডিং", Color(0xFFF59E0B), Icons.Outlined.AutoStories)
+        else -> Triple(if (isEnglish) "Translation & Tafsir" else "অনুবাদ ও তাফসীর", Color(0xFF059669), Icons.Outlined.Translate)
     }
 
-    val mainText = when (track.mode) {
-        "TAJWEED", "HAFEZI", "MUSHAF" -> {
-            if (track.pageNumber != null) "পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(track.pageNumber)}"
-            else "সূরা $surahName"
+    val mainText = if (isEnglish) {
+        when (track.mode) {
+            "TAJWEED", "HAFEZI", "MUSHAF" -> {
+                if (track.pageNumber != null) "Page: ${track.pageNumber}"
+                else "Surah $surahName"
+            }
+            else -> "Surah $surahName"
         }
-        else -> "সূরা $surahName"
+    } else {
+        when (track.mode) {
+            "TAJWEED", "HAFEZI", "MUSHAF" -> {
+                if (track.pageNumber != null) "পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(track.pageNumber)}"
+                else "সূরা $surahName"
+            }
+            else -> "সূরা $surahName"
+        }
     }
 
-    val subtitleText = when (track.mode) {
-        "TAJWEED" -> "সূরা: $surahName • পৃষ্ঠাভিত্তিক"
-        "HAFEZI" -> "সূরা: $surahName • ১৫ লাইন"
-        "MUSHAF" -> "মুসহাফ পৃষ্ঠা ${com.example.utils.DateUtil.toBengaliNumerals(track.pageNumber ?: 1)}"
-        "READING" -> "আয়াত: ${com.example.utils.DateUtil.toBengaliNumerals(track.ayahNumber)}"
-        else -> "আয়াত: ${com.example.utils.DateUtil.toBengaliNumerals(track.ayahNumber)}"
+    val subtitleText = if (isEnglish) {
+        when (track.mode) {
+            "TAJWEED" -> "Surah: $surahName • Page based"
+            "HAFEZI" -> "Surah: $surahName • 15 Lines"
+            "MUSHAF" -> "Mushaf Page ${track.pageNumber ?: 1}"
+            "READING" -> "Ayah: ${track.ayahNumber}"
+            else -> "Ayah: ${track.ayahNumber}"
+        }
+    } else {
+        when (track.mode) {
+            "TAJWEED" -> "সূরা: $surahName • পৃষ্ঠাভিত্তিক"
+            "HAFEZI" -> "সূরা: $surahName • ১৫ লাইন"
+            "MUSHAF" -> "মুসহাফ পৃষ্ঠা ${com.example.utils.DateUtil.toBengaliNumerals(track.pageNumber ?: 1)}"
+            "READING" -> "আয়াত: ${com.example.utils.DateUtil.toBengaliNumerals(track.ayahNumber)}"
+            else -> "আয়াত: ${com.example.utils.DateUtil.toBengaliNumerals(track.ayahNumber)}"
+        }
     }
 
     Card(
@@ -2191,6 +2284,7 @@ fun RecentReadCardItem(
 fun ModesGridSection(
     isHafeziDownloaded: Boolean,
     isDark: Boolean,
+    isEnglish: Boolean = false,
     onHafeziPdfClick: () -> Unit,
     onTajweedClick: () -> Unit,
     onTranslationClick: () -> Unit,
@@ -2203,7 +2297,7 @@ fun ModesGridSection(
             .padding(horizontal = 16.dp)
     ) {
         Text(
-            text = "কুরআন পঠন ও শ্রবণ মোড",
+            text = if (isEnglish) "Quran Reading & Listening Modes" else "কুরআন পঠন ও শ্রবণ মোড",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
@@ -2215,8 +2309,8 @@ fun ModesGridSection(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             ModeItemCard(
-                title = "হাফেজী কুরআন",
-                subtitle = "১৫ লাইন ইমেজ ভিউ",
+                title = if (isEnglish) "Hafezi Quran" else "হাফেজী কুরআন",
+                subtitle = if (isEnglish) "15 Lines Image View" else "১৫ লাইন ইমেজ ভিউ",
                 icon = Icons.Default.MenuBook,
                 containerColor = if (isDark) Color(0xFF064E3B).copy(alpha = 0.5f) else Color(0xFFECFDF5),
                 iconColor = Color(0xFF10B981),
@@ -2225,8 +2319,8 @@ fun ModesGridSection(
                 modifier = Modifier.weight(1f)
             )
             ModeItemCard(
-                title = "কালার কুরআন",
-                subtitle = "রঙিন তাজবীদ টেক্সট",
+                title = if (isEnglish) "Color Quran" else "কালার কুরআন",
+                subtitle = if (isEnglish) "Color Tajweed Text" else "রঙিন তাজবীদ টেক্সট",
                 icon = Icons.Default.Palette,
                 containerColor = if (isDark) Color(0xFF1E3A8A).copy(alpha = 0.5f) else Color(0xFFEFF6FF),
                 iconColor = Color(0xFF3B82F6),
@@ -2242,8 +2336,8 @@ fun ModesGridSection(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             ModeItemCard(
-                title = "অনুবাদ ও তাফসীর",
-                subtitle = "গভীর তাফসীর ও অর্থ",
+                title = if (isEnglish) "Translation & Tafsir" else "অনুবাদ ও তাফসীর",
+                subtitle = if (isEnglish) "Deep Meaning & Tafsir" else "গভীর তাফসীর ও অর্থ",
                 icon = Icons.Default.MenuBook,
                 containerColor = if (isDark) Color(0xFF4C1D95).copy(alpha = 0.5f) else Color(0xFFF5F3FF),
                 iconColor = Color(0xFF8B5CF6),
@@ -2251,8 +2345,8 @@ fun ModesGridSection(
                 modifier = Modifier.weight(1f)
             )
             ModeItemCard(
-                title = "তেলাওয়াত প্লেয়ার",
-                subtitle = "বিভিন্ন ক্বারীদের তেলওয়াত শুনুন",
+                title = if (isEnglish) "Recitation Player" else "তেলাওয়াত প্লেয়ার",
+                subtitle = if (isEnglish) "Listen to Various Qaris" else "বিভিন্ন ক্বারীদের তেলওয়াত শুনুন",
                 icon = Icons.Default.PlayArrow,
                 containerColor = if (isDark) Color(0xFF7C2D12).copy(alpha = 0.5f) else Color(0xFFFFF7ED),
                 iconColor = Color(0xFFF97316),
@@ -2266,6 +2360,7 @@ fun ModesGridSection(
 @Composable
 fun DhikrHabitSection(
     isDark: Boolean,
+    isEnglish: Boolean = false,
     onNavigateToDhikrReminder: (com.example.utils.DhikrType) -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -2283,7 +2378,7 @@ fun DhikrHabitSection(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "দৈনিক আমল ও অভ্যাস রিমাইন্ডার",
+                text = if (isEnglish) "Daily Dhikr & Habit Reminders" else "দৈনিক আমল ও অভ্যাস রিমাইন্ডার",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -2294,7 +2389,7 @@ fun DhikrHabitSection(
                 border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.3f))
             ) {
                 Text(
-                    text = "আমলের অভ্যাস",
+                    text = if (isEnglish) "Dhikr Habit" else "আমলের অভ্যাস",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF10B981),
@@ -2307,15 +2402,16 @@ fun DhikrHabitSection(
 
         // Card 1: দুরুদ শরীফ পড়ার অভ্যাস
         DhikrHabitCard(
-            title = "দুরুদ শরীফ পড়ার অভ্যাস করুন",
-            subtitle = "সারাদিন নবীজী (ﷺ)-এর ওপর নিয়মিত দুরুদ পাঠের সওয়াব অর্জনে রিমাইন্ডার চালু রাখুন।",
+            title = if (isEnglish) "Practice Reciting Durood Sharif" else "দুরুদ শরীফ পড়ার অভ্যাস করুন",
+            subtitle = if (isEnglish) "Keep reminders active to earn regular blessings by sending peace upon the Prophet (ﷺ) throughout the day." else "সারাদিন নবীজী (ﷺ)-এর ওপর নিয়মিত দুরুদ পাঠের সওয়াব অর্জনে রিমাইন্ডার চালু রাখুন।",
             iconEmoji = "📿",
             iconBg = if (isDark) Color(0xFF064E3B).copy(alpha = 0.45f) else Color(0xFFECFDF5),
             badgeColor = Color(0xFF10B981),
             isEnabled = duroodConfig.isEnabled,
             intervalMinutes = duroodConfig.intervalMinutes,
-            inactiveActionText = "অভ্যাস গড়তে দুরুদ শরীফ রিমাইন্ডার ফিচার চালু করুন",
+            inactiveActionText = if (isEnglish) "Enable Durood reminder to build a daily habit" else "অভ্যাস গড়তে দুরুদ শরীফ রিমাইন্ডার ফিচার চালু করুন",
             isDark = isDark,
+            isEnglish = isEnglish,
             onClick = { onNavigateToDhikrReminder(com.example.utils.DhikrType.DUROOD) }
         )
 
@@ -2323,15 +2419,16 @@ fun DhikrHabitSection(
 
         // Card 2: ইস্তিগফারের অভ্যাস
         DhikrHabitCard(
-            title = "ইস্তিগফারের অভ্যাস করুন",
-            subtitle = "সারাদিন মহান আল্লাহর কাছে ক্ষমা প্রার্থনার অভ্যাস গড়ে তুলতে নিয়মিত রিমাইন্ডার চালু রাখুন।",
+            title = if (isEnglish) "Practice Daily Istighfar" else "ইস্তিগফারের অভ্যাস করুন",
+            subtitle = if (isEnglish) "Keep reminders active to build a habit of seeking forgiveness from Allah throughout the day." else "সারাদিন মহান আল্লাহর কাছে ক্ষমা প্রার্থনার অভ্যাস গড়ে তুলতে নিয়মিত রিমাইন্ডার চালু রাখুন।",
             iconEmoji = "🤲",
             iconBg = if (isDark) Color(0xFF1E3A8A).copy(alpha = 0.45f) else Color(0xFFEFF6FF),
             badgeColor = Color(0xFF3B82F6),
             isEnabled = istighfarConfig.isEnabled,
             intervalMinutes = istighfarConfig.intervalMinutes,
-            inactiveActionText = "অভ্যাস গড়তে ইস্তিগফার রিমাইন্ডার চালু করুন",
+            inactiveActionText = if (isEnglish) "Enable Istighfar reminder to build a daily habit" else "অভ্যাস গড়তে ইস্তিগফার রিমাইন্ডার চালু করুন",
             isDark = isDark,
+            isEnglish = isEnglish,
             onClick = { onNavigateToDhikrReminder(com.example.utils.DhikrType.ISTIGHFAR) }
         )
     }
@@ -2348,6 +2445,7 @@ fun DhikrHabitCard(
     intervalMinutes: Int,
     inactiveActionText: String,
     isDark: Boolean,
+    isEnglish: Boolean = false,
     onClick: () -> Unit
 ) {
     Card(
@@ -2413,7 +2511,7 @@ fun DhikrHabitCard(
                                     .background(badgeColor)
                             )
                             Text(
-                                text = "চালু আছে",
+                                text = if (isEnglish) "ACTIVE" else "চালু আছে",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = badgeColor
@@ -2467,7 +2565,9 @@ fun DhikrHabitCard(
                             modifier = Modifier.size(15.dp)
                         )
                         Text(
-                            text = if (isEnabled) "প্রতি $intervalMinutes মিনিট পরপর রিমাইন্ডার আসবে" else inactiveActionText,
+                            text = if (isEnabled) {
+                                if (isEnglish) "Reminder every $intervalMinutes minutes" else "প্রতি $intervalMinutes মিনিট পরপর রিমাইন্ডার আসবে"
+                            } else inactiveActionText,
                             fontSize = 12.sp,
                             fontWeight = if (isEnabled) FontWeight.SemiBold else FontWeight.Medium,
                             color = if (isEnabled) badgeColor else MaterialTheme.colorScheme.onSurface
@@ -2489,6 +2589,7 @@ fun DhikrHabitCard(
 @Composable
 fun TopFeaturesGridSection(
     isDark: Boolean,
+    isEnglish: Boolean = false,
     onQiblaClick: () -> Unit,
     onMosqueClick: () -> Unit = {},
     onDuaClick: () -> Unit,
@@ -2545,7 +2646,7 @@ fun TopFeaturesGridSection(
                         )
                     }
                     Text(
-                        text = "টপ ফিচার",
+                        text = if (isEnglish) "Top Features" else "টপ ফিচার",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -2563,7 +2664,7 @@ fun TopFeaturesGridSection(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "আরও দেখুন",
+                            text = if (isEnglish) "More" else "আরও দেখুন",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = PrimaryGreen
@@ -2587,7 +2688,7 @@ fun TopFeaturesGridSection(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 TopFeatureCircleButton(
-                    title = "কিবলা",
+                    title = if (isEnglish) "Qibla" else "কিবলা",
                     icon = Icons.Default.Explore,
                     isDark = isDark,
                     bgColor = if (isDark) Color(0xFF0F3826) else Color(0xFFE8F5E9),
@@ -2595,7 +2696,7 @@ fun TopFeaturesGridSection(
                     onClick = onQiblaClick
                 )
                 TopFeatureCircleButton(
-                    title = "মসজিদ",
+                    title = if (isEnglish) "Mosques" else "মসজিদ",
                     icon = Icons.Default.Place,
                     isDark = isDark,
                     bgColor = if (isDark) Color(0xFF042F2E) else Color(0xFFCCFBF1),
@@ -2603,7 +2704,7 @@ fun TopFeaturesGridSection(
                     onClick = onMosqueClick
                 )
                 TopFeatureCircleButton(
-                    title = "মাসনূন দুআ",
+                    title = if (isEnglish) "Masnoon Dua" else "মাসনূন দুআ",
                     icon = Icons.Default.VolunteerActivism,
                     isDark = isDark,
                     bgColor = if (isDark) Color(0xFF0C334D) else Color(0xFFE0F2FE),
@@ -2611,7 +2712,7 @@ fun TopFeaturesGridSection(
                     onClick = onDuaClick
                 )
                 TopFeatureCircleButton(
-                    title = "মানযিল",
+                    title = if (isEnglish) "Manzil" else "মানযিল",
                     icon = Icons.Default.Security,
                     isDark = isDark,
                     bgColor = if (isDark) Color(0xFF064E3B) else Color(0xFFD1FAE5),
@@ -2628,7 +2729,7 @@ fun TopFeaturesGridSection(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 TopFeatureCircleButton(
-                    title = "প্ল্যানার",
+                    title = if (isEnglish) "Planner" else "প্ল্যানার",
                     icon = Icons.Default.TrackChanges,
                     isDark = isDark,
                     bgColor = if (isDark) Color(0xFF4C0519) else Color(0xFFFFE4E6),
@@ -2636,7 +2737,7 @@ fun TopFeaturesGridSection(
                     onClick = onPlannerClick
                 )
                 TopFeatureCircleButton(
-                    title = "ক্যালেন্ডার",
+                    title = if (isEnglish) "Calendar" else "ক্যালেন্ডার",
                     icon = Icons.Default.CalendarMonth,
                     isDark = isDark,
                     bgColor = if (isDark) Color(0xFF451A03) else Color(0xFFFEF3C7),
@@ -2644,7 +2745,7 @@ fun TopFeaturesGridSection(
                     onClick = onCalendarClick
                 )
                 TopFeatureCircleButton(
-                    title = "ভিডিও মেকার",
+                    title = if (isEnglish) "Video Maker" else "ভিডিও মেকার",
                     icon = Icons.Default.Videocam,
                     isDark = isDark,
                     bgColor = if (isDark) Color(0xFF3B0764) else Color(0xFFF3E8FF),
@@ -2652,7 +2753,7 @@ fun TopFeaturesGridSection(
                     onClick = onVideoCreatorClick
                 )
                 TopFeatureCircleButton(
-                    title = "বিষয়ভিত্তিক",
+                    title = if (isEnglish) "Topics" else "বিষয়ভিত্তিক",
                     icon = Icons.Default.AutoStories,
                     isDark = isDark,
                     bgColor = if (isDark) Color(0xFF1E1B4B) else Color(0xFFE0E7FF),
@@ -2667,6 +2768,7 @@ fun TopFeaturesGridSection(
 @Composable
 fun NearbyMosqueHomeBanner(
     isDark: Boolean,
+    isEnglish: Boolean = false,
     onMosqueClick: () -> Unit
 ) {
     Card(
@@ -2714,7 +2816,7 @@ fun NearbyMosqueHomeBanner(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "নিকটবর্তী মসজিদ খুঁজুন",
+                            text = if (isEnglish) "Find Nearby Mosques" else "নিকটবর্তী মসজিদ খুঁজুন",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -2725,7 +2827,7 @@ fun NearbyMosqueHomeBanner(
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
-                                text = "লাইভ জিপিএস",
+                                text = if (isEnglish) "LIVE GPS" else "লাইভ জিপিএস",
                                 fontSize = 9.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isDark) Color(0xFFFBBF24) else Color(0xFFB45309),
@@ -2737,7 +2839,7 @@ fun NearbyMosqueHomeBanner(
                     Spacer(modifier = Modifier.height(2.dp))
 
                     Text(
-                        text = "আশপাশের জামে মসজিদ, জামাতের সময় ও দিকনির্দেশনা",
+                        text = if (isEnglish) "Nearby Jame Mosques, Jama'ah times & navigation" else "আশপাশের জামে মসজিদ, জামাতের সময় ও দিকনির্দেশনা",
                         fontSize = 11.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 16.sp,
@@ -2815,6 +2917,7 @@ fun TopFeatureCircleButton(
 @Composable
 fun DailyDuaFeaturedSection(
     isDark: Boolean,
+    isEnglish: Boolean = false,
     arabicFontName: String = "kfgqpc",
     onReadDua: (com.example.data.DuaItem) -> Unit,
     onViewAllDuas: () -> Unit
@@ -2842,6 +2945,7 @@ fun DailyDuaFeaturedSection(
     val transliteration = firstSegment?.transliteration ?: ""
     val translation = firstSegment?.translation ?: ""
     val reference = firstSegment?.reference?.ifEmpty { firstSegment.bottom } ?: ""
+    val duaTitle = featuredDua.title
 
     Card(
         modifier = Modifier
@@ -2886,7 +2990,7 @@ fun DailyDuaFeaturedSection(
                         )
                     }
                     Text(
-                        text = "আজকের নির্বাচিত দুআ",
+                        text = if (isEnglish) "Dua of the Day" else "আজকের নির্বাচিত দুআ",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -2904,7 +3008,7 @@ fun DailyDuaFeaturedSection(
                         horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         Text(
-                            text = "সব দুআ",
+                            text = if (isEnglish) "All Duas" else "সব দুআ",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = PrimaryGreen
@@ -2923,7 +3027,7 @@ fun DailyDuaFeaturedSection(
 
             // Title
             Text(
-                text = featuredDua.title,
+                text = duaTitle,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = PrimaryGreen
@@ -2948,7 +3052,7 @@ fun DailyDuaFeaturedSection(
             if (transliteration.isNotEmpty() && transliteration != "null") {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "উচ্চারণ: $transliteration",
+                    text = if (isEnglish) "Pronunciation: $transliteration" else "উচ্চারণ: $transliteration",
                     fontSize = 12.5.sp,
                     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -2960,7 +3064,7 @@ fun DailyDuaFeaturedSection(
             if (translation.isNotEmpty() && translation != "null") {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "অর্থ: $translation",
+                    text = if (isEnglish) "Meaning: $translation" else "অর্থ: $translation",
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Normal,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -3003,7 +3107,7 @@ fun DailyDuaFeaturedSection(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "সম্পূর্ণ দুআ পড়ুন",
+                        text = if (isEnglish) "Read Full Dua" else "সম্পূর্ণ দুআ পড়ুন",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -3013,14 +3117,14 @@ fun DailyDuaFeaturedSection(
                     IconButton(
                         onClick = {
                             val copyText = buildString {
-                                append(featuredDua.title).append("\n\n")
+                                append(duaTitle).append("\n\n")
                                 if (arabic.isNotEmpty() && arabic != "null") append(arabic).append("\n\n")
-                                if (transliteration.isNotEmpty() && transliteration != "null") append("উচ্চারণ: ").append(transliteration).append("\n\n")
-                                if (translation.isNotEmpty() && translation != "null") append("অর্থ: ").append(translation).append("\n")
+                                if (transliteration.isNotEmpty() && transliteration != "null") append(if (isEnglish) "Pronunciation: " else "উচ্চারণ: ").append(transliteration).append("\n\n")
+                                if (translation.isNotEmpty() && translation != "null") append(if (isEnglish) "Meaning: " else "অর্থ: ").append(translation).append("\n")
                                 if (reference.isNotEmpty() && reference != "null") append("— ").append(reference)
                             }
                             clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(copyText))
-                            Toast.makeText(context, "দুআটি কপি করা হয়েছে", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, if (isEnglish) "Dua copied to clipboard" else "দুআটি কপি করা হয়েছে", Toast.LENGTH_SHORT).show()
                         },
                         modifier = Modifier
                             .size(36.dp)
@@ -3031,7 +3135,7 @@ fun DailyDuaFeaturedSection(
                     ) {
                         Icon(
                             imageVector = Icons.Default.ContentCopy,
-                            contentDescription = "কপি করুন",
+                            contentDescription = if (isEnglish) "Copy" else "কপি করুন",
                             tint = PrimaryGreen,
                             modifier = Modifier.size(17.dp)
                         )
@@ -3040,19 +3144,19 @@ fun DailyDuaFeaturedSection(
                     IconButton(
                         onClick = {
                             val shareText = buildString {
-                                append("✨ ").append(featuredDua.title).append("\n\n")
+                                append("✨ ").append(duaTitle).append("\n\n")
                                 if (arabic.isNotEmpty() && arabic != "null") append(arabic).append("\n\n")
-                                if (transliteration.isNotEmpty() && transliteration != "null") append("উচ্চারণ: ").append(transliteration).append("\n\n")
-                                if (translation.isNotEmpty() && translation != "null") append("অর্থ: ").append(translation).append("\n\n")
+                                if (transliteration.isNotEmpty() && transliteration != "null") append(if (isEnglish) "Pronunciation: " else "উচ্চারণ: ").append(transliteration).append("\n\n")
+                                if (translation.isNotEmpty() && translation != "null") append(if (isEnglish) "Meaning: " else "অর্থ: ").append(translation).append("\n\n")
                                 if (reference.isNotEmpty() && reference != "null") append("— ").append(reference).append("\n\n")
-                                append("আল-কুরআন ও ইসলামিক অ্যাপ")
+                                append(if (isEnglish) "Al-Quran & Islamic App" else "আল-কুরআন ও ইসলামিক অ্যাপ")
                             }
                             val sendIntent = android.content.Intent().apply {
                                 action = android.content.Intent.ACTION_SEND
                                 putExtra(android.content.Intent.EXTRA_TEXT, shareText)
                                 type = "text/plain"
                             }
-                            context.startActivity(android.content.Intent.createChooser(sendIntent, "দুআটি শেয়ার করুন"))
+                            context.startActivity(android.content.Intent.createChooser(sendIntent, if (isEnglish) "Share Dua" else "দুআটি শেয়ার করুন"))
                         },
                         modifier = Modifier
                             .size(36.dp)
@@ -3063,7 +3167,7 @@ fun DailyDuaFeaturedSection(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Share,
-                            contentDescription = "শেয়ার করুন",
+                            contentDescription = if (isEnglish) "Share" else "শেয়ার করুন",
                             tint = PrimaryGreen,
                             modifier = Modifier.size(17.dp)
                         )
@@ -3077,6 +3181,7 @@ fun DailyDuaFeaturedSection(
 @Composable
 fun SubjectwiseTopCategoriesSection(
     isDark: Boolean,
+    isEnglish: Boolean = false,
     onCategoryClick: (String) -> Unit,
     onViewAllClick: () -> Unit
 ) {
@@ -3111,7 +3216,7 @@ fun SubjectwiseTopCategoriesSection(
                     )
                 }
                 Text(
-                    text = "বিষয়ভিত্তিক কুরআন",
+                    text = if (isEnglish) "Subjectwise Quran" else "বিষয়ভিত্তিক কুরআন",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -3129,7 +3234,7 @@ fun SubjectwiseTopCategoriesSection(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "সব বিষয়",
+                        text = if (isEnglish) "All Topics" else "সব বিষয়",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = PrimaryGreen
@@ -3147,15 +3252,27 @@ fun SubjectwiseTopCategoriesSection(
         Spacer(modifier = Modifier.height(12.dp))
 
         // Horizontal scrolling categories
-        val subjectCategories = listOf(
-            Triple("ঈমান ও আকীদা", "তাওহীদ, রিসালাত ও আসমাউল হুসনা • ১০+ বিষয়", Color(0xFFF59E0B)),
-            Triple("ইবাদত ও আমল", "সালাত, সিয়াম, হজ ও জাকাত • ৮+ বিষয়", Color(0xFF10B981)),
-            Triple("পরকাল, কিয়ামত ও আখিরাত", "মৃত্যু, কবর, হাশর ও জান্নাত • ১১+ বিষয়", Color(0xFF8B5CF6)),
-            Triple("আখলাক, চরিত্র ও শিষ্টাচার", "সততা, উত্তম আচরণ ও শিষ্টাচার • ৮+ বিষয়", Color(0xFF0284C7)),
-            Triple("পারিবারিক ও সামাজিক জীবন", "পিতা-মাতা, আত্মীয় ও প্রতিবেশীর হক • ৭+ বিষয়", Color(0xFFF43F5E)),
-            Triple("দোয়া ও জিকির", "কুরআনের দোয়া ও আল্লাহর জিকির • ৬+ বিষয়", Color(0xFF14B8A6)),
-            Triple("মানযিল", "কুরআনের বিশেষ শেফা ও সুরক্ষার আয়াত • ৩৩ আয়াত", Color(0xFF059669))
-        )
+        val subjectCategories = if (isEnglish) {
+            listOf(
+                Triple("Faith & Creed", "Tawheed, Prophethood & Asmaul Husna • 10+ topics", Color(0xFFF59E0B)),
+                Triple("Worship & Deeds", "Salah, Sawm, Hajj & Zakat • 8+ topics", Color(0xFF10B981)),
+                Triple("Hereafter & Judgment", "Death, Grave, Resurrection & Paradise • 11+ topics", Color(0xFF8B5CF6)),
+                Triple("Character & Ethics", "Honesty, Good Behavior & Manners • 8+ topics", Color(0xFF0284C7)),
+                Triple("Family & Social Life", "Parents, Relatives & Neighbor Rights • 7+ topics", Color(0xFFF43F5E)),
+                Triple("Dua & Dhikr", "Quranic Duas & Remembrance of Allah • 6+ topics", Color(0xFF14B8A6)),
+                Triple("Manzil", "Special healing and protection verses • 33 Ayahs", Color(0xFF059669))
+            )
+        } else {
+            listOf(
+                Triple("ঈমান ও আকীদা", "তাওহীদ, রিসালাত ও আসমাউল হুসনা • ১০+ বিষয়", Color(0xFFF59E0B)),
+                Triple("ইবাদত ও আমল", "সালাত, সিয়াম, হজ ও জাকাত • ৮+ বিষয়", Color(0xFF10B981)),
+                Triple("পরকাল, কিয়ামত ও আখিরাত", "মৃত্যু, কবর, হাশর ও জান্নাত • ১১+ বিষয়", Color(0xFF8B5CF6)),
+                Triple("আখলাক, চরিত্র ও শিষ্টাচার", "সততা, উত্তম আচরণ ও শিষ্টাচার • ৮+ বিষয়", Color(0xFF0284C7)),
+                Triple("পারিবারিক ও সামাজিক জীবন", "পিতা-মাতা, আত্মীয় ও প্রতিবেশীর হক • ৭+ বিষয়", Color(0xFFF43F5E)),
+                Triple("দোয়া ও জিকির", "কুরআনের দোয়া ও আল্লাহর জিকির • ৬+ বিষয়", Color(0xFF14B8A6)),
+                Triple("মানযিল", "কুরআনের বিশেষ শেফা ও সুরক্ষার আয়াত • ৩৩ আয়াত", Color(0xFF059669))
+            )
+        }
 
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
@@ -3243,14 +3360,33 @@ fun SubjectwiseCategoryCard(
     }
 }
 
-fun formatPostTimeAgo(timestamp: Long): String {
-    if (timestamp <= 0L) return "এইমাত্র"
+fun formatPostTimeAgo(timestamp: Long, isEnglish: Boolean = false): String {
+    if (timestamp <= 0L) return if (isEnglish) "Just now" else "এইমাত্র"
     val diffMillis = System.currentTimeMillis() - timestamp
-    if (diffMillis < 0) return "এইমাত্র"
+    if (diffMillis < 0) return if (isEnglish) "Just now" else "এইমাত্র"
     val seconds = diffMillis / 1000
     val minutes = seconds / 60
     val hours = minutes / 60
     val days = hours / 24
+
+    if (isEnglish) {
+        return when {
+            minutes < 1 -> "Just now"
+            minutes < 60 -> "$minutes mins ago"
+            hours < 24 -> "$hours hours ago"
+            days < 2 -> "Yesterday"
+            days < 7 -> "$days days ago"
+            days < 8 -> "1 week ago"
+            else -> {
+                try {
+                    val sdf = java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.ENGLISH)
+                    sdf.format(java.util.Date(timestamp))
+                } catch (e: Exception) {
+                    "Recently"
+                }
+            }
+        }
+    }
 
     fun String.toBanglaDigits(): String {
         val banglaDigits = mapOf(
@@ -3291,66 +3427,122 @@ fun formatPostTimeAgo(timestamp: Long): String {
 @Composable
 fun FeaturedIslamicMediaSection(
     isDark: Boolean,
+    isEnglish: Boolean = false,
     blogPosts: List<BlogPost> = emptyList(),
     onPostClick: (BlogPost) -> Unit = {},
     onViewAllClick: () -> Unit = {}
 ) {
-    val fallbackBlogPosts = remember {
-        listOf(
-            BlogPost(
-                id = "featured_1",
-                title = "কুরআন নিয়মিত তিলাওয়াতের আত্মিক প্রশান্তি ও ফজিলত",
-                content = "পবিত্র কুরআন মুমিনের অন্তরের শেফা এবং হেদায়েতের আলোকবর্তিকা। দৈনন্দিন জীবনে নিয়মিত তিলাওয়াত মানুষের মন থেকে সকল দুশ্চিন্তা ও পেরেশানি দূর করে আত্মিক শান্তি এনে দেয়।",
-                author = "মাওলানা আব্দুল্লাহ",
-                category = "কুরআনের আলো",
-                imageUrl = "",
-                readTime = "৪ মিনিট",
-                timestamp = System.currentTimeMillis() - 25 * 60 * 1000L
-            ),
-            BlogPost(
-                id = "featured_2",
-                title = "দৈনন্দিন জীবনে দুআ ও ইস্তিগফারের অলৌকিক বরকত",
-                content = "যে ব্যক্তি বেশি বেশি ইস্তিগফার করে, আল্লাহ তায়ালা তার সকল সংকটে মুক্তির পথ তৈরি করেন এবং এমন উৎস থেকে রিজিকের ব্যবস্থা করেন যা সে কল্পনাও করেনি।",
-                author = "মুফতি মাহমুদ হাসান",
-                category = "আমল ও দুআ",
-                imageUrl = "",
-                readTime = "৩ মিনিট",
-                timestamp = System.currentTimeMillis() - 2 * 3600 * 1000L
-            ),
-            BlogPost(
-                id = "featured_3",
-                title = "তাহাজ্জুদ নামাজ ও আল্লাহর নৈকট্য অর্জনের পথ",
-                content = "রাতের শেষ তৃতীয়াংশে যখন মহান আল্লাহ প্রথম আসমানে নেমে আসেন, তখন বান্দার প্রতিটি আন্তরিক মুনাজাত ও চোখের পানি সরাসরি আল্লাহর দরবারে কবুল হয়।",
-                author = "শাইখ আহমাদুল্লাহ",
-                category = "নফল ইবাদত",
-                imageUrl = "",
-                readTime = "৫ মিনিট",
-                timestamp = System.currentTimeMillis() - 5 * 3600 * 1000L
-            ),
-            BlogPost(
-                id = "featured_4",
-                title = "উত্তম চরিত্র ও সুন্দর ব্যবহারের অপরিসীম গুরুত্ব",
-                content = "ইসলামের অন্যতম প্রধান সৌন্দর্য হলো সদ্ব্যবহার ও সদাচার। মানুষের সাথে সুন্দর আচরণ, সহমর্মিতা ও ক্ষমাশীলতার মাধ্যমে পরিপূর্ণ মুমিনের পরিচয় ফুটে ওঠে।",
-                author = "ড. আব্দুল্লাহ জাহাঙ্গীর",
-                category = "আখলাক ও শিষ্টাচার",
-                imageUrl = "",
-                readTime = "৪ মিনিট",
-                timestamp = System.currentTimeMillis() - 24 * 3600 * 1000L
-            ),
-            BlogPost(
-                id = "featured_5",
-                title = "রিজিকে বরকত বৃদ্ধির কুরআন ও সুন্নাহ নির্দেশিত আমল",
-                content = "তাকওয়া অবলম্বন, পিতা-মাতার সেবা, আত্মীয়তার সম্পর্ক বজায় রাখা ও বেশি বেশি দান-সদকার মাধ্যমে আল্লাহ রাব্বুল আলামিন রিজিকে অভাবনীয় বরকত দান করেন।",
-                author = "মুফতি তারিক জামিল",
-                category = "জীবন বিধান",
-                imageUrl = "",
-                readTime = "৩ মিনিট",
-                timestamp = System.currentTimeMillis() - 48 * 3600 * 1000L
+    val fallbackBlogPosts = remember(isEnglish) {
+        if (isEnglish) {
+            listOf(
+                BlogPost(
+                    id = "featured_1",
+                    title = "Spiritual Tranquility & Virtues of Regular Quran Recitation",
+                    content = "The Holy Quran is healing for the believers' hearts and a beacon of divine guidance. Daily regular recitation removes worries and brings deep inner serenity.",
+                    author = "Mawlana Abdullah",
+                    category = "Quran Light",
+                    imageUrl = "",
+                    readTime = "4 mins",
+                    timestamp = System.currentTimeMillis() - 25 * 60 * 1000L
+                ),
+                BlogPost(
+                    id = "featured_2",
+                    title = "Miraculous Blessings of Daily Dua and Istighfar",
+                    content = "Whoever constantly seeks forgiveness from Allah, Allah opens doors of relief from every distress and provides sustenance from unimaginable sources.",
+                    author = "Mufti Mahmud Hasan",
+                    category = "Dua & Deeds",
+                    imageUrl = "",
+                    readTime = "3 mins",
+                    timestamp = System.currentTimeMillis() - 2 * 3600 * 1000L
+                ),
+                BlogPost(
+                    id = "featured_3",
+                    title = "Tahajjud Prayer & the Path to Nearness with Allah",
+                    content = "In the last third of the night when Allah descends to the lowest heaven, every sincere prayer and tear is directly answered by the Almighty.",
+                    author = "Shaykh Ahmadullah",
+                    category = "Night Prayers",
+                    imageUrl = "",
+                    readTime = "5 mins",
+                    timestamp = System.currentTimeMillis() - 5 * 3600 * 1000L
+                ),
+                BlogPost(
+                    id = "featured_4",
+                    title = "Immense Significance of Excellent Character in Islam",
+                    content = "One of the greatest beauties of Islam is good character and noble conduct. Kindness, empathy, and forgiveness reflect true faith.",
+                    author = "Dr. Abdullah Jahangir",
+                    category = "Ethics & Manners",
+                    imageUrl = "",
+                    readTime = "4 mins",
+                    timestamp = System.currentTimeMillis() - 24 * 3600 * 1000L
+                ),
+                BlogPost(
+                    id = "featured_5",
+                    title = "Quran and Sunnah Deeds for Increasing Sustenance (Barakah in Rizq)",
+                    content = "Practicing Taqwa, serving parents, maintaining family ties, and giving charity bring unprecedented blessings into one's provision and life.",
+                    author = "Mufti Tariq Jameel",
+                    category = "Islamic Life",
+                    imageUrl = "",
+                    readTime = "3 mins",
+                    timestamp = System.currentTimeMillis() - 48 * 3600 * 1000L
+                )
             )
-        )
+        } else {
+            listOf(
+                BlogPost(
+                    id = "featured_1",
+                    title = "কুরআন নিয়মিত তিলাওয়াতের আত্মিক প্রশান্তি ও ফজিলত",
+                    content = "পবিত্র কুরআন মুমিনের অন্তরের শেফা এবং হেদায়েতের আলোকবর্তিকা। দৈনন্দিন জীবনে নিয়মিত তিলাওয়াত মানুষের মন থেকে সকল দুশ্চিন্তা ও পেরেশানি দূর করে আত্মিক শান্তি এনে দেয়।",
+                    author = "মাওলানা আব্দুল্লাহ",
+                    category = "কুরআনের আলো",
+                    imageUrl = "",
+                    readTime = "৪ মিনিট",
+                    timestamp = System.currentTimeMillis() - 25 * 60 * 1000L
+                ),
+                BlogPost(
+                    id = "featured_2",
+                    title = "দৈনন্দিন জীবনে দুআ ও ইস্তিগফারের অলৌকিক বরকত",
+                    content = "যে ব্যক্তি বেশি বেশি ইস্তিগফার করে, আল্লাহ তায়ালা তার সকল সংকটে মুক্তির পথ তৈরি করেন এবং এমন উৎস থেকে রিজিকের ব্যবস্থা করেন যা সে কল্পনাও করেনি।",
+                    author = "মুফতি মাহমুদ হাসান",
+                    category = "আমল ও দুআ",
+                    imageUrl = "",
+                    readTime = "৩ মিনিট",
+                    timestamp = System.currentTimeMillis() - 2 * 3600 * 1000L
+                ),
+                BlogPost(
+                    id = "featured_3",
+                    title = "তাহাজ্জুদ নামাজ ও আল্লাহর নৈকট্য অর্জনের পথ",
+                    content = "রাতের শেষ তৃতীয়াংশে যখন মহান আল্লাহ প্রথম আসমানে নেমে আসেন, তখন বান্দার প্রতিটি আন্তরিক মুনাজাত ও চোখের পানি সরাসরি আল্লাহর দরবারে কবুল হয়।",
+                    author = "শাইখ আহমাদুল্লাহ",
+                    category = "নফল ইবাদত",
+                    imageUrl = "",
+                    readTime = "৫ মিনিট",
+                    timestamp = System.currentTimeMillis() - 5 * 3600 * 1000L
+                ),
+                BlogPost(
+                    id = "featured_4",
+                    title = "উত্তম চরিত্র ও সুন্দর ব্যবহারের অপরিসীম গুরুত্ব",
+                    content = "ইসলামের অন্যতম প্রধান সৌন্দর্য হলো সদ্ব্যবহার ও সদাচার। মানুষের সাথে সুন্দর আচরণ, সহমর্মিতা ও ক্ষমাশীলতার মাধ্যমে পরিপূর্ণ মুমিনের পরিচয় ফুটে ওঠে।",
+                    author = "ড. আব্দুল্লাহ জাহাঙ্গীর",
+                    category = "আখলাক ও শিষ্টাচার",
+                    imageUrl = "",
+                    readTime = "৪ মিনিট",
+                    timestamp = System.currentTimeMillis() - 24 * 3600 * 1000L
+                ),
+                BlogPost(
+                    id = "featured_5",
+                    title = "রিজিকে বরকত বৃদ্ধির কুরআন ও সুন্নাহ নির্দেশিত আমল",
+                    content = "তাকওয়া অবলম্বন, পিতা-মাতার সেবা, আত্মীয়তার সম্পর্ক বজায় রাখা ও বেশি বেশি দান-সদকার মাধ্যমে আল্লাহ রাব্বুল আলামিন রিজিকে অভাবনীয় বরকত দান করেন।",
+                    author = "মুফতি তারিক জামিল",
+                    category = "জীবন বিধান",
+                    imageUrl = "",
+                    readTime = "৩ মিনিট",
+                    timestamp = System.currentTimeMillis() - 48 * 3600 * 1000L
+                )
+            )
+        }
     }
 
-    val displayPosts = remember(blogPosts) {
+    val displayPosts = remember(blogPosts, fallbackBlogPosts) {
         if (blogPosts.isNotEmpty()) blogPosts.take(6) else fallbackBlogPosts
     }
 
@@ -3385,7 +3577,7 @@ fun FeaturedIslamicMediaSection(
                     )
                 }
                 Text(
-                    text = "ইসলামিক আলোচনা ও ব্লগ পোস্ট",
+                    text = if (isEnglish) "Islamic Articles & Posts" else "ইসলামিক আলোচনা ও ব্লগ পোস্ট",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -3403,7 +3595,7 @@ fun FeaturedIslamicMediaSection(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "সবগুলো",
+                        text = if (isEnglish) "View All" else "সবগুলো",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = PrimaryGreen
@@ -3428,12 +3620,14 @@ fun FeaturedIslamicMediaSection(
                 DynamicBlogPostCard(
                     post = post,
                     isDark = isDark,
+                    isEnglish = isEnglish,
                     onClick = { onPostClick(post) }
                 )
             }
             item {
                 ViewAllBlogsCard(
                     isDark = isDark,
+                    isEnglish = isEnglish,
                     totalPosts = if (blogPosts.isNotEmpty()) blogPosts.size else displayPosts.size,
                     onClick = onViewAllClick
                 )
@@ -3446,6 +3640,7 @@ fun FeaturedIslamicMediaSection(
 fun DynamicBlogPostCard(
     post: BlogPost,
     isDark: Boolean,
+    isEnglish: Boolean = false,
     onClick: () -> Unit
 ) {
     Card(
@@ -3532,7 +3727,7 @@ fun DynamicBlogPostCard(
                         .padding(8.dp)
                 ) {
                     Text(
-                        text = post.category.ifBlank { "ইসলামিক জ্ঞান" },
+                        text = post.category.ifBlank { if (isEnglish) "Islamic Knowledge" else "ইসলামিক জ্ঞান" },
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -3560,7 +3755,7 @@ fun DynamicBlogPostCard(
                             modifier = Modifier.size(11.dp)
                         )
                         Text(
-                            text = formatPostTimeAgo(post.timestamp),
+                            text = formatPostTimeAgo(post.timestamp, isEnglish),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color.White
@@ -3620,7 +3815,7 @@ fun DynamicBlogPostCard(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = post.author.firstOrNull()?.toString() ?: "ই",
+                                text = post.author.firstOrNull()?.toString() ?: (if (isEnglish) "I" else "ই"),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = PrimaryGreen
@@ -3628,7 +3823,7 @@ fun DynamicBlogPostCard(
                         }
 
                         Text(
-                            text = post.author.ifBlank { "ইসলামিক স্কলার" },
+                            text = post.author.ifBlank { if (isEnglish) "Islamic Scholar" else "ইসলামিক স্কলার" },
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -3647,7 +3842,7 @@ fun DynamicBlogPostCard(
                             horizontalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             Text(
-                                text = "পড়ুন",
+                                text = if (isEnglish) "Read" else "পড়ুন",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = PrimaryGreen
@@ -3669,6 +3864,7 @@ fun DynamicBlogPostCard(
 @Composable
 fun ViewAllBlogsCard(
     isDark: Boolean,
+    isEnglish: Boolean = false,
     totalPosts: Int,
     onClick: () -> Unit
 ) {
@@ -3722,7 +3918,7 @@ fun ViewAllBlogsCard(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "সব ব্লগ দেখুন",
+                    text = if (isEnglish) "View All Articles" else "সব ব্লগ দেখুন",
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -3732,7 +3928,7 @@ fun ViewAllBlogsCard(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "$totalPosts+ টি আলোচনা",
+                    text = if (isEnglish) "$totalPosts+ Articles" else "$totalPosts+ টি আলোচনা",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -3933,33 +4129,35 @@ fun ModeItemCard(
 @Composable
 fun QariSelectorDialog(
     selectedQariId: String,
+    isEnglish: Boolean = false,
     onDismiss: () -> Unit,
     onSelectQari: (String) -> Unit
 ) {
     val selectionItems = com.example.util.QariData.list.map { item ->
         com.example.ui.components.SelectionItem(
             id = item.id,
-            title = item.nameEnglish,
-            subtitle = item.nameBengali,
+            title = if (isEnglish) item.nameEnglish else item.nameBengali,
+            subtitle = if (isEnglish) item.nameBengali else item.nameEnglish,
             icon = Icons.Default.RecordVoiceOver
         )
     }
 
     com.example.ui.components.SmartSelectionDialog(
-        title = "ক্বারী নির্বাচন করুন",
-        subtitle = "আপনার পছন্দের তেলাওয়াতকারী বেছে নিন",
+        title = if (isEnglish) "Select Qari" else "ক্বারী নির্বাচন করুন",
+        subtitle = if (isEnglish) "Choose your preferred reciter" else "আপনার পছন্দের তেলাওয়াতকারী বেছে নিন",
         headerIcon = Icons.Default.RecordVoiceOver,
         items = selectionItems,
         selectedId = selectedQariId,
         onSelectItem = onSelectQari,
         onDismiss = onDismiss,
         showSearch = true,
-        searchPlaceholder = "ক্বারী খুঁজুন..."
+        searchPlaceholder = if (isEnglish) "Search Qari..." else "ক্বারী খুঁজুন..."
     )
 }
 
 @Composable
 fun SurahSelectorDialog(
+    isEnglish: Boolean = false,
     onDismiss: () -> Unit,
     onSelectSurah: (Int) -> Unit
 ) {
@@ -3987,7 +4185,7 @@ fun SurahSelectorDialog(
         title = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "সূরা নির্বাচন করুন",
+                    text = if (isEnglish) "Select Surah" else "সূরা নির্বাচন করুন",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = MaterialTheme.colorScheme.onSurface
@@ -3996,7 +4194,7 @@ fun SurahSelectorDialog(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("সূরা খুঁজুন...", fontSize = 14.sp) },
+                    placeholder = { Text(if (isEnglish) "Search Surah..." else "সূরা খুঁজুন...", fontSize = 14.sp) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -4011,12 +4209,13 @@ fun SurahSelectorDialog(
             Box(modifier = Modifier.height(300.dp)) {
                 if (filteredSurahs.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("কোনো সূরা পাওয়া যায়নি!", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                        Text(if (isEnglish) "No Surah found!" else "কোনো সূরা পাওয়া যায়নি!", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                     }
                 } else {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(filteredSurahs) { surahPair ->
                             val surahId = surahPair.first
+                            val surahName = if (isEnglish) "Surah ${surahPair.second.first}" else surahPair.second.first
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -4037,7 +4236,7 @@ fun SurahSelectorDialog(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = surahId.toBengaliNumerals(),
+                                            text = if (isEnglish) surahId.toString() else surahId.toBengaliNumerals(),
                                             color = PrimaryGreen,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 12.sp
@@ -4046,7 +4245,7 @@ fun SurahSelectorDialog(
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Column {
                                         Text(
-                                            text = surahPair.second.first,
+                                            text = surahName,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onSurface
@@ -4066,7 +4265,7 @@ fun SurahSelectorDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("বন্ধ করুন", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(if (isEnglish) "Close" else "বন্ধ করুন", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
         containerColor = MaterialTheme.colorScheme.surface,
@@ -4084,6 +4283,7 @@ fun RecitationPlayerPanel(
     isRepeatAyahEnabled: Boolean,
     isRepeatSurahEnabled: Boolean,
     playbackSpeed: Float,
+    isEnglish: Boolean = false,
     onQariClick: () -> Unit,
     onSurahSelectorClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
@@ -4100,7 +4300,7 @@ fun RecitationPlayerPanel(
             .padding(horizontal = 16.dp)
     ) {
         Text(
-            text = "সূরা তেলাওয়াত প্লেয়ার",
+            text = if (isEnglish) "Surah Recitation Player" else "সূরা তেলাওয়াত প্লেয়ার",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
@@ -4117,10 +4317,15 @@ fun RecitationPlayerPanel(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 if (currentPlayingSurah != null) {
-                    val surahName = QuranData.surahNames.find { it.first == currentPlayingSurah }?.second?.first ?: "সূরা"
+                    val surahName = QuranData.surahNames.find { it.first == currentPlayingSurah }?.second?.first ?: if (isEnglish) "Surah" else "সূরা"
                     val qariName = com.example.util.QariData.getQariNameEnglish(selectedQariId)
                     val totalAyahs = currentPlayingAyahs.size
                     val progress = if (totalAyahs > 0) (currentPlayingAyahIndex.toFloat() / totalAyahs.toFloat()) else 0f
+                    val ayahDisplay = if (isEnglish) {
+                        "Ayah: ${currentPlayingAyahIndex + 1} / $totalAyahs"
+                    } else {
+                        "আয়াত: ${(currentPlayingAyahIndex + 1).toBengaliNumerals()} / ${totalAyahs.toBengaliNumerals()}"
+                    }
                     
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -4142,18 +4347,18 @@ fun RecitationPlayerPanel(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "সূরা $surahName",
+                                text = if (isEnglish) "Surah $surahName" else "সূরা $surahName",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "ক্বারী: $qariName",
+                                text = if (isEnglish) "Reciter: $qariName" else "ক্বারী: $qariName",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "আয়াত: ${(currentPlayingAyahIndex + 1).toBengaliNumerals()} / ${totalAyahs.toBengaliNumerals()}",
+                                text = ayahDisplay,
                                 fontSize = 11.sp,
                                 color = PrimaryGreen,
                                 fontWeight = FontWeight.Bold
@@ -4290,7 +4495,7 @@ fun RecitationPlayerPanel(
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("আয়াত লুপ", color = if (isRepeatAyahEnabled) White else PrimaryGreen, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            Text(if (isEnglish) "Ayah Loop" else "আয়াত লুপ", color = if (isRepeatAyahEnabled) White else PrimaryGreen, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                         }
 
                         // Surah repeat
@@ -4310,7 +4515,7 @@ fun RecitationPlayerPanel(
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("সূরা লুপ", color = if (isRepeatSurahEnabled) White else PrimaryGreen, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            Text(if (isEnglish) "Surah Loop" else "সূরা লুপ", color = if (isRepeatSurahEnabled) White else PrimaryGreen, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                         }
                     }
                 } else {
@@ -4320,13 +4525,13 @@ fun RecitationPlayerPanel(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "কোনো তেলাওয়াত সচল নেই",
+                            text = if (isEnglish) "No Recitation Playing" else "কোনো তেলাওয়াত সচল নেই",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "ক্বারী ও সূরা নির্বাচন করে তেলাওয়াত উপভোগ করুন",
+                            text = if (isEnglish) "Select Qari & Surah to enjoy Quran recitation" else "ক্বারী ও সূরা নির্বাচন করে তেলাওয়াত উপভোগ করুন",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -4347,7 +4552,7 @@ fun RecitationPlayerPanel(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.AccountCircle, contentDescription = null, tint = PrimaryGreen, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("ক্বারী নির্বাচন", color = PrimaryGreen, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                    Text(if (isEnglish) "Select Qari" else "ক্বারী নির্বাচন", color = PrimaryGreen, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                 }
                             }
                             
@@ -4360,7 +4565,7 @@ fun RecitationPlayerPanel(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.PlayArrow, contentDescription = null, tint = White, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("সূরা চালু করুন", color = White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                    Text(if (isEnglish) "Start Surah" else "সূরা চালু করুন", color = White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                 }
                             }
                         }
@@ -4374,6 +4579,7 @@ fun RecitationPlayerPanel(
 @Composable
 fun FloatingPlayerShortcut(
     viewModel: HomeViewModel,
+    isEnglish: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -4382,7 +4588,7 @@ fun FloatingPlayerShortcut(
 
     if (currentPlayingSurah != null) {
         val surahNamePair = QuranData.surahNames.find { it.first == currentPlayingSurah }
-        val bengaliName = surahNamePair?.second?.first ?: "সূরা"
+        val name = if (isEnglish) "Surah ${surahNamePair?.second?.first ?: ""}" else "সূরা ${surahNamePair?.second?.first ?: ""}"
 
         var offsetX by remember { mutableStateOf(0f) }
         var offsetY by remember { mutableStateOf(0f) }
@@ -4464,14 +4670,14 @@ fun FloatingPlayerShortcut(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "সূরা $bengaliName",
+                        text = name,
                         color = White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
                         maxLines = 1
                     )
                     Text(
-                        text = if (isPlaying) "চলছে..." else "বন্ধ আছে",
+                        text = if (isPlaying) (if (isEnglish) "Playing..." else "চলছে...") else (if (isEnglish) "Paused" else "বন্ধ আছে"),
                         color = White.copy(alpha = 0.8f),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium,
@@ -4526,6 +4732,7 @@ fun FloatingPlayerShortcut(
 private @Composable
 fun DuaActionButtonsRow(
     dua: com.example.data.DuaItem,
+    isEnglish: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -4565,7 +4772,7 @@ fun DuaActionButtonsRow(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "কপি",
+                        text = if (isEnglish) "Copy" else "কপি",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -4596,7 +4803,7 @@ fun DuaActionButtonsRow(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "শেয়ার",
+                            text = if (isEnglish) "Share" else "শেয়ার",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -4626,7 +4833,7 @@ fun DuaActionButtonsRow(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = "টেক্সট শেয়ার",
+                                    text = if (isEnglish) "Share Text" else "টেক্সট শেয়ার",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -4653,7 +4860,7 @@ fun DuaActionButtonsRow(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = "ছবি শেয়ার",
+                                    text = if (isEnglish) "Share Image" else "ছবি শেয়ার",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -4686,7 +4893,7 @@ fun DuaActionButtonsRow(
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = "❝কুরআন রিডার❞ অ্যাপ",
+                text = if (isEnglish) "❝Quran Reader❞ App" else "❝কুরআন রিডার❞ অ্যাপ",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
@@ -4699,6 +4906,7 @@ fun DuaActionButtonsRow(
 fun DuaDetailDialog(
     dua: com.example.data.DuaItem,
     arabicFontName: String,
+    isEnglish: Boolean = false,
     onDismiss: () -> Unit
 ) {
     val arabicFont = com.example.ui.theme.getArabicFont(arabicFontName)
@@ -4748,7 +4956,7 @@ fun DuaDetailDialog(
                             .fillMaxWidth()
                             .padding(top = 24.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
                     ) {
-                        val formattedIndex = formatToBanglaNumber(dua.id)
+                        val formattedIndex = if (isEnglish) dua.id.toString() else formatToBanglaNumber(dua.id)
                         Text(
                             text = "[$formattedIndex] ${dua.title}",
                             fontWeight = FontWeight.Bold,
@@ -4774,7 +4982,7 @@ fun DuaDetailDialog(
                                 // Arabic Text
                                 if (segment.arabic.isNotEmpty() && segment.arabic != "null") {
                                     val cleanForBismillah = segment.arabic.replace(Regex("[\\s\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]"), "")
-                                    val isBismillah = cleanForBismillah == "بسماللهالرحمنالرحيم" || cleanForBismillah == "بسمٱللهٱلرحمنٱلرحيم"
+                                    val isBismillah = cleanForBismillah == "بسماللهالرحمنالرحিম" || cleanForBismillah == "بسمٱللهٱلرحمنٱلرحيم"
                                     
                                     androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Rtl) {
                                         Text(
@@ -4809,7 +5017,7 @@ fun DuaDetailDialog(
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Column {
                                             Text(
-                                                text = "অর্থ:",
+                                                text = if (isEnglish) "Meaning:" else "অর্থ:",
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color(0xFF00B4D8)
@@ -4842,7 +5050,7 @@ fun DuaDetailDialog(
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Column {
                                             Text(
-                                                text = "উচ্চারণ:",
+                                                text = if (isEnglish) "Pronunciation:" else "উচ্চারণ:",
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color(0xFF00B4D8).copy(alpha = 0.8f)
@@ -4863,10 +5071,10 @@ fun DuaDetailDialog(
                                     Spacer(modifier = Modifier.height(12.dp))
                                     Column(modifier = Modifier.fillMaxWidth()) {
                                         val trimmed = segment.bottom.trim()
-                                        val contextText = if (trimmed.startsWith("দোয়ার প্রেক্ষাপট") || trimmed.startsWith("দোয়ার প্রেক্ষাপট")) {
+                                        val contextText = if (trimmed.startsWith("দোয়ার প্রেক্ষাপট") || trimmed.startsWith("দোয়ার প্রেক্ষাপট") || trimmed.startsWith("Context:")) {
                                             trimmed
                                         } else {
-                                            "দোয়ার প্রেক্ষাপট: ${segment.bottom}"
+                                            if (isEnglish) "Context: ${segment.bottom}" else "দোয়ার প্রেক্ষাপট: ${segment.bottom}"
                                         }
                                         Text(
                                             text = contextText,
@@ -4895,7 +5103,7 @@ fun DuaDetailDialog(
                         Spacer(modifier = Modifier.height(16.dp))
                         
                         // Copy & Share Actions Row
-                        DuaActionButtonsRow(dua = dua)
+                        DuaActionButtonsRow(dua = dua, isEnglish = isEnglish)
                     }
                 }
             }

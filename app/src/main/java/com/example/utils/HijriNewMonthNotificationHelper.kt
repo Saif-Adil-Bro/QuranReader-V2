@@ -46,19 +46,21 @@ object HijriNewMonthNotificationHelper {
             return
         }
 
-        val monthName = hijriInfo.hijriMonthNameBn
-        val title = "হিজরি নতুন মাস শুরু 🌙"
-        val message = "⚠️ আজ থেকে \"$monthName\" মাস শুরু। তারিখে অসামঞ্জস্য দেখা দিলে অনুগ্রহ করে সেটিংস → হিজরি তারিখ সমন্বয় থেকে তারিখ ঠিক করে নিন। 🌙"
+        val isEnglish = NotificationLocalization.isEnglish(context)
+        val monthNameBn = hijriInfo.hijriMonthNameBn
+        val monthNameEn = hijriInfo.hijriMonthNameEn
+        val title = NotificationLocalization.getHijriNewMonthTitle(isEnglish)
+        val message = NotificationLocalization.getHijriNewMonthMessage(monthNameBn, monthNameEn, isEnglish)
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "নতুন হিজরি মাস সতর্কতা",
+                NotificationLocalization.getHijriNewMonthChannelName(isEnglish),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "নতুন আরবি মাস শুরু হলে তারিখ সমন্বয় করার সতর্কবার্তা"
+                description = NotificationLocalization.getHijriNewMonthChannelDesc(isEnglish)
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -72,8 +74,8 @@ object HijriNewMonthNotificationHelper {
             val entity = com.example.data.local.entity.LocalNotificationEntity(
                 title = title,
                 content = message,
-                category = "হিজরি ক্যালেন্ডার",
-                author = "হিজরি তারিখ সমন্বয়",
+                category = if (isEnglish) "Hijri Calendar" else "হিজরি ক্যালেন্ডার",
+                author = if (isEnglish) "Hijri Date Adjustment" else "হিজরি তারিখ সমন্বয়",
                 timestamp = timestamp
             )
             GlobalScope.launch(Dispatchers.IO) {

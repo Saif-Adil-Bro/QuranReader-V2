@@ -88,8 +88,12 @@ class PrayerAlarmActivity : ComponentActivity() {
             PrayerName.FAJR
         }
 
-        val title = intent.getStringExtra("title") ?: "ওয়াক্তের অ্যালার্ম"
-        val message = intent.getStringExtra("message") ?: "সালাত কায়েম করুন"
+        val isEnglish = com.example.utils.NotificationLocalization.isEnglish(this)
+        val defaultTitle = com.example.utils.NotificationLocalization.getAlarmDefaultTitle(isEnglish)
+        val defaultMessage = com.example.utils.NotificationLocalization.getAlarmDefaultMessage(isEnglish)
+
+        val title = intent.getStringExtra("title") ?: defaultTitle
+        val message = intent.getStringExtra("message") ?: defaultMessage
         val notifId = intent.getIntExtra("notif_id", -1)
 
         setContent {
@@ -97,11 +101,12 @@ class PrayerAlarmActivity : ComponentActivity() {
                 prayerName = prayerName,
                 title = title,
                 message = message,
+                isEnglish = isEnglish,
                 onStop = {
-                    handleStopAlarm(notifId)
+                    handleStopAlarm(notifId, isEnglish)
                 },
                 onSnooze = {
-                    handleSnoozeAlarm(prayerName, notifId)
+                    handleSnoozeAlarm(prayerName, notifId, isEnglish)
                 },
                 onOpenApp = {
                     handleOpenApp(notifId)
@@ -137,24 +142,24 @@ class PrayerAlarmActivity : ComponentActivity() {
         )
     }
 
-    private fun handleStopAlarm(notifId: Int) {
+    private fun handleStopAlarm(notifId: Int, isEnglish: Boolean = false) {
         PrayerSoundManager.stopAll()
         if (notifId != -1) {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.cancel(notifId)
         }
-        Toast.makeText(this, "অ্যালার্ম বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, com.example.utils.NotificationLocalization.getAlarmStoppedToast(isEnglish), Toast.LENGTH_SHORT).show()
         finish()
     }
 
-    private fun handleSnoozeAlarm(prayerName: PrayerName, notifId: Int) {
+    private fun handleSnoozeAlarm(prayerName: PrayerName, notifId: Int, isEnglish: Boolean = false) {
         PrayerSoundManager.stopAll()
         if (notifId != -1) {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.cancel(notifId)
         }
         PrayerNotificationHelper.snoozePrayerAlarm(this, prayerName)
-        Toast.makeText(this, "১০ মিনিট পর আবার অ্যালার্ম বাজবে", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, com.example.utils.NotificationLocalization.getAlarmSnoozedToast(isEnglish), Toast.LENGTH_LONG).show()
         finish()
     }
 
@@ -183,17 +188,19 @@ fun PrayerAlarmScreen(
     prayerName: PrayerName,
     title: String,
     message: String,
+    isEnglish: Boolean = false,
     onStop: () -> Unit,
     onSnooze: () -> Unit,
     onOpenApp: () -> Unit
 ) {
     var currentTimeString by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isEnglish) {
         while (true) {
             val now = LocalTime.now()
             val formatter = DateTimeFormatter.ofPattern("hh:mm:ss a", Locale.ENGLISH)
-            currentTimeString = DateUtil.toBengaliNumerals(now.format(formatter))
+            val formatted = now.format(formatter)
+            currentTimeString = if (isEnglish) formatted else DateUtil.toBengaliNumerals(formatted)
             delay(1000L)
         }
     }
@@ -376,7 +383,7 @@ fun PrayerAlarmScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "১০ মি. স্নুজ",
+                                text = if (isEnglish) "10m Snooze" else "১০ মি. স্নুজ",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -403,7 +410,7 @@ fun PrayerAlarmScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "বন্ধ করুন",
+                                text = if (isEnglish) "Dismiss" else "বন্ধ করুন",
                                 color = Color.White,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
@@ -426,7 +433,7 @@ fun PrayerAlarmScreen(
                     )
                 ) {
                     Text(
-                        text = "নামাজের সময়সূচি খুলুন",
+                        text = if (isEnglish) "View Prayer Times" else "নামাজের সময়সূচি খুলুন",
                         color = Color.White,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold

@@ -33,7 +33,7 @@ object IslamicEventGuidanceHelper {
         }
     }
 
-    fun checkNotificationForDate(date: LocalDate, hijriOffset: Int = 0): EventNotificationInfo? {
+    fun checkNotificationForDate(date: LocalDate, hijriOffset: Int = 0, isEnglish: Boolean = false): EventNotificationInfo? {
         // We check what event or fast falls on TOMORROW (date.plusDays(1)) 
         // because notification triggers in the evening (8:00 PM) for tomorrow's fast/event!
         val tomorrow = date.plusDays(1)
@@ -52,24 +52,24 @@ object IslamicEventGuidanceHelper {
                 if (tDay == 1) {
                     return EventNotificationInfo(
                         id = "event_muharram_1_$dateIdStr",
-                        title = "আগামীকাল পবিত্র ইসলামী নববর্ষ (১ মুহাররম)",
-                        shortSubtitle = "আগামীকাল নতুন হিজরী বর্ষ শুরু। বছরের প্রথম দিন ইবাদত ও দোয়ার মাধ্যমে কাটান।",
+                        title = if (isEnglish) "Tomorrow is Islamic New Year (1st Muharram)" else "আগামীকাল পবিত্র ইসলামী নববর্ষ (১ মুহাররম)",
+                        shortSubtitle = if (isEnglish) "Tomorrow marks the 1st day of the new Hijri Year. Spend the day in worship and Dua." else "আগামীকাল নতুন হিজরী বর্ষ শুরু। বছরের প্রথম দিন ইবাদত ও দোয়ার মাধ্যমে কাটান।",
                         fullGuidanceContent = getMuharramNewYearGuidance()
                     )
                 }
                 if (tDay == 9) {
                     return EventNotificationInfo(
                         id = "event_ashura_9_$dateIdStr",
-                        title = "আগামীকাল তাসূআ (৯ই মুহাররমের রোজা)",
-                        shortSubtitle = "আশুরার সুন্নাত পূরণ করতে আগামীকাল ৯ই মুহাররমের রোজা রাখার প্রস্তুতি নিন।",
+                        title = if (isEnglish) "Tomorrow is Tasu'a (9th Muharram Fast)" else "আগামীকাল তাসূআ (৯ই মুহাররমের রোজা)",
+                        shortSubtitle = if (isEnglish) "Prepare to fast tomorrow on 9th Muharram to fulfill the Sunnah of Ashura." else "আশুরার সুন্নাত পূরণ করতে আগামীকাল ৯ই মুহাররমের রোজা রাখার প্রস্তুতি নিন।",
                         fullGuidanceContent = getAshuraGuidance()
                     )
                 }
                 if (tDay == 10) {
                     return EventNotificationInfo(
                         id = "event_ashura_10_$dateIdStr",
-                        title = "আগামীকাল পবিত্র আশুরার রোজা (১০ই মুহাররম)",
-                        shortSubtitle = "আশুরার সিয়ামে পূর্ববর্তী ১ বছরের গুনাহ মাফ হয়। আগামীকাল সিয়াম পালন করুন।",
+                        title = if (isEnglish) "Tomorrow is Day of Ashura Fast (10th Muharram)" else "আগামীকাল পবিত্র আশুরার রোজা (১০ই মুহাররম)",
+                        shortSubtitle = if (isEnglish) "Fasting on Ashura expiates sins of the previous year. Fast tomorrow." else "আশুরার সিয়ামে পূর্ববর্তী ১ বছরের গুনাহ মাফ হয়। আগামীকাল সিয়াম পালন করুন।",
                         fullGuidanceContent = getAshuraGuidance()
                     )
                 }
@@ -78,8 +78,8 @@ object IslamicEventGuidanceHelper {
                 if (tDay == 27) {
                     return EventNotificationInfo(
                         id = "event_meraj_27_$dateIdStr",
-                        title = "আজ রাতে পবিত্র শবে মেরাজ (২৭ রজব)",
-                        shortSubtitle = "আজ রাতে বেশি বেশি নফল সালাত, জিকির ও কুরআন তেলাওয়াত করুন।",
+                        title = if (isEnglish) "Tonight is Blessed Shab-e-Meraj (27th Rajab)" else "আজ রাতে পবিত্র শবে মেরাজ (২৭ রজব)",
+                        shortSubtitle = if (isEnglish) "Engage in Nafl prayers, Dhikr, and Quran recitation tonight." else "আজ রাতে বেশি বেশি নফল সালাত, জিকির ও কুরআন তেলাওয়াত করুন।",
                         fullGuidanceContent = getShabeMerajGuidance()
                     )
                 }
@@ -88,8 +88,8 @@ object IslamicEventGuidanceHelper {
                 if (tDay == 15) {
                     return EventNotificationInfo(
                         id = "event_shab_barat_15_$dateIdStr",
-                        title = "আজ রাতে পবিত্র শবে বরাত (১৫ই শা'বান)",
-                        shortSubtitle = "আজ রাতে ইবাদত, ইস্তিগফার ও দুআ করুন এবং আগামীকাল নফল রোজা রাখুন।",
+                        title = if (isEnglish) "Tonight is Blessed Shab-e-Barat (15th Sha'ban)" else "আজ রাতে পবিত্র শবে বরাত (১৫ই শা'বান)",
+                        shortSubtitle = if (isEnglish) "Engage in worship, Istighfar, and prayers tonight, and fast tomorrow." else "আজ রাতে ইবাদত, ইস্তিগফার ও দুআ করুন এবং আগামীকাল নফল রোজা রাখুন।",
                         fullGuidanceContent = getShabeBaratGuidance()
                     )
                 }
@@ -98,16 +98,16 @@ object IslamicEventGuidanceHelper {
                 if (tDay == 1) {
                     return EventNotificationInfo(
                         id = "event_ramadan_1_$dateIdStr",
-                        title = "আজ রাতে তারাবীহ ও সেহরি - পবিত্র রমজান শুরু!",
-                        shortSubtitle = "আজ রাতে প্রথম তারাবীহ সালাত আদায় ও সেহরি খেয়ে পবিত্র রমজানের রোজা শুরু করুন।",
+                        title = if (isEnglish) "Tonight: Taraweeh & Sahri - Ramadan Begins!" else "আজ রাতে তারাবীহ ও সেহরি - পবিত্র রমজান শুরু!",
+                        shortSubtitle = if (isEnglish) "Offer your first Taraweeh prayer tonight and have Sahri to begin the Ramadan fast." else "আজ রাতে প্রথম তারাবীহ সালাত আদায় ও সেহরি খেয়ে পবিত্র রমজানের রোজা শুরু করুন।",
                         fullGuidanceContent = getRamadanStartGuidance()
                     )
                 }
                 if (tDay == 21 || tDay == 23 || tDay == 25 || tDay == 27 || tDay == 29) {
                     return EventNotificationInfo(
                         id = "event_qadr_${tDay}_$dateIdStr",
-                        title = "আজ রাতে পবিত্র লাইলাতুল কদর অন্বেষণ করুন ($tDay রমজান)",
-                        shortSubtitle = "আজ রমজানের বিজোড় রাত। রাত জেগে ইবাদত ও কদরের দোয়া বেশি বেশি পড়ুন।",
+                        title = if (isEnglish) "Seek Laylatul Qadr Tonight ($tDay Ramadan)" else "আজ রাতে পবিত্র লাইলাতুল কদর অন্বেষণ করুন ($tDay রমজান)",
+                        shortSubtitle = if (isEnglish) "Odd night of Ramadan. Stay awake in worship and recite the Dua of Qadr." else "আজ রমজানের বিজোড় রাত। রাত জেগে ইবাদত ও কদরের দোয়া বেশি বেশি পড়ুন।",
                         fullGuidanceContent = getLaylatulQadrGuidance(tDay)
                     )
                 }
@@ -116,16 +116,16 @@ object IslamicEventGuidanceHelper {
                 if (tDay == 1) {
                     return EventNotificationInfo(
                         id = "event_eid_fitr_1_$dateIdStr",
-                        title = "আগামীকাল পবিত্র ঈদুল ফিতর (১ শাওয়াল)",
-                        shortSubtitle = "আগামীকাল ঈদুল ফিতরের সালাত আদায় করুন, মিষ্টিমুখ করুন ও সদকাতুল ফিতর আদায় করুন। ঈদ মোবারক!",
+                        title = if (isEnglish) "Tomorrow is Eid-ul-Fitr (1st Shawwal)" else "আগামীকাল পবিত্র ঈদুল ফিতর (১ শাওয়াল)",
+                        shortSubtitle = if (isEnglish) "Offer Eid prayer tomorrow, pay Sadaqatul Fitr, and celebrate. Eid Mubarak!" else "আগামীকাল ঈদুল ফিতরের সালাত আদায় করুন, মিষ্টিমুখ করুন ও সদকাতুল ফিতর আদায় করুন। ঈদ মোবারক!",
                         fullGuidanceContent = getEidUlFitrGuidance()
                     )
                 }
                 if (tDay == 2) {
                     return EventNotificationInfo(
                         id = "event_shawwal_6_$dateIdStr",
-                        title = "শাওয়াল মাসের ৬টি সুন্নাত রোজা শুরু",
-                        shortSubtitle = "ঈদের পর শাওয়াল মাসে যেকোনো ৬ দিন রোজা রাখলে সারা বছর রোজা রাখার সওয়াব পাওয়া যায়।",
+                        title = if (isEnglish) "6 Sunnah Fasts of Shawwal Begins" else "শাওয়াল মাসের ৬টি সুন্নাত রোজা শুরু",
+                        shortSubtitle = if (isEnglish) "Fasting any 6 days in Shawwal carries the reward of fasting the entire year." else "ঈদের পর শাওয়াল মাসে যেকোনো ৬ দিন রোজা রাখলে সারা বছর রোজা রাখার সওয়াব পাওয়া যায়।",
                         fullGuidanceContent = getShawwal6FastsGuidance()
                     )
                 }
@@ -134,24 +134,24 @@ object IslamicEventGuidanceHelper {
                 if (tDay == 1) {
                     return EventNotificationInfo(
                         id = "event_dhul_hijjah_1_$dateIdStr",
-                        title = "আগামীকাল জিলহজ্জ মাসের শুরু (১ম দশক)",
-                        shortSubtitle = "জিলহজ্জের প্রথম ১০ দিন বছরের শ্রেষ্ঠ দিন। বেশি বেশি নেক আমল ও রোজা রাখুন।",
+                        title = if (isEnglish) "Tomorrow Begins Dhul Hijjah (1st 10 Days)" else "আগামীকাল জিলহজ্জ মাসের শুরু (১ম দশক)",
+                        shortSubtitle = if (isEnglish) "The first 10 days of Dhul Hijjah are the best days of the year. Increase righteous deeds." else "জিলহজ্জের প্রথম ১০ দিন বছরের শ্রেষ্ঠ দিন। বেশি বেশি নেক আমল ও রোজা রাখুন।",
                         fullGuidanceContent = getDhulHijjah10DaysGuidance()
                     )
                 }
                 if (tDay == 9) {
                     return EventNotificationInfo(
                         id = "event_arafah_9_$dateIdStr",
-                        title = "আগামীকাল পবিত্র ইয়াওমে আরাফাহর রোজা (৯ই জিলহজ্জ)",
-                        shortSubtitle = "আরাফাহর সিয়ামে বিগত ও আগামী ১ বছরের গুনাহ মাফ হয়। আগামীকাল রোজা রাখুন।",
+                        title = if (isEnglish) "Tomorrow is Day of Arafah Fast (9th Dhul Hijjah)" else "আগামীকাল পবিত্র ইয়াওমে আরাফাহর রোজা (৯ই জিলহজ্জ)",
+                        shortSubtitle = if (isEnglish) "Fasting on Arafah expiates sins of the previous and upcoming year. Fast tomorrow." else "আরাফাহর সিয়ামে বিগত ও আগামী ১ বছরের গুনাহ মাফ হয়। আগামীকাল রোজা রাখুন।",
                         fullGuidanceContent = getArafahGuidance()
                     )
                 }
                 if (tDay == 10) {
                     return EventNotificationInfo(
                         id = "event_eid_adha_10_$dateIdStr",
-                        title = "আগামীকাল পবিত্র ঈদুল আজহা (১০ই জিলহজ্জ)",
-                        shortSubtitle = "আগামীকাল ঈদুল আজহার সালাত আদায় ও পশু কোরবানি সম্পন্ন করুন। ঈদ মোবারক!",
+                        title = if (isEnglish) "Tomorrow is Eid-ul-Adha (10th Dhul Hijjah)" else "আগামীকাল পবিত্র ঈদুল আজহা (১০ই জিলহজ্জ)",
+                        shortSubtitle = if (isEnglish) "Offer Eid prayer and sacrifice tomorrow. Eid Mubarak!" else "আগামীকাল ঈদুল আজহার সালাত আদায় ও পশু কোরবানি সম্পন্ন করুন। ঈদ মোবারক!",
                         fullGuidanceContent = getEidUlAdhaGuidance()
                     )
                 }
@@ -170,16 +170,16 @@ object IslamicEventGuidanceHelper {
         if (tomorrowDayOfWeek == 1) { // Tomorrow is Monday
             return EventNotificationInfo(
                 id = "fast_monday_$dateIdStr",
-                title = "আগামীকাল সোমবারের সুন্নাত রোজা",
-                shortSubtitle = "রাসূলুল্লাহ (সা:) সোমবারে রোজা রাখতেন কারণ এই দিনে আমল পেশ করা হয় ও ওহী নাজিল হয়েছিল।",
+                title = if (isEnglish) "Tomorrow is Sunnah Monday Fast" else "আগামীকাল সোমবারের সুন্নাত রোজা",
+                shortSubtitle = if (isEnglish) "The Prophet (ﷺ) used to fast on Mondays as deeds are presented to Allah and revelation began." else "রাসূলুল্লাহ (সা:) সোমবারে রোজা রাখতেন কারণ এই দিনে আমল পেশ করা হয় ও ওহী নাজিল হয়েছিল।",
                 fullGuidanceContent = getMondayFastGuidance()
             )
         }
         if (tomorrowDayOfWeek == 4) { // Tomorrow is Thursday
             return EventNotificationInfo(
                 id = "fast_thursday_$dateIdStr",
-                title = "আগামীকাল বৃহস্পতিবারের সুন্নাত রোজা",
-                shortSubtitle = "বৃহস্পতিবারে আল্লাহর দরবারে বান্দার আমল পেশ করা হয়। সিয়াম পালন করা মুস্তাহাব।",
+                title = if (isEnglish) "Tomorrow is Sunnah Thursday Fast" else "আগামীকাল বৃহস্পতিবারের সুন্নাত রোজা",
+                shortSubtitle = if (isEnglish) "Deeds are presented before Allah on Thursdays. Fasting on this day is recommended Sunnah." else "বৃহস্পতিবারে আল্লাহর দরবারে বান্দার আমল পেশ করা হয়। সিয়াম পালন করা মুস্তাহাব।",
                 fullGuidanceContent = getThursdayFastGuidance()
             )
         }
@@ -188,9 +188,11 @@ object IslamicEventGuidanceHelper {
         if (tDay in 13..15 && !(tMonth == 12 && tDay == 13)) {
             return EventNotificationInfo(
                 id = "fast_ayame_beej_${tDay}_$dateIdStr",
-                title = "আগামীকাল আইয়ামে বীজের সুন্নাত রোজা ($tDay হিজরী)",
-                shortSubtitle = "চন্দ্র মাসের ১৩, ১৪ ও ১৫ তারিখে রোজা রাখা সুন্নাত। এতে সারা বছর রোজা রাখার সওয়াব মেলে।",
-                fullGuidanceContent = getAyameBeejGuidance(tDay)
+                title = if (isEnglish) "Tomorrow is Ayyam al-Bidh Sunnah Fast ($tDay Hijri)" else "আগামীকাল আইয়ামে বীজের সুন্নাত রোজা ($tDay হিজরী)",
+                shortSubtitle = if (isEnglish) "Fasting on the 13th, 14th, and 15th of the lunar month carries the reward of fasting the whole year." else "চন্দ্র মাসের ১৩, ১৪ ও ১৫ তারিখে রোজা রাখা সুন্নাত। এতে সারা বছর রোজা রাখার সওয়াব মেলে।",
+                fullGuidanceContent = getAyameBeejGuidance(tDay, isEnglish),
+                category = if (isEnglish) "Notification" else "নোটিফিকেশন",
+                author = if (isEnglish) "Islamic Fasting & Event Reminder" else "ইসলামিক রোজা ও দিবস রিমাইন্ডার"
             )
         }
 
@@ -285,7 +287,49 @@ object IslamicEventGuidanceHelper {
 - নফল রোজা শুরু করার পর অনিচ্ছাকৃত ভেঙে গেলে পরবর্তীতে কেবল ১টি কাজা রাখা ওয়াজিব (কাফফারা নেই)।
     """.trimIndent()
 
-    fun getAyameBeejGuidance(day: Int): String = """
+    fun getAyameBeejGuidance(day: Int, isEnglish: Boolean = false): String {
+        return if (isEnglish) {
+            """
+✨ Sunnah Fasting of Ayyam al-Bidh (13th, 14th & 15th Hijri) ✨
+
+📖 1. Ruling & Jurisprudential Status:
+The 13th, 14th, and 15th days of every lunar (Hijri) month are called 'Ayyam al-Bidh' (The White Days). Fasting on these three days is an established and highly recommended Sunnah (Sunnah Mu'akkadah / Mustahabb).
+
+📜 2. Sahih Hadith, Arabic Text & References:
+
+[Hadith 1]
+• Arabic Matn:
+عَنْ أَبِي هُرَيْرَةَ رَضِيَ اللَّهُ عَنْهُ قَالَ: «أَوْصَانِي خَلِيلِي صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ بِثَلاَثٍ: صِيَامِ ثَلاَثَةِ أَيَّامٍ مِنْ كُلِّ شَهْرٍ، وَرَكْعَتَيِ الضُّحَى، وَأَنْ أُوتِرَ قَبْلَ أَنْ أَنَامَ»
+
+• English Translation:
+Narrated Abu Huraira (RA): "My beloved friend (the Prophet ﷺ) advised me to do three things: to fast three days of every month, to pray two Rak'ahs of Duha (forenoon) prayer, and to pray Witr before sleeping."
+
+• Reference:
+- Sahih al-Bukhari, Hadith: 1981
+- Sahih Muslim, Hadith: 721
+- Grade: Muttafaqun Alayh (Highest level of authenticity).
+
+[Hadith 2]
+• Arabic Matn:
+عَنْ أَبِي ذَرٍّ رَضِيَ اللَّهُ عَنْهُ قَالَ: قَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ: «يَا أَبَا ذَرٍّ إِذَا صُمْتَ مِنَ الشَّهْرِ ثَلاَثَةً فَصُمْ ثَلاَثَ عَشْرَةَ وَأَرْبَعَ عَشْرَةَ وَخَمْسَ عَشْرَةَ»
+
+• English Translation:
+Narrated Abu Dharr (RA): The Messenger of Allah (ﷺ) said: "O Abu Dharr, if you fast three days of the month, then fast on the 13th, 14th, and 15th."
+
+• Reference:
+- Jami' at-Tirmidhi, Hadith: 761
+- Sunan an-Nasa'i, Hadith: 2424
+- Grade: Sahih (Authentic).
+
+🔍 3. Virtue & Explanation:
+Every righteous deed receives a tenfold reward from Allah. Fasting 3 days equals the reward of 30 days (an entire month). Observing this every month equates to fasting a lifetime.
+
+🤲 4. Important Rulings:
+- It is Sunnah to fast consecutively on the 13th, 14th, and 15th. If missed due to valid reasons, one may fast any 3 days of the month.
+- The 13th of Dhul Hijjah is part of Ayyam at-Tashreeq (when fasting is prohibited); therefore, in Dhul Hijjah, one should only fast on the 14th, 15th, and another day of the month.
+            """.trimIndent()
+        } else {
+            """
 ✨ আইয়ামে বীজের সুন্নাত রোজা (১৩, ১৪ ও ১৫ই হিজরী) ✨
 
 📖 ১. হুকুম ও ফিকহী স্থান (হানাফি ফিকহ অনুযায়ী):
@@ -322,7 +366,9 @@ object IslamicEventGuidanceHelper {
 🤲 ৪. সম্পর্কিত মাসআলা:
 - আইয়ামে বীজের ৩টি রোজা পরপর ১৩, ১৪ ও ১৫ তারিখে রাখা সুন্নাত। কোনো কারণে এই দিনগুলোতে রোজা রাখতে না পারলে হিজরী মাসের অন্য যেকোনো ৩ দিন রোজা রাখা যাবে।
 - জিলহজ্জ মাসের ১৩ তারিখ আইয়ামে তাশরিকের অন্তর্ভুক্ত (যে দিনগুলোতে রোজা রাখা হারাম), তাই জিলহজ্জ মাসে কেবল ১৪ ও ১৫ তারিখ এবং পরবর্তী অন্য যেকোনো একদিন রোজা রাখা উত্তম।
-    """.trimIndent()
+            """.trimIndent()
+        }
+    }
 
     fun getAshuraGuidance(): String = """
 ✨ পবিত্র আশুরার রোজা (৯ম ও ১০ম মুহাররম) ✨

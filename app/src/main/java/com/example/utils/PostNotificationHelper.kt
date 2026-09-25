@@ -261,10 +261,11 @@ object PostNotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val titleText = if (post.category == "নোটিফিকেশন" || post.category == "নোটিশ") {
-            "📢 ${post.title.ifBlank { "নতুন নোটিফিকেশন" }}"
+        val isEnglish = NotificationLocalization.isEnglish(context)
+        val titleText = if (post.category == "নোটিফিকেশন" || post.category == "নোটিশ" || post.category == "Notification") {
+            "📢 ${post.title.ifBlank { if (isEnglish) "New Notification" else "নতুন নোটিফিকেশন" }}"
         } else {
-            "নতুন পোস্ট: ${post.title}"
+            if (isEnglish) "New Post: ${post.title}" else "নতুন পোস্ট: ${post.title}"
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -277,12 +278,12 @@ object PostNotificationHelper {
             .setContentIntent(openDetailPendingIntent)
             .addAction(
                 android.R.drawable.ic_menu_view,
-                "পড়ুন",
+                NotificationLocalization.getActionReadLabel(isEnglish),
                 openDetailPendingIntent
             )
             .addAction(
                 android.R.drawable.ic_menu_share,
-                "শেয়ার",
+                NotificationLocalization.getActionShareLabel(isEnglish),
                 openDetailPendingIntent
             )
             .build()

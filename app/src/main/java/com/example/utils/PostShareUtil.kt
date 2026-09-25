@@ -177,7 +177,7 @@ object PostShareUtil {
         HADITH("হাদিস"),
         DUA("দোয়া"),
         NASIHAT("দৈনিক নসীহত"),
-        JUMUAH("জুমা"),
+        JUMUAH("জুমুআ"),
         RAMADAN("রমজান"),
         QUOTE("ইসলামিক উক্তি")
     }
@@ -222,7 +222,7 @@ object PostShareUtil {
             catLower.contains("কুরআন") || catLower.contains("আয়াত") || catLower.contains("quran") || catLower.contains("ayah") || refLower.contains("সূরা") -> TemplateCategory.QURAN
             catLower.contains("হাদিস") || catLower.contains("হাদীস") || catLower.contains("hadith") || refLower.contains("বুখারী") || refLower.contains("মুসলিম") || refLower.contains("তিরমিজী") -> TemplateCategory.HADITH
             catLower.contains("দোয়া") || catLower.contains("দোয়া") || catLower.contains("মোনাজাত") || catLower.contains("dua") -> TemplateCategory.DUA
-            catLower.contains("জুমা") || catLower.contains("jumu") -> TemplateCategory.JUMUAH
+            catLower.contains("জুমুআ") || catLower.contains("জুমা") || catLower.contains("jumu") -> TemplateCategory.JUMUAH
             catLower.contains("রমজান") || catLower.contains("রোজা") || catLower.contains("ramadan") -> TemplateCategory.RAMADAN
             catLower.contains("উক্তি") || catLower.contains("বাণী") || catLower.contains("quote") -> TemplateCategory.QUOTE
             catLower.contains("নসীহত") || catLower.contains("nasihat") -> TemplateCategory.NASIHAT

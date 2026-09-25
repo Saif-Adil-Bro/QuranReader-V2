@@ -42,12 +42,24 @@ private val AccentGoldWarm = Color(0xFFD4AF37)
 private val TextPrimary = Color(0xFFFFFFFF)
 private val TextSecondary = Color(0xFFE2EFEA)
 
+private fun String.toEnglishNumerals(): String {
+    val bengaliNumerals = "০১২৩৪৫৬৭৮৯"
+    val englishNumerals = "0123456789"
+    return this.map { char ->
+        val index = bengaliNumerals.indexOf(char)
+        if (index != -1) englishNumerals[index] else char
+    }.joinToString("")
+}
+
 @Composable
 fun PrayerTimesBannerSlide(
     schedule: DailyPrayerSchedule,
     onClick: () -> Unit,
     onLocationClick: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isEnglish = com.example.utils.NotificationLocalization.isEnglish(context)
+
     var currentTimeMillis by remember { mutableStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -78,7 +90,7 @@ fun PrayerTimesBannerSlide(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Top-Left: Golden Calendar Icon + Bangla Date Capsule
+                // Top-Left: Golden Calendar Icon + Date Capsule
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
@@ -99,7 +111,7 @@ fun PrayerTimesBannerSlide(
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            text = schedule.dateStrBn,
+                            text = if (isEnglish) com.example.utils.DateUtil.getTodayEnglishDateStr() else schedule.dateStrBn,
                             color = TextPrimary,
                             fontSize = 9.5.sp,
                             fontWeight = FontWeight.SemiBold
@@ -118,7 +130,7 @@ fun PrayerTimesBannerSlide(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "⚠️ ${schedule.forbiddenTimeReason ?: "নামাযের নিষিদ্ধ সময়"}",
+                            text = if (isEnglish) "⚠️ Forbidden Prayer Time" else "⚠️ ${schedule.forbiddenTimeReason ?: "নামাযের নিষিদ্ধ সময়"}",
                             color = Color(0xFFFFCDD2),
                             fontSize = 9.5.sp,
                             fontWeight = FontWeight.Bold,
@@ -135,6 +147,8 @@ fun PrayerTimesBannerSlide(
                     val seconds = totalSeconds % 60
                     val timeFormatted = String.format(java.util.Locale.US, "%02d:%02d:%02d", hours, minutes, seconds)
                     val banglaCountdown = com.example.utils.DateUtil.toBengaliNumerals(timeFormatted)
+                    val countdownDisplay = if (isEnglish) timeFormatted else banglaCountdown
+                    val nextPrayerName = if (isEnglish) nextPrayer.name.nameEn else nextPrayer.displayNameBn
 
                     Box(
                         modifier = Modifier
@@ -154,13 +168,13 @@ fun PrayerTimesBannerSlide(
                             )
                             Spacer(modifier = Modifier.width(3.5.dp))
                             Text(
-                                text = "${nextPrayer.name.nameBn}: ",
+                                text = "$nextPrayerName: ",
                                 color = AccentGold,
                                 fontSize = 9.5.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = banglaCountdown,
+                                text = countdownDisplay,
                                 color = TextPrimary,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
@@ -190,10 +204,10 @@ fun PrayerTimesBannerSlide(
                             modifier = Modifier.size(10.5.dp)
                         )
                         Spacer(modifier = Modifier.width(2.5.dp))
-                        val locationName = if (schedule.district.countryBn == "বাংলাদেশ") {
-                            schedule.district.nameBn
+                        val locationName = if (isEnglish) {
+                            if (schedule.district.countryEn == "Bangladesh") schedule.district.nameEn else "${schedule.district.nameEn}, ${schedule.district.countryEn}"
                         } else {
-                            "${schedule.district.nameBn}, ${schedule.district.countryBn}"
+                            if (schedule.district.countryBn == "বাংলাদেশ") schedule.district.nameBn else "${schedule.district.nameBn}, ${schedule.district.countryBn}"
                         }
                         Text(
                             text = "$locationName ▾",
@@ -250,14 +264,26 @@ fun PrayerTimesBannerSlide(
                         val remainingMillis = (endMillis - currentTimeMillis).coerceAtLeast(0L)
                         val remainingMins = remainingMillis / (1000 * 60)
                         val remainingSecs = (remainingMillis / 1000) % 60
-                        countdownText = if (remainingMins >= 60) {
-                            val hrs = remainingMins / 60
-                            val mins = remainingMins % 60
-                            "${com.example.utils.DateUtil.toBengaliNumerals(hrs)}ঘ. ${com.example.utils.DateUtil.toBengaliNumerals(mins)}মি."
-                        } else if (remainingMins > 0) {
-                            "${com.example.utils.DateUtil.toBengaliNumerals(remainingMins)}মি."
+                        countdownText = if (isEnglish) {
+                            if (remainingMins >= 60) {
+                                val hrs = remainingMins / 60
+                                val mins = remainingMins % 60
+                                "${hrs}h ${mins}m"
+                            } else if (remainingMins > 0) {
+                                "${remainingMins}m"
+                            } else {
+                                "${remainingSecs}s"
+                            }
                         } else {
-                            "${com.example.utils.DateUtil.toBengaliNumerals(remainingSecs)}সে."
+                            if (remainingMins >= 60) {
+                                val hrs = remainingMins / 60
+                                val mins = remainingMins % 60
+                                "${com.example.utils.DateUtil.toBengaliNumerals(hrs)}ঘ. ${com.example.utils.DateUtil.toBengaliNumerals(mins)}মি."
+                            } else if (remainingMins > 0) {
+                                "${com.example.utils.DateUtil.toBengaliNumerals(remainingMins)}মি."
+                            } else {
+                                "${com.example.utils.DateUtil.toBengaliNumerals(remainingSecs)}সে."
+                            }
                         }
                     }
 
@@ -267,6 +293,7 @@ fun PrayerTimesBannerSlide(
                         isNext = isNext,
                         progress = progressFraction,
                         countdownText = countdownText,
+                        isEnglish = isEnglish,
                         modifier = Modifier.weight(1f)
                     )
 
@@ -312,7 +339,7 @@ fun PrayerTimesBannerSlide(
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            text = "ইসলামিক ফাউন্ডেশন (বাংলাদেশ)",
+                            text = if (isEnglish) "Islamic Foundation" else "ইসলামিক ফাউন্ডেশন (বাংলাদেশ)",
                             color = TextSecondary.copy(alpha = 0.85f),
                             fontSize = 9.sp,
                             maxLines = 1
@@ -324,7 +351,7 @@ fun PrayerTimesBannerSlide(
                         modifier = Modifier.padding(start = 4.dp)
                     ) {
                         Text(
-                            text = "বিস্তারিত ও নিষিদ্ধ সময় →",
+                            text = if (isEnglish) "Details & Forbidden Times →" else "বিস্তারিত ও নিষিদ্ধ সময় →",
                             color = AccentGold,
                             fontSize = 9.5.sp,
                             fontWeight = FontWeight.Bold
@@ -343,8 +370,12 @@ private fun PrayerUnifiedColumnItem(
     isNext: Boolean,
     progress: Float,
     countdownText: String,
+    isEnglish: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val displayName = if (isEnglish) prayer.name.nameEn else prayer.displayNameBn
+    val timeDigits = if (isEnglish) prayer.timeDigits.toEnglishNumerals() else prayer.timeDigits
+
     if (isCurrent) {
         // Dynamic Glowing Active Animation for Current Waqt
         val infiniteTransition = rememberInfiniteTransition(label = "currentWaqtActiveGlow")
@@ -393,7 +424,7 @@ private fun PrayerUnifiedColumnItem(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.CenterVertically)
             ) {
-                // Top Badge: Pulsing Dot + "চলমান"
+                // Top Badge: Pulsing Dot + "চলমান" / "Active"
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
@@ -406,7 +437,7 @@ private fun PrayerUnifiedColumnItem(
                     )
                     Spacer(modifier = Modifier.width(2.dp))
                     Text(
-                        text = "চলমান",
+                        text = if (isEnglish) "Active" else "চলমান",
                         color = AccentGold,
                         fontSize = 7.5.sp,
                         lineHeight = 9.sp,
@@ -414,9 +445,9 @@ private fun PrayerUnifiedColumnItem(
                     )
                 }
 
-                // Bengali Name
+                // Name
                 Text(
-                    text = prayer.name.nameBn,
+                    text = displayName,
                     color = TextPrimary,
                     fontSize = 10.sp,
                     lineHeight = 11.sp,
@@ -425,7 +456,7 @@ private fun PrayerUnifiedColumnItem(
 
                 // Large clear time digits
                 Text(
-                    text = prayer.timeDigits,
+                    text = timeDigits,
                     color = TextPrimary,
                     fontSize = 12.sp,
                     lineHeight = 13.sp,
@@ -457,8 +488,13 @@ private fun PrayerUnifiedColumnItem(
                 }
 
                 // Live Countdown Text
+                val remainingLabel = if (isEnglish) {
+                    if (countdownText.isNotBlank()) "Left $countdownText" else prayer.amPm
+                } else {
+                    if (countdownText.isNotBlank()) "বাকি $countdownText" else prayer.amPm
+                }
                 Text(
-                    text = if (countdownText.isNotBlank()) "বাকি $countdownText" else prayer.amPm,
+                    text = remainingLabel,
                     color = AccentGold,
                     fontSize = 7.sp,
                     lineHeight = 8.sp,
@@ -491,16 +527,16 @@ private fun PrayerUnifiedColumnItem(
             ) {
                 // Tiny badge
                 Text(
-                    text = "পরবর্তী",
+                    text = if (isEnglish) "Next" else "পরবর্তী",
                     color = AccentGold,
                     fontSize = 7.5.sp,
                     lineHeight = 9.sp,
                     fontWeight = FontWeight.Bold
                 )
 
-                // Bengali Name
+                // Name
                 Text(
-                    text = prayer.name.nameBn,
+                    text = displayName,
                     color = TextPrimary,
                     fontSize = 10.sp,
                     lineHeight = 11.sp,
@@ -509,7 +545,7 @@ private fun PrayerUnifiedColumnItem(
 
                 // Large clear time digits
                 Text(
-                    text = prayer.timeDigits,
+                    text = timeDigits,
                     color = TextPrimary,
                     fontSize = 12.sp,
                     lineHeight = 13.sp,
@@ -540,9 +576,9 @@ private fun PrayerUnifiedColumnItem(
                 modifier = Modifier.size(13.dp)
             )
 
-            // Bengali Name
+            // Name
             Text(
-                text = prayer.name.nameBn,
+                text = displayName,
                 color = TextSecondary,
                 fontSize = 9.5.sp,
                 lineHeight = 11.sp,
@@ -551,7 +587,7 @@ private fun PrayerUnifiedColumnItem(
 
             // Clear time digits
             Text(
-                text = prayer.timeDigits,
+                text = timeDigits,
                 color = TextPrimary,
                 fontSize = 11.5.sp,
                 lineHeight = 13.sp,
@@ -561,10 +597,10 @@ private fun PrayerUnifiedColumnItem(
             // AM / PM
             Text(
                 text = prayer.amPm,
-                color = TextSecondary.copy(alpha = 0.8f),
+                color = AccentGold.copy(alpha = 0.85f),
                 fontSize = 7.5.sp,
                 lineHeight = 8.5.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Bold
             )
         }
     }

@@ -32,11 +32,25 @@ enum class PrayerName(val id: String, val nameBn: String, val nameEn: String, va
 
     val isMakruh: Boolean
         get() = this == MAKRUH_SUNRISE || this == MAKRUH_ZAWAL || this == MAKRUH_SUNSET
+
+    fun getDisplayName(isFriday: Boolean = false, isEn: Boolean = false): String {
+        if (this == DHUHR && isFriday) {
+            return if (isEn) "Jumu'ah" else "জুমুআ"
+        }
+        return if (isEn) nameEn else nameBn
+    }
 }
 
 enum class AlertCategory(val id: String, val titleBn: String) {
     NOTIFICATION("notification", "নোটিফিকেশন"),
-    ALARM("alarm", "অ্যালার্ম ও আযান")
+    ALARM("alarm", "অ্যালার্ম ও আযান");
+
+    fun getTitle(isEn: Boolean): String = if (isEn) {
+        when (this) {
+            NOTIFICATION -> "Notification"
+            ALARM -> "Alarm & Azan"
+        }
+    } else titleBn
 }
 
 enum class PrayerAlarmSoundType(
@@ -60,6 +74,34 @@ enum class PrayerAlarmSoundType(
 
     val isAlarm: Boolean get() = category == AlertCategory.ALARM
     val isNotification: Boolean get() = category == AlertCategory.NOTIFICATION
+
+    fun getTitle(isEn: Boolean): String = if (isEn) {
+        when (this) {
+            SILENT -> "Silent"
+            BEEP -> "Gentle Beep"
+            RING -> "Short Ringtone"
+            VOICE_NAME -> "Waqt Name Voice"
+            NOTIFICATION -> "Default Notification"
+            AZAN_MECCA -> "Makkah Mukarramah Azan"
+            AZAN_MADINA -> "Madinah Munawwarah Azan"
+            AZAN_FAJR -> "Fajr Special Azan"
+            CUSTOM_RINGTONE -> "Device Ringtone"
+        }
+    } else titleBn
+
+    fun getSubtitle(isEn: Boolean): String = if (isEn) {
+        when (this) {
+            SILENT -> "No sound will play"
+            BEEP -> "Short gentle beep tone"
+            RING -> "Pleasant short melody"
+            VOICE_NAME -> "Voice announcement of prayer name"
+            NOTIFICATION -> "Default notification tone"
+            AZAN_MECCA -> "Soulful Azan from Makkah"
+            AZAN_MADINA -> "Heartwarming Azan from Madinah"
+            AZAN_FAJR -> "Includes As-Salatu Khairum Minan Nawm"
+            CUSTOM_RINGTONE -> "Select from device ringtone list"
+        }
+    } else subtitleBn
 }
 
 data class WaqtAlarmConfig(
@@ -83,8 +125,16 @@ data class SinglePrayerTime(
     val isNext: Boolean = false,
     val endTimeDigits: String = "",
     val endTimeFormatted: String = "", // e.g. "৫:৩২ AM"
-    val timeRangeFormatted: String = "" // e.g. "৪:১৬ AM - ৫:৩২ AM"
-)
+    val timeRangeFormatted: String = "", // e.g. "৪:১৬ AM - ৫:৩২ AM"
+    val isFriday: Boolean = false
+) {
+    fun getDisplayName(isEn: Boolean = false): String {
+        return name.getDisplayName(isFriday = isFriday, isEn = isEn)
+    }
+
+    val displayNameBn: String
+        get() = name.getDisplayName(isFriday = isFriday, isEn = false)
+}
 
 data class ForbiddenPrayerInterval(
     val titleBn: String,          // e.g. "সূর্যোদয়"
@@ -130,5 +180,6 @@ data class DailyPrayerSchedule(
     val sunriseTimeDigits: String = "",
     val sunsetTimeDigits: String = "",
     val sahriTimeDigits: String = "",
-    val iftarTimeDigits: String = ""
+    val iftarTimeDigits: String = "",
+    val isFriday: Boolean = false
 )

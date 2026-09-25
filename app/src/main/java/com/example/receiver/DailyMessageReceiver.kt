@@ -27,14 +27,15 @@ class DailyMessageReceiver : BroadcastReceiver() {
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "daily_islamic_message"
+        val isEnglish = com.example.utils.NotificationLocalization.isEnglish(context)
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "Daily Islamic Message",
+                com.example.utils.NotificationLocalization.getDailyMessageChannelName(isEnglish),
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "Daily Ayah, Hadith or Islamic reminder"
+                description = com.example.utils.NotificationLocalization.getDailyMessageChannelDesc(isEnglish)
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -70,10 +71,10 @@ class DailyMessageReceiver : BroadcastReceiver() {
         } else {
             com.example.data.DuaItem(
                 id = 1,
-                title = "দুনিয়া ও পরকালের কল্যাণের দুআ",
+                title = if (isEnglish) "Dua for Good in This World and Hereafter" else "দুনিয়া ও পরকালের কল্যাণের দুআ",
                 segments = listOf(
                     com.example.data.DuaSegment(
-                        translation = "হে আমাদের রব! আমাদেরকে দুনিয়াতে কল্যাণ দান করুন এবং আখিরাতেও কল্যাণ দান করুন। (সূরা বাকারা: ২০১)"
+                        translation = if (isEnglish) "Our Lord, give us in this world [that which is] good and in the Hereafter [that which is] good. (Surah Al-Baqarah: 201)" else "হে আমাদের রব! আমাদেরকে দুনিয়াতে কল্যাণ দান করুন এবং আখিরাতেও কল্যাণ দান করুন। (সূরা বাকারা: ২০১)"
                     )
                 )
             )
@@ -92,7 +93,7 @@ class DailyMessageReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val duaTitle = "কুরআনিক দোয়া"
+        val duaTitle = com.example.utils.NotificationLocalization.getDailyDuaNotificationTitle(isEnglish)
         val duaSubtitle = selectedDua.title
 
         try {
@@ -100,8 +101,8 @@ class DailyMessageReceiver : BroadcastReceiver() {
             val entity = com.example.data.local.entity.LocalNotificationEntity(
                 title = duaTitle,
                 content = duaSubtitle,
-                category = "নোটিফিকেশন",
-                author = "কুরআনিক দুআ",
+                category = if (isEnglish) "Notification" else "নোটিফিকেশন",
+                author = if (isEnglish) "Quranic Dua" else "কুরআনিক দুআ",
                 timestamp = System.currentTimeMillis()
             )
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {

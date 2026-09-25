@@ -26,14 +26,15 @@ class ReminderReceiver : BroadcastReceiver() {
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "quran_planner_reminder"
+        val isEnglish = com.example.utils.NotificationLocalization.isEnglish(context)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "Quran Planner Reminder",
+                com.example.utils.NotificationLocalization.getPlannerChannelName(isEnglish),
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "Reminds you to read Quran to complete your daily goal"
+                description = com.example.utils.NotificationLocalization.getPlannerChannelDesc(isEnglish)
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -50,19 +51,8 @@ class ReminderReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val titles = listOf(
-            "কুরআন পড়ার সময় হয়েছে!",
-            "আজকের লক্ষ্য কি পূরণ করেছেন?",
-            "দৈনিক কুরআন তিলাওয়াত"
-        )
-        val messages = listOf(
-            "আপনার আজকের লক্ষ্য পূরণ করতে তেলওয়াত শুরু করুন...",
-            "আসুন আজকেও কুরআন পড়ে আমাদের প্ল্যান এগিয়ে নিয়ে যাই।",
-            "কুরআনের সাথে থাকুন, জীবনকে বরকতময় করুন।"
-        )
-        
-        val title = titles.random()
-        val message = messages.random()
+        val title = com.example.utils.NotificationLocalization.getPlannerReminderTitle(isEnglish)
+        val message = com.example.utils.NotificationLocalization.getPlannerReminderMessage(isEnglish)
 
         val iconRes = com.example.R.mipmap.ic_launcher
 

@@ -98,6 +98,8 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             var prayerRangeFormatted = intent.getStringExtra("prayer_range_formatted") ?: ""
             val prayerTimeFormatted = intent.getStringExtra("prayer_time_formatted") ?: ""
             val districtNameBn = intent.getStringExtra("district_name_bn") ?: "ঢাকা"
+            val districtNameEn = intent.getStringExtra("district_name_en") ?: ""
+            val isEnglish = com.example.utils.NotificationLocalization.isEnglish(context)
 
             val isSoundEnabled = PrayerNotificationHelper.isSoundEnabled(context)
             val isAlarm = isSoundEnabled && config.soundType.isAlarm
@@ -122,76 +124,22 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             }
 
             val isFriday = LocalDate.now().dayOfWeek == DayOfWeek.FRIDAY
-            val isDhuhrOnFriday = isFriday && prayerName == PrayerName.DHUHR
+            val title = com.example.utils.NotificationLocalization.getPrayerNotificationTitle(
+                prayerName = prayerName,
+                isFriday = isFriday,
+                offsetMinutes = offsetMinutes,
+                isEnglish = isEnglish
+            )
 
-            val title = when (prayerName) {
-                PrayerName.FAJR -> if (offsetMinutes < 0) "ফজরের ওয়াক্ত আসন্ন (${-offsetMinutes} মিনিট বাকি) 🌅" else "ফজরের ওয়াক্ত শুরু হয়েছে 🕌"
-                PrayerName.DHUHR -> if (isDhuhrOnFriday) "পবিত্র জুমুআর ওয়াক্ত হয়েছে 🕌✨" else if (offsetMinutes < 0) "যুহরের ওয়াক্ত আসন্ন (${-offsetMinutes} মিনিট বাকি) ☀️" else "যুহরের ওয়াক্ত শুরু হয়েছে 🕌"
-                PrayerName.ASR -> if (offsetMinutes < 0) "আসরের ওয়াক্ত আসন্ন (${-offsetMinutes} মিনিট বাকি) 🌤️" else "আসরের ওয়াক্ত শুরু হয়েছে 🕌"
-                PrayerName.MAGHRIB -> if (offsetMinutes < 0) "মাগরিবের ওয়াক্ত আসন্ন (${-offsetMinutes} মিনিট বাকি) 🌇" else "মাগরিবের ওয়াক্ত শুরু হয়েছে 🕌"
-                PrayerName.ISHA -> if (offsetMinutes < 0) "এশার ওয়াক্ত আসন্ন (${-offsetMinutes} মিনিট বাকি) 🌙" else "এশার ওয়াক্ত শুরু হয়েছে 🌙"
-                PrayerName.SUNRISE -> "সূর্যোদয় হয়েছে ☀️"
-                PrayerName.TAHAJJUD -> "তাহাজ্জুদের বিশেষ সময় হয়েছে 🌌"
-                PrayerName.SAHRI -> "সাহরির সময় শেষ হতে যাচ্ছে 🌙"
-                PrayerName.IFTAR -> "ইফতারের সময় হয়েছে ✨"
-                PrayerName.MAKRUH_SUNRISE -> "মাকরূহ ওয়াক্ত: সূর্যোদয় ⚠️"
-                PrayerName.MAKRUH_ZAWAL -> "মাকরূহ ওয়াক্ত: দ্বিপ্রহর (জাওয়াল) ⚠️"
-                PrayerName.MAKRUH_SUNSET -> "মাকরূহ ওয়াক্ত: সূর্যাস্ত ⚠️"
-            }
-
-            val prayerDisplayTitle = when (prayerName) {
-                PrayerName.FAJR -> "ফজর"
-                PrayerName.DHUHR -> if (isDhuhrOnFriday) "জুমুআ" else "যুহর"
-                PrayerName.ASR -> "আসর"
-                PrayerName.MAGHRIB -> "মাগরিব"
-                PrayerName.ISHA -> "এশা"
-                PrayerName.SUNRISE -> "সূর্যোদয়"
-                PrayerName.TAHAJJUD -> "তাহাজ্জুদ"
-                PrayerName.SAHRI -> "সাহরি শেষ"
-                PrayerName.IFTAR -> "ইফতার"
-                PrayerName.MAKRUH_SUNRISE -> "সূর্যোদয় মাকরূহ সময়"
-                PrayerName.MAKRUH_ZAWAL -> "দ্বিপ্রহর (জাওয়াল) মাকরূহ সময়"
-                PrayerName.MAKRUH_SUNSET -> "সূর্যাস্ত মাকরূহ সময়"
-            }
-
-            val message = when (prayerName) {
-                PrayerName.SAHRI -> {
-                    if (prayerTimeFormatted.isNotBlank()) "সাহরির শেষ সময়: $prayerTimeFormatted ($districtNameBn)। রোজার নিয়ত করে নিন।"
-                    else "সাহরির সময় শেষ হয়েছে ($districtNameBn)। রোজার নিয়ত করে নিন।"
-                }
-                PrayerName.IFTAR -> {
-                    if (prayerTimeFormatted.isNotBlank()) "ইফতারের সময়: $prayerTimeFormatted ($districtNameBn)। দুআ পাঠ করে ইফতার করুন: আল্লাহুম্মা লাকা সুমতু..."
-                    else "ইফতারের সময় হয়েছে ($districtNameBn)। দুআ পাঠ করে ইফতার করুন।"
-                }
-                PrayerName.TAHAJJUD -> {
-                    "তাহাজ্জুদের বরকতময় সময়। শেষ রাতে রবের দরবারে তাওবা ও দুআ করার উত্তম মুহূর্ত।"
-                }
-                PrayerName.MAKRUH_SUNRISE -> {
-                    val timeDisplay = if (prayerRangeFormatted.isNotBlank()) prayerRangeFormatted else if (prayerTimeFormatted.isNotBlank()) prayerTimeFormatted else "সূর্যোদয়কালীন সময়"
-                    "সূর্যোদয়ের নিষিদ্ধ (মাকরূহ) ওয়াক্ত: $timeDisplay ($districtNameBn)। সূর্যোদয়কালীন এই সময়ে কোনো সালাত বা সিজদাহ আদায় করা নিষিদ্ধ।"
-                }
-                PrayerName.MAKRUH_ZAWAL -> {
-                    val timeDisplay = if (prayerRangeFormatted.isNotBlank()) prayerRangeFormatted else if (prayerTimeFormatted.isNotBlank()) prayerTimeFormatted else "দ্বিপ্রহরের সময়"
-                    "দ্বিপ্রহরের নিষিদ্ধ (মাকরূহ) ওয়াক্ত: $timeDisplay ($districtNameBn)। ঠিক দুপুরে সূর্য মাথার ওপর অবস্থানকালে সালাত বা সিজদাহ আদায় করা নিষিদ্ধ।"
-                }
-                PrayerName.MAKRUH_SUNSET -> {
-                    val timeDisplay = if (prayerRangeFormatted.isNotBlank()) prayerRangeFormatted else if (prayerTimeFormatted.isNotBlank()) prayerTimeFormatted else "সূর্যাস্তের সময়"
-                    "সূর্যাস্তের নিষিদ্ধ (মাকরূহ) ওয়াক্ত: $timeDisplay ($districtNameBn)। সূর্যাস্তের পূর্ববর্তী এই সময়ে সালাত বা সিজদাহ আদায় করা নিষিদ্ধ।"
-                }
-                else -> {
-                    val timeDisplay = if (prayerRangeFormatted.isNotBlank()) {
-                        prayerRangeFormatted
-                    } else if (prayerTimeFormatted.isNotBlank()) {
-                        prayerTimeFormatted
-                    } else ""
-
-                    if (timeDisplay.isNotBlank()) {
-                        "$prayerDisplayTitle সালাতের সময় : $timeDisplay ($districtNameBn)। ওয়াক্তমত সালাত আদায় করার প্রস্তুতি নিন।"
-                    } else {
-                        "$prayerDisplayTitle সালাতের সময় হয়েছে ($districtNameBn)। ওয়াক্তমত সালাত আদায় করার প্রস্তুতি নিন।"
-                    }
-                }
-            }
+            val message = com.example.utils.NotificationLocalization.getPrayerNotificationMessage(
+                prayerName = prayerName,
+                isFriday = isFriday,
+                prayerTimeFormatted = prayerTimeFormatted,
+                prayerRangeFormatted = prayerRangeFormatted,
+                districtNameBn = districtNameBn,
+                districtNameEn = districtNameEn,
+                isEnglish = isEnglish
+            )
 
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             PrayerNotificationHelper.createNotificationChannel(context)
@@ -274,8 +222,16 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 builder.setFullScreenIntent(fullScreenPendingIntent, true)
                 builder.setPriority(NotificationCompat.PRIORITY_MAX)
                 builder.setCategory(NotificationCompat.CATEGORY_ALARM)
-                builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "বন্ধ করুন", stopPendingIntent)
-                builder.addAction(android.R.drawable.ic_lock_idle_alarm, "১০ মিনিট পর (স্নুজ)", snoozePendingIntent)
+                builder.addAction(
+                    android.R.drawable.ic_menu_close_clear_cancel,
+                    com.example.utils.NotificationLocalization.getActionDismissLabel(isEnglish),
+                    stopPendingIntent
+                )
+                builder.addAction(
+                    android.R.drawable.ic_lock_idle_alarm,
+                    com.example.utils.NotificationLocalization.getActionSnoozeLabel(isEnglish),
+                    snoozePendingIntent
+                )
 
                 if (config.isVibrationEnabled) {
                     builder.setVibrate(PrayerNotificationHelper.ALARM_VIBRATION_PATTERN)
@@ -286,7 +242,11 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 // Gentle standard notification
                 builder.setPriority(NotificationCompat.PRIORITY_HIGH)
                 builder.setCategory(NotificationCompat.CATEGORY_EVENT)
-                builder.addAction(android.R.drawable.ic_menu_view, "সময়সূচি দেখুন", pendingIntent)
+                builder.addAction(
+                    android.R.drawable.ic_menu_view,
+                    com.example.utils.NotificationLocalization.getActionViewScheduleLabel(isEnglish),
+                    pendingIntent
+                )
 
                 if (config.isVibrationEnabled) {
                     builder.setVibrate(PrayerNotificationHelper.VIBRATION_PATTERN)

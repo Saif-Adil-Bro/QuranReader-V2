@@ -77,6 +77,7 @@ fun WaqtAlarmOverviewSheet(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val isEn = com.example.utils.LocaleHelper.getLanguage(context) == "en"
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     var isMasterEnabled by remember { mutableStateOf(PrayerNotificationHelper.isMasterEnabled(context)) }
@@ -93,10 +94,10 @@ fun WaqtAlarmOverviewSheet(
         if (isGranted) {
             isMasterEnabled = true
             PrayerNotificationHelper.setMasterEnabled(context, true)
-            Toast.makeText(context, "ওয়াক্তের অ্যালার্ম চালু হয়েছে", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, if (isEn) "Prayer alarm enabled" else "ওয়াক্তের অ্যালার্ম চালু হয়েছে", Toast.LENGTH_SHORT).show()
         } else {
             isMasterEnabled = false
-            Toast.makeText(context, "নোটিফিকেশন অনুমতি প্রয়োজন", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, if (isEn) "Notification permission required" else "নোটিফিকেশন অনুমতি প্রয়োজন", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -172,13 +173,13 @@ fun WaqtAlarmOverviewSheet(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "নামাজ ও ইবাদত অ্যালার্ম",
+                            text = if (isEn) "Prayer & Worship Alarms" else "নামাজ ও ইবাদত অ্যালার্ম",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
                         Text(
-                            text = "ওয়াক্ত অনুযায়ী কাস্টম আজান ও অ্যালার্ম শিডিউল",
+                            text = if (isEn) "Custom Azan & alarm schedule per prayer time" else "ওয়াক্ত অনুযায়ী কাস্টম আজান ও অ্যালার্ম শিডিউল",
                             fontSize = 11.5.sp,
                             color = Color.LightGray.copy(alpha = 0.7f)
                         )
@@ -191,7 +192,7 @@ fun WaqtAlarmOverviewSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Close,
-                        contentDescription = "বন্ধ করুন",
+                        contentDescription = if (isEn) "Close" else "বন্ধ করুন",
                         tint = Color.White.copy(alpha = 0.8f)
                     )
                 }
@@ -224,13 +225,17 @@ fun WaqtAlarmOverviewSheet(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "সকল ওয়াক্তের অ্যালার্ম",
+                                text = if (isEn) "All Prayer Alarms" else "সকল ওয়াক্তের অ্যালার্ম",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                             Text(
-                                text = if (isMasterEnabled) "অ্যালার্ম সিস্টেম সক্রিয় রয়েছে" else "সকল অ্যালার্ম সাময়িকভাবে বন্ধ",
+                                text = if (isMasterEnabled) {
+                                    if (isEn) "Alarm system is active" else "অ্যালার্ম সিস্টেম সক্রিয় রয়েছে"
+                                } else {
+                                    if (isEn) "All alarms are temporarily paused" else "সকল অ্যালার্ম সাময়িকভাবে বন্ধ"
+                                },
                                 fontSize = 11.5.sp,
                                 color = if (isMasterEnabled) emeraldGreen else Color.LightGray.copy(alpha = 0.6f)
                             )
@@ -295,7 +300,7 @@ fun WaqtAlarmOverviewSheet(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "সঠিক সময়ে বাজার প্রয়োজনীয় সেটিংস",
+                                text = if (isEn) "Required Settings for Timely Alarms" else "সঠিক সময়ে বাজার প্রয়োজনীয় সেটিংস",
                                 fontSize = 13.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFFE2E8F0)
@@ -328,9 +333,14 @@ fun WaqtAlarmOverviewSheet(
                             ),
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                         ) {
+                            val batteryBtnText = if (isEn) {
+                                if (isBatteryIgnored) "✓ Battery Unrestricted" else "⚡ Turn Off Saver"
+                            } else {
+                                if (isBatteryIgnored) "✓ ব্যাটারি আনরেস্ট্রিক্টেড" else "⚡ ব্যাটারি সেভার অফ করুন"
+                            }
                             Text(
-                                text = if (isBatteryIgnored) "✓ ব্যাটারি আনরেস্ট্রিক্টেড" else "⚡ ব্যাটারি সেভার অফ করুন",
-                                fontSize = 11.5.sp,
+                                text = batteryBtnText,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -348,8 +358,8 @@ fun WaqtAlarmOverviewSheet(
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                         ) {
                             Text(
-                                text = "🔒 লক স্ক্রিন পারমিশন",
-                                fontSize = 11.5.sp,
+                                text = if (isEn) "🔒 Lock Screen Permission" else "🔒 লক স্ক্রিন পারমিশন",
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -360,7 +370,7 @@ fun WaqtAlarmOverviewSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "নামাজের ওয়াক্ত ও ইবাদত অ্যালার্ম:",
+                text = if (isEn) "Prayer Waqt & Worship Alarms:" else "নামাজের ওয়াক্ত ও ইবাদত অ্যালার্ম:",
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.LightGray.copy(alpha = 0.9f)
@@ -426,7 +436,7 @@ fun WaqtAlarmOverviewSheet(
                             Column {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = pName.nameBn,
+                                        text = pName.getDisplayName(isFriday = schedule.isFriday, isEn = isEn),
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (config.isEnabled) Color.White else Color.LightGray.copy(alpha = 0.6f)
@@ -445,9 +455,9 @@ fun WaqtAlarmOverviewSheet(
                                     val soundTitle = if (config.soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE && !config.customRingtoneTitle.isNullOrBlank()) {
                                         config.customRingtoneTitle
                                     } else {
-                                        config.soundType.titleBn
+                                        config.soundType.getTitle(isEn)
                                     }
-                                    val categoryLabel = if (config.soundType.isAlarm) "অ্যালার্ম" else "নোটিফিকেশন"
+                                    val categoryLabel = if (config.soundType.isAlarm) (if (isEn) "Alarm" else "অ্যালার্ম") else (if (isEn) "Notification" else "নোটিফিকেশন")
                                     val toneColor = if (config.soundType == PrayerAlarmSoundType.SILENT) {
                                         Color.LightGray.copy(alpha = 0.5f)
                                     } else if (config.soundType.isAlarm) {
@@ -462,15 +472,21 @@ fun WaqtAlarmOverviewSheet(
                                         color = toneColor
                                     )
                                     if (config.offsetMinutes != 0) {
+                                        val offsetMins = kotlin.math.abs(config.offsetMinutes)
+                                        val offsetStr = if (isEn) {
+                                            "$offsetMins min ${if (config.offsetMinutes < 0) "before" else "after"}"
+                                        } else {
+                                            "${DateUtil.toBengaliNumerals(offsetMins)} মি. ${if (config.offsetMinutes < 0) "আগে" else "পরে"}"
+                                        }
                                         Text(
-                                            text = " • ${DateUtil.toBengaliNumerals(kotlin.math.abs(config.offsetMinutes))} মি. ${if (config.offsetMinutes < 0) "আগে" else "পরে"}",
+                                            text = " • $offsetStr",
                                             fontSize = 11.5.sp,
                                             color = Color(0xFF34D399)
                                         )
                                     }
                                     if (config.isVibrationEnabled) {
                                         Text(
-                                            text = " • ভাইব্রেশন",
+                                            text = if (isEn) " • Vibration" else " • ভাইব্রেশন",
                                             fontSize = 11.5.sp,
                                             color = Color.LightGray.copy(alpha = 0.5f)
                                         )
@@ -499,7 +515,7 @@ fun WaqtAlarmOverviewSheet(
                             Spacer(modifier = Modifier.width(6.dp))
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "কাস্টমাইজ করুন",
+                                contentDescription = if (isEn) "Customize" else "কাস্টমাইজ করুন",
                                 tint = Color.LightGray.copy(alpha = 0.5f),
                                 modifier = Modifier.size(18.dp)
                             )
@@ -516,7 +532,7 @@ fun WaqtAlarmOverviewSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "মাকরূহ (নিষিদ্ধ) ওয়াক্তের নোটিফিকেশন:",
+                    text = if (isEn) "Makruh (Forbidden) Times Notification:" else "মাকরূহ (নিষিদ্ধ) ওয়াক্তের নোটিফিকেশন:",
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFFF87171)
@@ -528,7 +544,7 @@ fun WaqtAlarmOverviewSheet(
                 )
             }
             Text(
-                text = "নিষিদ্ধ সময়ে সালাত থেকে বিরত থাকার সতর্কবার্তা",
+                text = if (isEn) "Alert to refrain from prayer during forbidden times" else "নিষিদ্ধ সময়ে সালাত থেকে বিরত থাকার সতর্কবার্তা",
                 fontSize = 11.5.sp,
                 color = Color.LightGray.copy(alpha = 0.6f)
             )
@@ -586,7 +602,7 @@ fun WaqtAlarmOverviewSheet(
                             Column {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = pName.nameBn,
+                                        text = if (isEn) pName.nameEn else pName.nameBn,
                                         fontSize = 14.5.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (config.isEnabled) Color(0xFFFFD1D5) else Color.LightGray.copy(alpha = 0.6f)
@@ -605,9 +621,9 @@ fun WaqtAlarmOverviewSheet(
                                     val soundTitle = if (config.soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE && !config.customRingtoneTitle.isNullOrBlank()) {
                                         config.customRingtoneTitle
                                     } else {
-                                        config.soundType.titleBn
+                                        config.soundType.getTitle(isEn)
                                     }
-                                    val categoryLabel = if (config.soundType.isAlarm) "অ্যালার্ম" else "নোটিফিকেশন"
+                                    val categoryLabel = if (config.soundType.isAlarm) (if (isEn) "Alarm" else "অ্যালার্ম") else (if (isEn) "Notification" else "নোটিফিকেশন")
                                     val toneColor = if (config.soundType == PrayerAlarmSoundType.SILENT) {
                                         Color.LightGray.copy(alpha = 0.5f)
                                     } else {
@@ -620,15 +636,21 @@ fun WaqtAlarmOverviewSheet(
                                         color = toneColor
                                     )
                                     if (config.offsetMinutes != 0) {
+                                        val offsetMins = kotlin.math.abs(config.offsetMinutes)
+                                        val offsetStr = if (isEn) {
+                                            "$offsetMins min ${if (config.offsetMinutes < 0) "before" else "after"}"
+                                        } else {
+                                            "${DateUtil.toBengaliNumerals(offsetMins)} মি. ${if (config.offsetMinutes < 0) "আগে" else "পরে"}"
+                                        }
                                         Text(
-                                            text = " • ${DateUtil.toBengaliNumerals(kotlin.math.abs(config.offsetMinutes))} মি. ${if (config.offsetMinutes < 0) "আগে" else "পরে"}",
+                                            text = " • $offsetStr",
                                             fontSize = 11.sp,
                                             color = Color(0xFF34D399)
                                         )
                                     }
                                     if (config.isVibrationEnabled) {
                                         Text(
-                                            text = " • ভাইব্রেশন",
+                                            text = if (isEn) " • Vibration" else " • ভাইব্রেশন",
                                             fontSize = 11.sp,
                                             color = Color.LightGray.copy(alpha = 0.5f)
                                         )
@@ -657,7 +679,7 @@ fun WaqtAlarmOverviewSheet(
                             Spacer(modifier = Modifier.width(6.dp))
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "কাস্টমাইজ করুন",
+                                contentDescription = if (isEn) "Customize" else "কাস্টমাইজ করুন",
                                 tint = Color.LightGray.copy(alpha = 0.5f),
                                 modifier = Modifier.size(18.dp)
                             )

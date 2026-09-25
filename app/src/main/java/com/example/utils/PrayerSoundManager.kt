@@ -242,7 +242,7 @@ object PrayerSoundManager {
                         onCompletion()
                     }
                     PrayerAlarmSoundType.VOICE_NAME -> {
-                        val textToSpeak = getVoiceAnnouncementText(prayerName)
+                        val textToSpeak = getVoiceAnnouncementText(context, prayerName)
                         speakText(context, textToSpeak) {
                             currentlyPlayingType = null
                             onCompletion()
@@ -397,7 +397,7 @@ object PrayerSoundManager {
                         playSynthesizedMelody()
                     }
                     PrayerAlarmSoundType.VOICE_NAME -> {
-                        val announcement = getVoiceAnnouncementText(prayerName)
+                        val announcement = getVoiceAnnouncementText(context, prayerName)
                         speakText(context, announcement)
                     }
                     else -> {}
@@ -461,21 +461,10 @@ object PrayerSoundManager {
         }
     }
 
-    private fun getVoiceAnnouncementText(prayerName: PrayerName): String {
-        return when (prayerName) {
-            PrayerName.FAJR -> "ফজরের নামাজের ওয়াক্ত হয়েছে, আস-সালাতু খাইরুম মিনান নাওম"
-            PrayerName.DHUHR -> "যুহরের নামাজের ওয়াক্ত হয়েছে, জামাতের প্রস্তুতি নিন"
-            PrayerName.ASR -> "আসরের নামাজের ওয়াক্ত হয়েছে, সালাত আদায়ের প্রস্তুতি নিন"
-            PrayerName.MAGHRIB -> "মাগরিবের নামাজের ওয়াক্ত হয়েছে, সালাতের প্রস্তুতি নিন"
-            PrayerName.ISHA -> "এশার নামাজের ওয়াক্ত হয়েছে"
-            PrayerName.SUNRISE -> "সূর্যোদয় হয়েছে, ইশরাকের নামাজের সময় আসন্ন"
-            PrayerName.TAHAJJUD -> "তাহাজ্জুদের বিশেষ ফজিলতপূর্ণ সময় হয়েছে"
-            PrayerName.SAHRI -> "সাহরির সময় শেষ হয়েছে, রোজার নিয়ত করে নিন"
-            PrayerName.IFTAR -> "ইফতারের সময় হয়েছে, বিসমিল্লাহ বলে ইফতার করুন"
-            PrayerName.MAKRUH_SUNRISE -> "সূর্যোদয়কালীন মাকরূহ সময় শুরু হয়েছে, এই সময়ে সালাত আদায় করা নিষিদ্ধ"
-            PrayerName.MAKRUH_ZAWAL -> "দ্বিপ্রহরের মাকরূহ সময় শুরু হয়েছে, এই সময়ে সালাত আদায় করা নিষেধ"
-            PrayerName.MAKRUH_SUNSET -> "সূর্যাস্তকালীন মাকরূহ সময় শুরু হয়েছে, এই সময়ে সালাত আদায় করা নিষেধ"
-        }
+    private fun getVoiceAnnouncementText(context: Context, prayerName: PrayerName): String {
+        val isFriday = java.time.LocalDate.now().dayOfWeek == java.time.DayOfWeek.FRIDAY
+        val isEnglish = NotificationLocalization.isEnglish(context)
+        return NotificationLocalization.getVoiceAnnouncementText(prayerName, isFriday, isEnglish)
     }
 
     private fun speakText(context: Context, text: String, onFinished: () -> Unit = {}) {
@@ -489,13 +478,18 @@ object PrayerSoundManager {
                 return
             }
 
+            val isEnglish = NotificationLocalization.isEnglish(context)
             activeTts = TextToSpeech(context.applicationContext) { status ->
                 if (status == TextToSpeech.SUCCESS) {
                     try {
-                        val bnLocale = Locale("bn", "BD")
-                        val result = activeTts?.setLanguage(bnLocale)
-                        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        if (isEnglish) {
                             activeTts?.language = Locale.ENGLISH
+                        } else {
+                            val bnLocale = Locale("bn", "BD")
+                            val result = activeTts?.setLanguage(bnLocale)
+                            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                                activeTts?.language = Locale.ENGLISH
+                            }
                         }
                         activeTts?.setSpeechRate(0.9f)
                         activeTts?.setPitch(1.0f)

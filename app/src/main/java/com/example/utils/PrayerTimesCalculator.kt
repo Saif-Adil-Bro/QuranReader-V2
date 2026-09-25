@@ -271,6 +271,7 @@ object PrayerTimesCalculator {
         // 2. Solar Noon / Zawal (12 min before Dhuhr to Dhuhr)
         // 3. Sunset (15 min before Maghrib till Maghrib)
         val sunriseForbiddenEnd = sunriseTime.plusMinutes(15)
+        val isFriday = (date.dayOfWeek == java.time.DayOfWeek.FRIDAY)
 
         fun createSinglePrayer(name: PrayerName, time: LocalTime, endTime: LocalTime? = null): SinglePrayerTime {
             val endDigits = endTime?.let { formatTimeDigits(it) } ?: ""
@@ -288,7 +289,8 @@ object PrayerTimesCalculator {
                 timestampMillis = toMillis(time),
                 endTimeDigits = endDigits,
                 endTimeFormatted = endFormatted,
-                timeRangeFormatted = rangeFormatted
+                timeRangeFormatted = rangeFormatted,
+                isFriday = isFriday
             )
         }
 
@@ -375,7 +377,8 @@ object PrayerTimesCalculator {
         val markedPrayers = rawPrayers.map { p ->
             p.copy(
                 isCurrent = isToday && (currentPrayer?.name == p.name),
-                isNext = isToday && (nextPrayer?.name == p.name)
+                isNext = isToday && (nextPrayer?.name == p.name),
+                isFriday = isFriday
             )
         }
 
@@ -461,15 +464,15 @@ object PrayerTimesCalculator {
         val duhaRangeStr = "${formatTimeDigits(duhaStartTime)} - ${formatTimeDigits(duhaEndTime)}"
         val zawalStartStr = formatTimeDigits(dhuhrTime.minusMinutes(4))
         val awwabinRangeStr = "মাগরিবের পর - ${formatTimeDigits(ishaTime.minusMinutes(1))}"
-        val tahajjudRangeStr = "ইশার পর - ${formatTimeDigits(fajrTime.minusMinutes(1))}"
+        val tahajjudRangeStr = "এশার পর - ${formatTimeDigits(fajrTime.minusMinutes(1))}"
         val tahajjudLastThirdStr = formatTimeDigits(lastThirdTime)
 
         return DailyPrayerSchedule(
             dateStrBn = DateUtil.formatDateStr(date),
             district = district,
             prayers = markedPrayers,
-            currentPrayer = currentPrayer,
-            nextPrayer = nextPrayer,
+            currentPrayer = currentPrayer?.copy(isFriday = isFriday),
+            nextPrayer = nextPrayer?.copy(isFriday = isFriday),
             remainingTimeToNextFormatted = formatRemainingTimeBn(remainingMillis),
             isForbiddenTimeNow = isForbidden,
             forbiddenTimeReason = forbiddenReason,
@@ -500,7 +503,8 @@ object PrayerTimesCalculator {
             sunriseTimeDigits = formatTimeDigits(sunriseTime),
             sunsetTimeDigits = formatTimeDigits(maghribTime),
             sahriTimeDigits = formatTimeDigits(sahriEndTime),
-            iftarTimeDigits = formatTimeDigits(iftarTime)
+            iftarTimeDigits = formatTimeDigits(iftarTime),
+            isFriday = isFriday
         )
     }
 

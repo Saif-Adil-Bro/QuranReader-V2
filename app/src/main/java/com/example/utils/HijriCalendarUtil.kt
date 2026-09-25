@@ -11,6 +11,7 @@ data class HijriDateInfo(
     val hijriYear: Int,
     val hijriMonthNameBn: String,
     val hijriMonthNameAr: String,
+    val hijriMonthNameEn: String = "",
     val specialEvents: List<String>,
     val isSunnahFast: Boolean,
     val sunnahFastReason: String?
@@ -18,16 +19,22 @@ data class HijriDateInfo(
 
 object HijriCalendarUtil {
 
-    private val hijriMonthNamesBengali = listOf(
+    val hijriMonthNamesBengali = listOf(
         "মুহাররম", "সফর", "রবিউল আউয়াল", "রবিউস সানি",
         "জমাদিউল আউয়াল", "জমাদিউস সানি", "রজব", "শা'বান",
         "রমজান", "শাওয়াল", "জিলকদ", "জিলহজ্জ"
     )
 
-    private val hijriMonthNamesArabic = listOf(
+    val hijriMonthNamesArabic = listOf(
         "المحرّم", "صفر", "ربيع الأوّل", "ربيع الثاني",
         "جمادى الأولى", "جمادى الثانية", "رجب", "شعبان",
         "رمضان", "شوّال", "ذو القعدة", "ذو الحجة"
+    )
+
+    val hijriMonthNamesEnglish = listOf(
+        "Muharram", "Safar", "Rabi' al-Awwal", "Rabi' al-Thani",
+        "Jumada al-Awwal", "Jumada al-Thani", "Rajab", "Sha'ban",
+        "Ramadan", "Shawwal", "Dhul Qi'dah", "Dhul Hijjah"
     )
 
     fun getHijriDate(date: LocalDate, offsetDays: Int = 0): HijriDateInfo {
@@ -67,6 +74,7 @@ object HijriCalendarUtil {
 
         val monthBn = hijriMonthNamesBengali.getOrElse(hMonth - 1) { "হিজরী" }
         val monthAr = hijriMonthNamesArabic.getOrElse(hMonth - 1) { "" }
+        val monthEn = hijriMonthNamesEnglish.getOrElse(hMonth - 1) { "Hijri" }
 
         val events = mutableListOf<String>()
         
@@ -136,6 +144,7 @@ object HijriCalendarUtil {
             hijriYear = hYear,
             hijriMonthNameBn = monthBn,
             hijriMonthNameAr = monthAr,
+            hijriMonthNameEn = monthEn,
             specialEvents = events,
             isSunnahFast = isSunnah,
             sunnahFastReason = sunnahReason

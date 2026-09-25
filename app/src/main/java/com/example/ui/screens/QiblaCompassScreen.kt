@@ -77,9 +77,25 @@ fun getBanglaDirection(azimuth: Float): String {
     }
 }
 
+fun getEnglishDirection(azimuth: Float): String {
+    val normalized = (azimuth % 360 + 360) % 360
+    return when {
+        normalized < 22.5 || normalized >= 337.5 -> "N"
+        normalized < 67.5 -> "NE"
+        normalized < 112.5 -> "E"
+        normalized < 157.5 -> "SE"
+        normalized < 202.5 -> "S"
+        normalized < 247.5 -> "SW"
+        normalized < 292.5 -> "W"
+        else -> "NW"
+    }
+}
+
 @Composable
-fun QiblaDialogContent() {
+fun QiblaDialogContent(viewModel: com.example.ui.viewmodels.SettingsViewModel? = null) {
     val context = LocalContext.current
+    val currentLang = viewModel?.appLanguage?.collectAsState()?.value ?: com.example.utils.LocaleHelper.getLanguage(context)
+    val isEn = currentLang == "en"
     var qiblaBearing by remember { mutableFloatStateOf(0f) }
     var currentAzimuth by remember { mutableFloatStateOf(0f) }
     var currentPitch by remember { mutableFloatStateOf(0f) }
@@ -239,9 +255,9 @@ fun QiblaDialogContent() {
     }
     
     val turnDirectionText = when {
-        abs(turnAngle) <= 2 -> "আপনি সঠিক দিকে আছেন"
-        turnAngle < 0 -> "বামে ${formatToBanglaNumber(abs(turnAngle.roundToInt()))}° ঘুরুন"
-        else -> "ডানে ${formatToBanglaNumber(abs(turnAngle.roundToInt()))}° ঘুরুন"
+        abs(turnAngle) <= 2 -> if (isEn) "You are facing the right direction" else "আপনি সঠিক দিকে আছেন"
+        turnAngle < 0 -> if (isEn) "Turn Left ${abs(turnAngle.roundToInt())}°" else "বামে ${formatToBanglaNumber(abs(turnAngle.roundToInt()))}° ঘুরুন"
+        else -> if (isEn) "Turn Right ${abs(turnAngle.roundToInt())}°" else "ডানে ${formatToBanglaNumber(abs(turnAngle.roundToInt()))}° ঘুরুন"
     }
 
     val isDark = androidx.compose.material3.MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -274,7 +290,7 @@ fun QiblaDialogContent() {
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "লোকেশন পারমিশন প্রয়োজন",
+                            text = if (isEn) "Location Permission Required" else "লোকেশন পারমিশন প্রয়োজন",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.onErrorContainer
@@ -287,7 +303,7 @@ fun QiblaDialogContent() {
                             )
                         }
                     ) {
-                        Text("পারমিশন")
+                        Text(if (isEn) "Grant" else "পারমিশন")
                     }
                 }
             }
@@ -327,14 +343,19 @@ fun QiblaDialogContent() {
         Spacer(modifier = Modifier.weight(1f))
         
         // Compass Info (Degrees)
+        val degreeText = if (isEn) {
+            "${currentAzimuth.roundToInt()}° ${getEnglishDirection(currentAzimuth)}"
+        } else {
+            "${formatToBanglaNumber(currentAzimuth.roundToInt())}° ${getBanglaDirection(currentAzimuth)}"
+        }
         Text(
-            text = "${formatToBanglaNumber(currentAzimuth.roundToInt())}° ${getBanglaDirection(currentAzimuth)}",
+            text = degreeText,
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = if (isDark) Color.White else Color(0xFF2D3748)
         )
         Text(
-            text = "কম্পাস",
+            text = if (isEn) "Compass" else "কম্পাস",
             fontSize = 14.sp,
             color = Color.Gray,
             modifier = Modifier.padding(top = 4.dp)
@@ -343,14 +364,19 @@ fun QiblaDialogContent() {
         Spacer(modifier = Modifier.height(32.dp))
         
         // Distance Info
+        val distanceText = if (isEn) {
+            "$distanceToMecca km"
+        } else {
+            "${formatToBanglaNumber(distanceToMecca)} কিমি"
+        }
         Text(
-            text = "${formatToBanglaNumber(distanceToMecca)} কিমি",
+            text = distanceText,
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = if (isDark) Color.White else Color(0xFF2D3748)
         )
         Text(
-            text = "মক্কা থেকে দূরত্ব",
+            text = if (isEn) "Distance to Mecca" else "মক্কা থেকে দূরত্ব",
             fontSize = 14.sp,
             color = Color.Gray,
             modifier = Modifier.padding(top = 4.dp)

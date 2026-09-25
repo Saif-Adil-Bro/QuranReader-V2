@@ -8,6 +8,9 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.combine
@@ -207,6 +210,16 @@ class SettingsRepository(val context: Context) {
 
     init {
         fetchGlobalHijriOffset()
+        CoroutineScope(Dispatchers.IO).launch {
+            combinedHijriOffsetFlow.collect { combined ->
+                try {
+                    val sharedPrefs = context.getSharedPreferences("quran_menu_prefs", Context.MODE_PRIVATE)
+                    sharedPrefs.edit().putInt("hijri_offset", combined).apply()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
     }
 
     private fun fetchGlobalHijriOffset() {
@@ -362,6 +375,13 @@ class SettingsRepository(val context: Context) {
 
     suspend fun setHijriOffset(offset: Int) {
         context.dataStore.edit { preferences -> preferences[HIJRI_OFFSET_KEY] = offset }
+        try {
+            val total = offset + _globalHijriOffsetFlow.value
+            val sharedPrefs = context.getSharedPreferences("quran_menu_prefs", Context.MODE_PRIVATE)
+            sharedPrefs.edit().putInt("hijri_offset", total).apply()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     suspend fun setKeepScreenOn(keep: Boolean) {

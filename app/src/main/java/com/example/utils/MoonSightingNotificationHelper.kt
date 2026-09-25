@@ -110,18 +110,19 @@ object MoonSightingNotificationHelper {
             return
         }
 
-        val title = "✨ চাঁদ দেখা সংক্রান্ত জরুরি জ্ঞাতব্য.. ✨"
-        val message = "দ্বীনের বৃহত্তর এক যরূরত পূরণে সর্বস্তরের ওলামায়ে কেরামের কাছে বিশেষ আবেদন:"
+        val isEnglish = NotificationLocalization.isEnglish(context)
+        val title = NotificationLocalization.getMoonSightingTitle(isEnglish)
+        val message = NotificationLocalization.getMoonSightingMessage(isEnglish)
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "চাঁদ দেখা সংক্রান্ত বিজ্ঞপ্তি",
+                NotificationLocalization.getMoonSightingChannelName(isEnglish),
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "প্রতি আরবি মাসের ২৯ তারিখে চাঁদ দেখা সংক্রান্ত জরুরি জ্ঞাতব্য ও বিশেষ আবেদন"
+                description = NotificationLocalization.getMoonSightingChannelDesc(isEnglish)
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -147,8 +148,8 @@ object MoonSightingNotificationHelper {
             putExtra("blog_post_id", TARGET_POST_ID)
             putExtra("blog_post_title", title)
             putExtra("blog_post_content", "")
-            putExtra("blog_post_category", "নোটিফিকেশন")
-            putExtra("blog_post_author", "চাঁদ দেখা বিজ্ঞপ্তি")
+            putExtra("blog_post_category", if (isEnglish) "Notification" else "নোটিফিকেশন")
+            putExtra("blog_post_author", if (isEnglish) "Moon Sighting Notice" else "চাঁদ দেখা বিজ্ঞপ্তি")
             putExtra("blog_post_timestamp", timestamp)
         }
 
