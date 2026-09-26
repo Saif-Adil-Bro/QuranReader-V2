@@ -652,7 +652,7 @@ fun PrayerTimesDetailSheet(
                 PrayerDetailRow(
                     icon = Icons.Outlined.WbCloudy,
                     name = if (effectiveIsEnglish) "Awwabin" else "আওয়াবিন",
-                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.awwabinRange) else activeSchedule.awwabinRange,
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.awwabinRange.replace("মাগরিবের পর", "After Maghrib")) else activeSchedule.awwabinRange,
                     isCurrentWaqt = isMaghribActive,
                     currentBadgeText = if (effectiveIsEnglish) "After Maghrib" else "মাগরিবের পর"
                 )
@@ -663,7 +663,7 @@ fun PrayerTimesDetailSheet(
                 PrayerDetailRow(
                     icon = Icons.Outlined.Bedtime,
                     name = if (effectiveIsEnglish) "Tahajjud" else "তাহাজ্জুদ",
-                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.tahajjudRange) else activeSchedule.tahajjudRange,
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.tahajjudRange.replace("এশার পর", "After Isha")) else activeSchedule.tahajjudRange,
                     subItems = listOf(
                         BulletSubItem(
                             if (effectiveIsEnglish) "Last 1/3 of Night Starts: ${DateUtil.toEnglishNumerals(activeSchedule.tahajjudLastThirdStart)}" else "রাতের শেষ ১/৩ শুরু: ${activeSchedule.tahajjudLastThirdStart}",

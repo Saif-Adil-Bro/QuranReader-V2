@@ -73,7 +73,12 @@ object PrayerTimesShareUtil {
             append("☀️ সূর্যোদয়: $sunrise\n")
             append("🌅 সূর্যাস্ত: $sunset\n")
             append("✨ দুহা / ইশরাক: ${schedule.ishraqStartTimeFormatted}\n")
-            append("🌌 তাহাজ্জুদ শেষ: ${schedule.tahajjudEndTimeFormatted}\n")
+            val tahajjudDisplay = if (isEnglish) {
+                "🌌 Tahajjud: After Isha - ${DateUtil.toEnglishNumerals(schedule.sahriTimeDigits.ifEmpty { schedule.sahriEndTimeFormatted })}\n"
+            } else {
+                "🌌 তাহাজ্জুদ: এশার পর - ${schedule.sahriTimeDigits.ifEmpty { schedule.sahriEndTimeFormatted }}\n"
+            }
+            append(tahajjudDisplay)
             append("─────────────────\n")
             append("⚠️ নামাজের ৩টি নিষিদ্ধ সময় (মাকরূহ):\n")
             val forbiddenItems = schedule.forbiddenTimesList.ifEmpty {
@@ -123,10 +128,23 @@ object PrayerTimesShareUtil {
 
         // Date strings calculation
         val hijriInfo = HijriCalendarUtil.getHijriDate(date, hijriOffset)
-        val hijriDateStr = "${DateUtil.toBengaliNumerals(hijriInfo.hijriDay)} ${hijriInfo.hijriMonthNameBn}, ${DateUtil.toBengaliNumerals(hijriInfo.hijriYear)}"
-        val banglaDateStr = HijriCalendarUtil.getBanglaDateStr(date, includeSuffix = true)
-        val weekdayStr = HijriCalendarUtil.getBengaliWeekdayName(date)
-        val engDateStr = schedule.dateStrBn
+        val weekdayStr = if (isEnglish) {
+            date.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH)
+        } else {
+            HijriCalendarUtil.getBengaliWeekdayName(date)
+        }
+        val engDateStr = if (isEnglish) {
+            date.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy", java.util.Locale.ENGLISH))
+        } else {
+            schedule.dateStrBn
+        }
+        val hijriDateStr = if (isEnglish) {
+            "${hijriInfo.hijriDay} ${hijriInfo.hijriMonthNameEn}, ${hijriInfo.hijriYear} AH"
+        } else {
+            "${DateUtil.toBengaliNumerals(hijriInfo.hijriDay)} ${hijriInfo.hijriMonthNameBn}, ${DateUtil.toBengaliNumerals(hijriInfo.hijriYear)} হিজরী"
+        }
+        val banglaDateStr = if (isEnglish) "" else "  •  ${HijriCalendarUtil.getBanglaDateStr(date, includeSuffix = true)}"
+        val datesCombinedStr = if (isEnglish) "$engDateStr  •  $hijriDateStr" else "$engDateStr  •  $hijriDateStr$banglaDateStr"
 
         // 1. Clean Pastel Mint-Green Background Gradient
         val bgPaint = Paint().apply {
@@ -330,7 +348,6 @@ object PrayerTimesShareUtil {
             typeface = regularFont
             textAlign = Paint.Align.LEFT
         }
-        val datesCombinedStr = "$engDateStr  •  $hijriDateStr হিজরী  •  $banglaDateStr"
         canvas.drawText(datesCombinedStr, cardLeft + 30f, cardTop + 86f, datesSubtitlePaint)
 
         // Location Right Side (Pin + District)
@@ -443,16 +460,20 @@ object PrayerTimesShareUtil {
             cleanTimeDigits(schedule.zawalStartTime.ifEmpty { "১১:৫৬" })
         }
 
+        val formatTime = { raw: String -> if (isEnglish) DateUtil.toEnglishNumerals(raw) else raw }
+        val tahajjudStartStr = if (isEnglish) "After Isha" else "এশার পর"
+        val tahajjudEndStr = formatTime(sahri)
+
         data class TableRowItem(val name: String, val start: String, val end: String)
         val dhuhrTableRowName = if (schedule.isFriday) (if (isEnglish) "Jumu'ah" else "জুমুআ") else (if (isEnglish) "Dhuhr" else "যোহর")
         val t1Rows = listOf(
-            TableRowItem("ফজর", fajrItem?.timeDigits ?: "০৪:১০", sunrise),
-            TableRowItem(dhuhrTableRowName, dhuhrItem?.timeDigits ?: "১২:০৪", asrItem?.timeDigits ?: "০৪:৩৭"),
-            TableRowItem("আসর", asrItem?.timeDigits ?: "০৪:৩৮", maghribItem?.timeDigits ?: "০৬:৩১"),
-            TableRowItem("মাগরিব", maghribItem?.timeDigits ?: "০৬:৩২", ishaItem?.timeDigits ?: "০৭:৫১"),
-            TableRowItem("এশা", ishaItem?.timeDigits ?: "০৭:৫২", fajrItem?.timeDigits ?: "০৪:১০"),
-            TableRowItem("দুহা", duhaStart, duhaEnd),
-            TableRowItem("তাহাজ্জুদ", ishaItem?.timeDigits ?: "০৭:৫২", sahri)
+            TableRowItem(if (isEnglish) "Fajr" else "ফজর", formatTime(fajrItem?.timeDigits ?: "০৪:১০"), formatTime(sunrise)),
+            TableRowItem(dhuhrTableRowName, formatTime(dhuhrItem?.timeDigits ?: "১২:০৪"), formatTime(asrItem?.timeDigits ?: "০৪:৩৭")),
+            TableRowItem(if (isEnglish) "Asr" else "আসর", formatTime(asrItem?.timeDigits ?: "০৪:৩৮"), formatTime(maghribItem?.timeDigits ?: "০৬:৩১")),
+            TableRowItem(if (isEnglish) "Maghrib" else "মাগরিব", formatTime(maghribItem?.timeDigits ?: "০৬:৩২"), formatTime(ishaItem?.timeDigits ?: "০৭:৫১")),
+            TableRowItem(if (isEnglish) "Isha" else "এশা", formatTime(ishaItem?.timeDigits ?: "০৭:৫২"), formatTime(fajrItem?.timeDigits ?: "০৪:১০")),
+            TableRowItem(if (isEnglish) "Duha" else "দুহা", formatTime(duhaStart), formatTime(duhaEnd)),
+            TableRowItem(if (isEnglish) "Tahajjud" else "তাহাজ্জুদ", tahajjudStartStr, tahajjudEndStr)
         )
 
         val t1TotalH = thHeight + t1Rows.size * t1RowHeight
@@ -492,16 +513,25 @@ object PrayerTimesShareUtil {
             typeface = boldFont
             textAlign = Paint.Align.CENTER
         }
-        canvas.drawText("ওয়াক্ত", col1X, currentY + 29f, thTextLeft)
-        canvas.drawText("শুরু", col2X, currentY + 29f, thTextCol)
-        canvas.drawText("শেষ", col3X, currentY + 29f, thTextCol)
+        val thWaqt = if (isEnglish) "Waqt" else "ওয়াক্ত"
+        val thStart = if (isEnglish) "Start" else "শুরু"
+        val thEnd = if (isEnglish) "End" else "শেষ"
+        canvas.drawText(thWaqt, col1X, currentY + 29f, thTextLeft)
+        canvas.drawText(thStart, col2X, currentY + 29f, thTextCol)
+        canvas.drawText(thEnd, col3X, currentY + 29f, thTextCol)
 
         // Draw Rows
         var rowTopY = currentY + thHeight
         t1Rows.forEachIndexed { index, row ->
             val centerY = rowTopY + 29f
             canvas.drawText(row.name, col1X, centerY, rowNamePaint)
-            canvas.drawText(row.start, col2X, centerY, rowTimePaint)
+            if (row.start.length > 5) {
+                rowTimePaint.textSize = 21f
+                canvas.drawText(row.start, col2X, centerY, rowTimePaint)
+                rowTimePaint.textSize = 24.5f
+            } else {
+                canvas.drawText(row.start, col2X, centerY, rowTimePaint)
+            }
             canvas.drawText(row.end, col3X, centerY, rowTimePaint)
 
             // Horizontal divider line
@@ -529,10 +559,10 @@ object PrayerTimesShareUtil {
         // =========================================================================
         val t2RowHeight = 41f
         val t2Rows = listOf(
-            Pair("সাহরি শেষ", sahri),
-            Pair("ইফতার শুরু", iftar),
-            Pair("সূর্যোদয়", sunrise),
-            Pair("সূর্যাস্ত", sunset)
+            Pair(if (isEnglish) "Sahri Ends" else "সাহরি শেষ", formatTime(sahri)),
+            Pair(if (isEnglish) "Iftar Begins" else "ইফতার শুরু", formatTime(iftar)),
+            Pair(if (isEnglish) "Sunrise" else "সূর্যোদয়", formatTime(sunrise)),
+            Pair(if (isEnglish) "Sunset" else "সূর্যাস্ত", formatTime(sunset))
         )
         val t2TotalH = t2Rows.size * t2RowHeight
         val t2BoxRect = RectF(tableLeft, currentY, tableRight, currentY + t2TotalH)
@@ -579,9 +609,9 @@ object PrayerTimesShareUtil {
         }
 
         val t3Rows = listOf(
-            Pair("১. সূর্যোদয়ের সময়", fMorningStr),
-            Pair("২. দ্বিপ্রহরের সময় (জাওয়াল)", fNoonStr),
-            Pair("৩. সূর্যাস্তের সময়", fEveStr)
+            Pair(if (isEnglish) "1. At Sunrise" else "১. সূর্যোদয়ের সময়", formatTime(fMorningStr)),
+            Pair(if (isEnglish) "2. At Midday (Zawal)" else "২. দ্বিপ্রহরের সময় (জাওয়াল)", formatTime(fNoonStr)),
+            Pair(if (isEnglish) "3. At Sunset" else "৩. সূর্যাস্তের সময়", formatTime(fEveStr))
         )
         val t3TotalH = t3HeaderHeight + t3Rows.size * t3RowHeight
         val t3BoxRect = RectF(tableLeft, currentY, tableRight, currentY + t3TotalH)
@@ -631,7 +661,8 @@ object PrayerTimesShareUtil {
             typeface = boldFont
             textAlign = Paint.Align.LEFT
         }
-        canvas.drawText("⚠️ নামাজের ৩টি নিষিদ্ধ সময় (মাকরূহ):", tableLeft + 18f, currentY + 27f, fTitlePaint)
+        val t3Title = if (isEnglish) "⚠️ 3 Forbidden Prayer Times (Makruh):" else "⚠️ নামাজের ৩টি নিষিদ্ধ সময় (মাকরূহ):"
+        canvas.drawText(t3Title, tableLeft + 18f, currentY + 27f, fTitlePaint)
 
         // Header bottom divider line
         canvas.drawLine(tableLeft, currentY + t3HeaderHeight, tableRight, currentY + t3HeaderHeight, forbiddenGridPaint)
