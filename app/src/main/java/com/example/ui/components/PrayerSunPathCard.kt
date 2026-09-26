@@ -44,42 +44,73 @@ private val GlassBorder = Color.White.copy(alpha = 0.14f)
 data class VisualPrayerPoint(
     val name: String,
     val bengaliName: String,
+    val englishName: String,
     val timeMinutes: Int,
     val timeString: String,
+    val timeStringEn: String,
     val iconType: PrayerName
 )
+
+private fun formatDurationEnglish(minutes: Int): String {
+    val hrs = minutes / 60
+    val mins = minutes % 60
+    return when {
+        hrs > 0 && mins > 0 -> "${hrs}h ${mins}m"
+        hrs > 0 -> "${hrs}h"
+        else -> "${mins}m"
+    }
+}
 
 @Composable
 fun PrayerSunPathCard(
     schedule: DailyPrayerSchedule,
     modifier: Modifier = Modifier,
+    isEnglish: Boolean = false,
     onDetailsClick: () -> Unit = {},
     notificationStates: Map<com.example.data.model.PrayerName, Boolean> = emptyMap(),
     onToggleNotification: (com.example.data.model.PrayerName, Boolean) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
-    val currentDate = remember(schedule) { schedule.dateStrBn }
-    val hijriDate = remember { DateUtil.getTodayHijriDateStr(0) }
-
-    val selectedLocation = if (schedule.district.countryBn == "বাংলাদেশ") {
-        schedule.district.nameBn
-    } else {
-        "${schedule.district.nameBn}, ${schedule.district.countryBn}"
+    val currentDate = remember(schedule, isEnglish) {
+        if (isEnglish) {
+            DateUtil.formatDateEnglish(java.time.LocalDate.now())
+        } else {
+            schedule.dateStrBn
+        }
+    }
+    val hijriDate = remember(isEnglish) {
+        DateUtil.getTodayHijriDateStr(0, isEnglish = isEnglish)
     }
 
-    val prayers = remember(schedule) {
+    val selectedLocation = if (isEnglish) {
+        if (schedule.district.countryEn == "Bangladesh") schedule.district.nameEn else "${schedule.district.nameEn}, ${schedule.district.countryEn}"
+    } else {
+        if (schedule.district.countryBn == "বাংলাদেশ") schedule.district.nameBn else "${schedule.district.nameBn}, ${schedule.district.countryBn}"
+    }
+
+    val zoneId = remember(schedule.district) {
+        try {
+            java.time.ZoneId.of(schedule.district.timeZoneId)
+        } catch (e: Exception) {
+            java.time.ZoneId.of("Asia/Dhaka")
+        }
+    }
+
+    val prayers = remember(schedule, zoneId) {
         val list = mutableListOf<VisualPrayerPoint>()
         schedule.prayers.forEach { prayerTime ->
             if (prayerTime.name != PrayerName.SAHRI && prayerTime.name != PrayerName.IFTAR) {
-                val cal = Calendar.getInstance().apply { timeInMillis = prayerTime.timestampMillis }
-                val minutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+                val zdt = java.time.Instant.ofEpochMilli(prayerTime.timestampMillis).atZone(zoneId)
+                val minutes = zdt.hour * 60 + zdt.minute
                 
                 list.add(
                     VisualPrayerPoint(
                         name = prayerTime.name.name,
                         bengaliName = prayerTime.displayNameBn,
+                        englishName = prayerTime.getDisplayName(isEn = true),
                         timeMinutes = minutes,
                         timeString = "${prayerTime.timeDigits} ${prayerTime.amPm}",
+                        timeStringEn = "${DateUtil.toEnglishNumerals(prayerTime.timeDigits)} ${prayerTime.amPm.replace("am", "AM").replace("pm", "PM")}",
                         iconType = prayerTime.name
                     )
                 )
@@ -88,15 +119,41 @@ fun PrayerSunPathCard(
         list.sortedBy { it.timeMinutes }
     }
 
-    val currentMinutes by rememberCurrentMinutes()
+    val currentMinutes by rememberCurrentMinutes(zoneId)
     val currentIndex = findCurrentPrayerIndex(prayers, currentMinutes)
 
-    val dynamicColors = remember(currentIndex) {
-        when (currentIndex) {
-            0, 1 -> listOf(Color(0xFF0C2B3C), Color(0xFF071922)) // Fajr/Sunrise: Dawn Blues
-            2 -> listOf(Color(0xFF084B5B), Color(0xFF04262E)) // Dhuhr: Bright Midday
-            3 -> listOf(Color(0xFF4A3415), Color(0xFF2B1D0B)) // Asr: Afternoon Warm
-            4 -> listOf(Color(0xFF441818), Color(0xFF220A0A)) // Maghrib: Sunset Deep Orange/Red
+    val sunriseTimeItem = remember(schedule) { schedule.prayers.find { it.name == PrayerName.SUNRISE } }
+    val dhuhrTimeItem = remember(schedule) { schedule.prayers.find { it.name == PrayerName.DHUHR } }
+    val fajrTimeItem = remember(schedule) { schedule.prayers.find { it.name == PrayerName.FAJR } }
+
+    val sunriseMinutes = remember(sunriseTimeItem, zoneId) {
+        sunriseTimeItem?.let {
+            val zdt = java.time.Instant.ofEpochMilli(it.timestampMillis).atZone(zoneId)
+            zdt.hour * 60 + zdt.minute
+        } ?: (6 * 60)
+    }
+    val duhaStartMinutes = sunriseMinutes + 16
+    val dhuhrMinutes = remember(dhuhrTimeItem, zoneId) {
+        dhuhrTimeItem?.let {
+            val zdt = java.time.Instant.ofEpochMilli(it.timestampMillis).atZone(zoneId)
+            zdt.hour * 60 + zdt.minute
+        } ?: (12 * 60)
+    }
+    val duhaEndMinutes = (dhuhrMinutes - 4).coerceAtLeast(duhaStartMinutes)
+
+    val isSunriseMakruhNow = (currentIndex == 1 && currentMinutes in sunriseMinutes until duhaStartMinutes)
+    val isDuhaNow = (currentIndex == 1 && currentMinutes in duhaStartMinutes until duhaEndMinutes)
+    val isZawalMakruhNow = (currentIndex == 1 && currentMinutes in duhaEndMinutes until dhuhrMinutes)
+
+    val dynamicColors = remember(currentIndex, isSunriseMakruhNow, isDuhaNow, isZawalMakruhNow) {
+        when {
+            isSunriseMakruhNow || isZawalMakruhNow -> listOf(Color(0xFF38191C), Color(0xFF1E0E10))
+            isDuhaNow -> listOf(Color(0xFF0D4B3C), Color(0xFF05241D)) // Morning vibrant warm golden green
+            currentIndex == 0 -> listOf(Color(0xFF0C2B3C), Color(0xFF071922)) // Fajr/Sunrise: Dawn Blues
+            currentIndex == 1 -> listOf(Color(0xFF0E465A), Color(0xFF07242E)) // Sunrise
+            currentIndex == 2 -> listOf(Color(0xFF084B5B), Color(0xFF04262E)) // Dhuhr: Bright Midday
+            currentIndex == 3 -> listOf(Color(0xFF4A3415), Color(0xFF2B1D0B)) // Asr: Afternoon Warm
+            currentIndex == 4 -> listOf(Color(0xFF441818), Color(0xFF220A0A)) // Maghrib: Sunset Deep Orange/Red
             else -> listOf(Color(0xFF0B1120), Color(0xFF060912)) // Isha/Night: Midnight
         }
     }
@@ -193,6 +250,7 @@ fun PrayerSunPathCard(
                 prayers = prayers,
                 currentIndex = currentIndex,
                 currentMinutes = currentMinutes,
+                isEnglish = isEnglish,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(96.dp)
@@ -205,39 +263,133 @@ fun PrayerSunPathCard(
                 val current = prayers[currentIndex]
                 val next = prayers.getOrNull((currentIndex + 1) % prayers.size) ?: prayers.first()
                 
-                val totalMinutes = if (next.timeMinutes > current.timeMinutes) {
-                    next.timeMinutes - current.timeMinutes
-                } else {
-                    (24 * 60 - current.timeMinutes) + next.timeMinutes
-                }
-                val elapsedMinutes = if (currentMinutes >= current.timeMinutes) {
-                    currentMinutes - current.timeMinutes
-                } else {
-                    (24 * 60 - current.timeMinutes) + currentMinutes
-                }
-                val progress = (elapsedMinutes.toFloat() / totalMinutes.coerceAtLeast(1)).coerceIn(0f, 1f)
+                // Dynamic Waqt metadata based on morning Chasht/Duha or Makruh periods
+                val displayPill: String
+                val displayName: String
+                val displayTime: String
+                val elapsedMinutes: Int
+                val totalMinutes: Int
+                val leftLabel: String
+                val leftValue: String
+                val rightLabel: String
+                val rightValue: String
+                val progressFraction: Float
+                val nextWaqtDisplayName: String
+                val nextWaqtDisplayTime: String
 
-                // "বর্তমান ওয়াক্ত" pill
+                when {
+                    isSunriseMakruhNow -> {
+                        displayPill = if (isEnglish) "⚠️ Forbidden Prayer Time" else "⚠️ সালাতের নিষিদ্ধ সময়"
+                        displayName = if (isEnglish) "Sunrise (Makruh)" else "সূর্যোদয় (মাকরূহ)"
+                        displayTime = if (isEnglish) DateUtil.toEnglishNumerals(schedule.forbiddenMorningRange).ifBlank { "15-16 mins from sunrise" } else schedule.forbiddenMorningRange.ifBlank { "সূর্যোদয় থেকে ১৫-১৬ মিনিট" }
+                        elapsedMinutes = (currentMinutes - sunriseMinutes).coerceAtLeast(0)
+                        totalMinutes = (duhaStartMinutes - sunriseMinutes).coerceAtLeast(1)
+                        val remainingToDuha = (duhaStartMinutes - currentMinutes).coerceAtLeast(0)
+                        leftLabel = if (isEnglish) "Started" else "শুরু হয়েছে"
+                        leftValue = if (isEnglish) "${formatDurationEnglish(elapsedMinutes)} ago" else "${formatDurationBangla(elapsedMinutes)} আগে"
+                        rightLabel = if (isEnglish) "Chasht Starts" else "চাশত শুরু"
+                        rightValue = if (isEnglish) "${formatDurationEnglish(remainingToDuha)} left" else "${formatDurationBangla(remainingToDuha)} বাকি"
+                        progressFraction = (elapsedMinutes.toFloat() / totalMinutes.toFloat()).coerceIn(0f, 1f)
+                        nextWaqtDisplayName = if (isEnglish) "Chasht & Duha" else "চাশত ও দুহা"
+                        nextWaqtDisplayTime = if (isEnglish) DateUtil.toEnglishNumerals(schedule.duhaRange.split("-").firstOrNull()?.trim() ?: "Morning") else (schedule.duhaRange.split("-").firstOrNull()?.trim() ?: "সকাল")
+                    }
+                    isDuhaNow -> {
+                        displayPill = if (isEnglish) "Nafl Prayer Time" else "নফল সালাতের ওয়াক্ত"
+                        displayName = if (isEnglish) "Chasht & Duha" else "চাশত ও দুহা"
+                        displayTime = if (isEnglish) DateUtil.toEnglishNumerals(schedule.duhaRange).ifBlank { "Morning to Midday" } else schedule.duhaRange.ifBlank { "সকাল থেকে দ্বিপ্রহর" }
+                        elapsedMinutes = (currentMinutes - duhaStartMinutes).coerceAtLeast(0)
+                        totalMinutes = (duhaEndMinutes - duhaStartMinutes).coerceAtLeast(1)
+                        val remainingToZawal = (duhaEndMinutes - currentMinutes).coerceAtLeast(0)
+                        leftLabel = if (isEnglish) "Started" else "শুরু হয়েছে"
+                        leftValue = if (isEnglish) "${formatDurationEnglish(elapsedMinutes)} ago" else "${formatDurationBangla(elapsedMinutes)} আগে"
+                        rightLabel = if (isEnglish) "Waqt Ends" else "ওয়াক্ত শেষ"
+                        rightValue = if (isEnglish) "${formatDurationEnglish(remainingToZawal)} left" else "${formatDurationBangla(remainingToZawal)} বাকি"
+                        progressFraction = (elapsedMinutes.toFloat() / totalMinutes.toFloat()).coerceIn(0f, 1f)
+                        nextWaqtDisplayName = if (isEnglish) (if (schedule.isFriday) "Jumu'ah" else "Dhuhr") else (if (schedule.isFriday) "জুমুআ" else "যোহর")
+                        nextWaqtDisplayTime = if (isEnglish) next.timeStringEn else next.timeString
+                    }
+                    isZawalMakruhNow -> {
+                        displayPill = if (isEnglish) "⚠️ Forbidden Prayer Time" else "⚠️ সালাতের নিষিদ্ধ সময়"
+                        displayName = if (isEnglish) "Midday (Zawal)" else "দ্বিপ্রহর (জাওয়াল)"
+                        displayTime = if (isEnglish) DateUtil.toEnglishNumerals(schedule.forbiddenNoonRange).ifBlank { "Midday forbidden time" } else schedule.forbiddenNoonRange.ifBlank { "দ্বিপ্রহরের নিষিদ্ধ সময়" }
+                        elapsedMinutes = (currentMinutes - duhaEndMinutes).coerceAtLeast(0)
+                        totalMinutes = (dhuhrMinutes - duhaEndMinutes).coerceAtLeast(1)
+                        val remainingToDhuhr = (dhuhrMinutes - currentMinutes).coerceAtLeast(0)
+                        leftLabel = if (isEnglish) "Started" else "শুরু হয়েছে"
+                        leftValue = if (isEnglish) "${formatDurationEnglish(elapsedMinutes)} ago" else "${formatDurationBangla(elapsedMinutes)} আগে"
+                        rightLabel = if (isEnglish) (if (schedule.isFriday) "Jumu'ah Starts" else "Dhuhr Starts") else (if (schedule.isFriday) "জুমুআ শুরু" else "যোহর শুরু")
+                        rightValue = if (isEnglish) "${formatDurationEnglish(remainingToDhuhr)} left" else "${formatDurationBangla(remainingToDhuhr)} বাকি"
+                        progressFraction = (elapsedMinutes.toFloat() / totalMinutes.toFloat()).coerceIn(0f, 1f)
+                        nextWaqtDisplayName = if (isEnglish) (if (schedule.isFriday) "Jumu'ah" else "Dhuhr") else (if (schedule.isFriday) "জুমুআ" else "যোহর")
+                        nextWaqtDisplayTime = if (isEnglish) next.timeStringEn else next.timeString
+                    }
+                    else -> {
+                        displayPill = if (isEnglish) "Current Waqt" else "বর্তমান ওয়াক্ত"
+                        displayName = if (isEnglish) current.englishName else current.bengaliName
+                        displayTime = if (isEnglish) current.timeStringEn else current.timeString
+                        val rawTotal = if (next.timeMinutes > current.timeMinutes) {
+                            next.timeMinutes - current.timeMinutes
+                        } else {
+                            (24 * 60 - current.timeMinutes) + next.timeMinutes
+                        }
+                        totalMinutes = rawTotal.coerceAtLeast(1)
+                        val rawElapsed = if (currentMinutes >= current.timeMinutes) {
+                            currentMinutes - current.timeMinutes
+                        } else {
+                            (24 * 60 - current.timeMinutes) + currentMinutes
+                        }
+                        elapsedMinutes = rawElapsed
+                        val remaining = (totalMinutes - elapsedMinutes).coerceAtLeast(0)
+                        leftLabel = if (isEnglish) "Started" else "শুরু হয়েছে"
+                        leftValue = if (isEnglish) "${formatDurationEnglish(elapsedMinutes)} ago" else "${formatDurationBangla(elapsedMinutes)} আগে"
+                        rightLabel = if (isEnglish) "Waqt Ends" else "ওয়াক্ত শেষ"
+                        rightValue = if (isEnglish) "${formatDurationEnglish(remaining)} left" else "${formatDurationBangla(remaining)} বাকি"
+                        progressFraction = (elapsedMinutes.toFloat() / totalMinutes.toFloat()).coerceIn(0f, 1f)
+                        nextWaqtDisplayName = if (isEnglish) next.englishName else next.bengaliName
+                        nextWaqtDisplayTime = if (isEnglish) next.timeStringEn else next.timeString
+                    }
+                }
+
+                // "বর্তমান ওয়াক্ত" / "নফল সালাতের ওয়াক্ত" / "⚠️ সালাতের নিষিদ্ধ সময়" pill
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
-                        .background(Color.White.copy(alpha = 0.12f))
-                        .padding(horizontal = 14.dp, vertical = 3.dp)
+                        .background(
+                            when {
+                                isSunriseMakruhNow || isZawalMakruhNow -> Color(0xFFDC2626).copy(alpha = 0.35f)
+                                isDuhaNow -> Color(0xFF00C288).copy(alpha = 0.25f)
+                                else -> Color.White.copy(alpha = 0.12f)
+                            }
+                        )
+                        .border(
+                            0.8.dp,
+                            when {
+                                isSunriseMakruhNow || isZawalMakruhNow -> Color(0xFFF87171).copy(alpha = 0.6f)
+                                isDuhaNow -> Color(0xFF00C288).copy(alpha = 0.6f)
+                                else -> Color.White.copy(alpha = 0.2f)
+                            },
+                            RoundedCornerShape(50)
+                        )
+                        .padding(horizontal = 14.dp, vertical = 3.5.dp)
                 ) {
                     Text(
-                        text = "বর্তমান ওয়াক্ত",
-                        color = SoftWhite,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium
+                        text = displayPill,
+                        color = when {
+                            isSunriseMakruhNow || isZawalMakruhNow -> Color(0xFFFFCDD2)
+                            isDuhaNow -> Color(0xFF34D399)
+                            else -> SoftWhite
+                        },
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
                 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(5.dp))
                 
                 // Current Prayer Name & Time
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = current.bengaliName,
+                        text = displayName,
                         color = Color.White,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold
@@ -251,7 +403,7 @@ fun PrayerSunPathCard(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = current.timeString,
+                        text = displayTime,
                         color = Color.White,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold
@@ -265,7 +417,7 @@ fun PrayerSunPathCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .background(Color.Black.copy(alpha = 0.35f)) // Slightly darker for contrast
+                        .background(Color.Black.copy(alpha = 0.35f))
                         .border(0.8.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(16.dp))
                         .height(58.dp)
                         .padding(horizontal = 16.dp)
@@ -285,14 +437,14 @@ fun PrayerSunPathCard(
                             Spacer(modifier = Modifier.width(4.dp))
                             Column(verticalArrangement = Arrangement.spacedBy((-1).dp)) {
                                 Text(
-                                    text = "শুরু হয়েছে",
+                                    text = leftLabel,
                                     color = Color.White,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Medium,
                                     lineHeight = 10.sp
                                 )
                                 Text(
-                                    text = "${formatDurationBangla(elapsedMinutes)} আগে",
+                                    text = leftValue,
                                     color = GoldBright,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
@@ -305,14 +457,14 @@ fun PrayerSunPathCard(
                         
                         // Center: Progress Bar
                         Column(
-                            modifier = Modifier.weight(1.8f), // increased weight to make it wider
+                            modifier = Modifier.weight(1.8f),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy((-1).dp)
                         ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(8.dp) // made progress bar thicker
+                                    .height(8.dp)
                                     .clip(RoundedCornerShape(50))
                                     .background(Color.White.copy(alpha = 0.15f)),
                                 contentAlignment = Alignment.CenterStart
@@ -320,19 +472,23 @@ fun PrayerSunPathCard(
                                 // Progress fill
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxWidth(progress)
+                                        .fillMaxWidth(progressFraction)
                                         .fillMaxHeight()
                                         .clip(RoundedCornerShape(50))
                                         .background(
                                             Brush.horizontalGradient(
-                                                colors = listOf(GoldAccent, Color(0xFF34D399))
+                                                colors = if (isSunriseMakruhNow || isZawalMakruhNow) {
+                                                    listOf(Color(0xFFEF4444), Color(0xFFF87171))
+                                                } else {
+                                                    listOf(GoldAccent, Color(0xFF34D399))
+                                                }
                                             )
                                         )
                                 )
                                 // Thumb indicator
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxWidth(progress)
+                                        .fillMaxWidth(progressFraction)
                                         .fillMaxHeight(),
                                     contentAlignment = Alignment.CenterEnd
                                 ) {
@@ -341,15 +497,15 @@ fun PrayerSunPathCard(
                                             .size(12.dp)
                                             .offset(x = 6.dp)
                                             .clip(CircleShape)
-                                            .background(Color(0xFF34D399))
+                                            .background(if (isSunriseMakruhNow || isZawalMakruhNow) Color(0xFFF87171) else Color(0xFF34D399))
                                             .border(1.5.dp, Color(0xFF0F3E29), CircleShape)
                                     )
                                 }
                             }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "${DateUtil.toBengaliNumerals((progress * 100).toInt())}% সম্পন্ন",
-                                color = Color(0xFF34D399),
+                                text = "${DateUtil.toBengaliNumerals((progressFraction * 100).toInt())}% সম্পন্ন",
+                                color = if (isSunriseMakruhNow || isZawalMakruhNow) Color(0xFFFCA5A5) else Color(0xFF34D399),
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Medium
                             )
@@ -357,21 +513,21 @@ fun PrayerSunPathCard(
                         
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        // Right: Remaining time (ওয়াক্ত শেষ)
+                        // Right: Remaining time
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(
                                 horizontalAlignment = Alignment.End,
                                 verticalArrangement = Arrangement.spacedBy((-1).dp)
                             ) {
                                 Text(
-                                    text = "ওয়াক্ত শেষ",
+                                    text = rightLabel,
                                     color = Color.White,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Medium,
                                     lineHeight = 10.sp
                                 )
                                 Text(
-                                    text = "${formatDurationBangla(totalMinutes - elapsedMinutes)} বাকি",
+                                    text = rightValue,
                                     color = GoldBright,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
@@ -417,13 +573,13 @@ fun PrayerSunPathCard(
                             Spacer(modifier = Modifier.width(4.dp))
                             Column(verticalArrangement = Arrangement.spacedBy((-1).dp)) {
                                 Text(
-                                    text = "পরবর্তী ওয়াক্ত",
+                                    text = if (isEnglish) "Next Waqt" else "পরবর্তী ওয়াক্ত",
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 9.sp,
                                     lineHeight = 10.sp
                                 )
                                 Text(
-                                    text = "${next.bengaliName} • ${next.timeString}",
+                                    text = "$nextWaqtDisplayName • $nextWaqtDisplayTime",
                                     color = Color.White,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
@@ -440,7 +596,7 @@ fun PrayerSunPathCard(
                                 .background(Color.White.copy(alpha = 0.15f))
                         )
 
-                        // Middle: Azaan Time
+                        // Middle: Azaan / Waqt Start Time
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Outlined.Notifications,
@@ -451,13 +607,17 @@ fun PrayerSunPathCard(
                             Spacer(modifier = Modifier.width(4.dp))
                             Column(verticalArrangement = Arrangement.spacedBy((-1).dp)) {
                                 Text(
-                                    text = "আজানের সময়",
+                                    text = if (isSunriseMakruhNow) {
+                                        if (isEnglish) "Waqt Starts" else "ওয়াক্ত শুরু"
+                                    } else {
+                                        if (isEnglish) "Adhan Time" else "আজানের সময়"
+                                    },
                                     color = Color.White.copy(alpha = 0.8f),
                                     fontSize = 9.sp,
                                     lineHeight = 10.sp
                                 )
                                 Text(
-                                    text = next.timeString, // This matches alarm logic natively
+                                    text = nextWaqtDisplayTime,
                                     color = Color.White,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
@@ -475,16 +635,17 @@ fun PrayerSunPathCard(
                         )
 
                         // Right: Notification Toggle
-                        val isNotificationOn = notificationStates[next.iconType] ?: true
+                        val notifTargetIcon = if (isSunriseMakruhNow) PrayerName.SUNRISE else next.iconType
+                        val isNotificationOn = notificationStates[notifTargetIcon] ?: true
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(2.dp),
                             modifier = Modifier.clickable { 
-                                onToggleNotification(next.iconType, !isNotificationOn)
+                                onToggleNotification(notifTargetIcon, !isNotificationOn)
                             }
                         ) {
                             Text(
-                                text = "নোটিফিকেশন",
+                                text = if (isEnglish) "Alert" else "নোটিফিকেশন",
                                 color = Color.White.copy(alpha = 0.8f),
                                 fontSize = 9.sp
                             )
@@ -509,7 +670,6 @@ fun PrayerSunPathCard(
                         }
                     }
                 }
-
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -527,7 +687,7 @@ fun PrayerSunPathCard(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "সময়সূচী: ইসলামিক ফাউন্ডেশন (বাংলাদেশ) অনুযায়ী",
+                    text = if (isEnglish) "Timetable: Based on Islamic Foundation (Bangladesh)" else "সময়সূচী: ইসলামিক ফাউন্ডেশন (বাংলাদেশ) অনুযায়ী",
                     color = SoftWhite.copy(alpha = 0.75f),
                     fontSize = 10.sp,
                     maxLines = 1,
@@ -542,6 +702,7 @@ private fun VisualSunPathSection(
     prayers: List<VisualPrayerPoint>,
     currentIndex: Int,
     currentMinutes: Int,
+    isEnglish: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     BoxWithConstraints(modifier = modifier) {
@@ -732,8 +893,13 @@ private fun VisualSunPathSection(
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
+                val nodeTitle = if (index == 1 && isCurrent && currentMinutes >= prayer.timeMinutes + 16) {
+                    if (isEnglish) "Chasht / Duha" else "চাশত / দুহা"
+                } else {
+                    if (isEnglish) prayer.englishName else prayer.bengaliName
+                }
                 Text(
-                    text = prayer.bengaliName,
+                    text = nodeTitle,
                     color = if (isCurrent) GoldBright else Color.White,
                     fontSize = if (isCurrent) 8.5.sp else 7.5.sp,
                     fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
@@ -741,7 +907,7 @@ private fun VisualSunPathSection(
                     maxLines = 1
                 )
                 Text(
-                    text = prayer.timeString.replace(" ", "\n"),
+                    text = (if (isEnglish) prayer.timeStringEn else prayer.timeString).replace(" ", "\n"),
                     color = if (isCurrent) Color.White else SoftWhite.copy(alpha = 0.85f),
                     fontSize = if (isCurrent) 7.5.sp else 6.5.sp,
                     fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal,
@@ -790,14 +956,14 @@ private fun VisualSunPathSection(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "তাহাজ্জুদ",
+                    text = if (isEnglish) "Tahajjud" else "তাহাজ্জুদ",
                     color = Color.White.copy(alpha = 0.9f),
                     fontSize = 7.5.sp,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "রাতের\nশেষাংশ",
+                    text = if (isEnglish) "Late\nNight" else "রাতের\nশেষাংশ",
                     color = SoftWhite.copy(alpha = 0.75f),
                     fontSize = 6.5.sp,
                     textAlign = TextAlign.Center,
@@ -810,13 +976,16 @@ private fun VisualSunPathSection(
 }
 
 @Composable
-private fun rememberCurrentMinutes(): State<Int> {
-    val currentMinutes = remember { mutableStateOf(0) }
-    LaunchedEffect(Unit) {
+private fun rememberCurrentMinutes(zoneId: java.time.ZoneId): State<Int> {
+    val currentMinutes = remember(zoneId) {
+        val now = java.time.ZonedDateTime.now(zoneId)
+        mutableStateOf(now.hour * 60 + now.minute)
+    }
+    LaunchedEffect(zoneId) {
         while(true) {
-            val cal = Calendar.getInstance()
-            currentMinutes.value = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
-            delay(1000 * 60)
+            val now = java.time.ZonedDateTime.now(zoneId)
+            currentMinutes.value = now.hour * 60 + now.minute
+            delay(1000 * 30)
         }
     }
     return currentMinutes

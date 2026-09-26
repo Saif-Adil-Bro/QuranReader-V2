@@ -35,7 +35,8 @@ object PrayerTimesShareUtil {
     fun buildShareText(
         schedule: DailyPrayerSchedule,
         date: LocalDate = LocalDate.now(),
-        hijriOffset: Int = 0
+        hijriOffset: Int = 0,
+        isEnglish: Boolean = false
     ): String {
         val hijriInfo = HijriCalendarUtil.getHijriDate(date, hijriOffset)
         val hijriStr = "${DateUtil.toBengaliNumerals(hijriInfo.hijriDay)} ${hijriInfo.hijriMonthNameBn}, ${DateUtil.toBengaliNumerals(hijriInfo.hijriYear)} হিজরী"
@@ -60,7 +61,7 @@ object PrayerTimesShareUtil {
             append("🌾 বাংলা: $banglaStr\n")
             append("─────────────────\n")
             append("【 ওয়াক্তের সময়সূচি 】\n")
-            val dhuhrLabel = if (schedule.isFriday) "জুমুআ" else "যোহর"
+            val dhuhrLabel = if (schedule.isFriday) (if (isEnglish) "Jumu'ah" else "জুমুআ") else (if (isEnglish) "Dhuhr" else "যোহর")
             append("🌅 ফজর: শুরু ${fajrItem?.timeDigits ?: "০৪:১০"} - শেষ $sunrise\n")
             append("☀️ $dhuhrLabel: শুরু ${dhuhrItem?.timeDigits ?: "১২:০৪"} - শেষ ${asrItem?.timeDigits ?: "০৪:৩৭"}\n")
             append("🌤️ আসর: শুরু ${asrItem?.timeDigits ?: "০৪:৩৮"} - শেষ ${maghribItem?.timeDigits ?: "০৬:৩১"}\n")
@@ -109,7 +110,8 @@ object PrayerTimesShareUtil {
         context: Context,
         schedule: DailyPrayerSchedule,
         date: LocalDate = LocalDate.now(),
-        hijriOffset: Int = 0
+        hijriOffset: Int = 0,
+        isEnglish: Boolean = false
     ): Bitmap {
         val width = 1080
         val height = 1240
@@ -442,7 +444,7 @@ object PrayerTimesShareUtil {
         }
 
         data class TableRowItem(val name: String, val start: String, val end: String)
-        val dhuhrTableRowName = if (schedule.isFriday) "জুমুআ" else "যোহর"
+        val dhuhrTableRowName = if (schedule.isFriday) (if (isEnglish) "Jumu'ah" else "জুমুআ") else (if (isEnglish) "Dhuhr" else "যোহর")
         val t1Rows = listOf(
             TableRowItem("ফজর", fajrItem?.timeDigits ?: "০৪:১০", sunrise),
             TableRowItem(dhuhrTableRowName, dhuhrItem?.timeDigits ?: "১২:০৪", asrItem?.timeDigits ?: "০৪:৩৭"),
@@ -766,11 +768,12 @@ object PrayerTimesShareUtil {
         context: Context,
         schedule: DailyPrayerSchedule,
         date: LocalDate = LocalDate.now(),
-        hijriOffset: Int = 0
+        hijriOffset: Int = 0,
+        isEnglish: Boolean = false
     ) {
         try {
             val bitmap = withContext(Dispatchers.Default) {
-                generatePrayerCardBitmap(context, schedule, date, hijriOffset)
+                generatePrayerCardBitmap(context, schedule, date, hijriOffset, isEnglish)
             }
 
             val cacheDir = File(context.cacheDir, "shared_prayer_cards")
@@ -794,7 +797,7 @@ object PrayerTimesShareUtil {
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "image/png"
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_TEXT, buildShareText(schedule, date, hijriOffset))
+                putExtra(Intent.EXTRA_TEXT, buildShareText(schedule, date, hijriOffset, isEnglish))
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
 

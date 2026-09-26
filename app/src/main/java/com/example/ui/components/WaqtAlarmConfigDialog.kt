@@ -96,10 +96,12 @@ fun WaqtAlarmConfigDialog(
     prayerName: PrayerName,
     baseTimeFormatted: String = "", // e.g. "০৪:১৩ PM"
     baseTimestampMillis: Long = 0L,
+    isEnglish: Boolean = false,
+    isFriday: Boolean = false,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val isEn = com.example.utils.LocaleHelper.getLanguage(context) == "en"
+    val isEn = isEnglish || com.example.utils.LocaleHelper.getLanguage(context) == "en"
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // Load initial config from helper
@@ -221,7 +223,7 @@ fun WaqtAlarmConfigDialog(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = if (isEn) prayerName.nameEn else prayerName.nameBn,
+                        text = prayerName.getDisplayName(isFriday = isFriday, isEn = isEn),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -956,7 +958,8 @@ fun WaqtAlarmConfigDialog(
                     if (isAlarmEnabled && !DeviceSettingsHelper.isBatteryOptimizationIgnored(context)) {
                         DeviceSettingsHelper.openBatteryOptimizationSettings(context)
                     }
-                    val msg = if (isEn) "${prayerName.name} alert settings saved" else "${prayerName.nameBn} অ্যালার্ট সেটিংস সংরক্ষিত হয়েছে"
+                    val prayerDisplayName = prayerName.getDisplayName(isFriday = isFriday, isEn = isEn)
+                    val msg = if (isEn) "$prayerDisplayName alert settings saved" else "$prayerDisplayName অ্যালার্ট সেটিংস সংরক্ষিত হয়েছে"
                     Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                     onDismiss()
                 },

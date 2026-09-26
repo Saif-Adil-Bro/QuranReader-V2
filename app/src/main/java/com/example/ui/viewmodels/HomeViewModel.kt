@@ -406,4 +406,10 @@ class HomeViewModel(
             playAyahAtIndex(prevIndex)
         }
     }
+
+    fun setAppLanguage(languageCode: String) {
+        viewModelScope.launch {
+            settingsRepository.setAppLanguage(languageCode)
+        }
+    }
 }

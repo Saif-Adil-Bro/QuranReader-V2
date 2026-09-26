@@ -314,6 +314,7 @@ fun HomeScreen(
             schedule = prayerSchedule,
             isHanafi = isHanafiAsr,
             hijriOffset = combinedHijriOffset,
+            isEnglish = isEnglish,
             onDistrictSelected = { prayerRepo.setDistrict(it) },
             onHanafiChanged = { prayerRepo.setHanafi(it) },
             onDismiss = { showPrayerTimesDetailSheet = false }
@@ -528,12 +529,190 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(if (isEnglish) "Quran Reader" else "কুরআন রিডার", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .background(PrimaryGreen, RoundedCornerShape(12.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(if (isEnglish) "EN" else "BN", color = White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        
+                        var showHeaderLanguageMenu by remember { mutableStateOf(false) }
+
+                        Box(contentAlignment = Alignment.Center) {
+                            Surface(
+                                onClick = { showHeaderLanguageMenu = true },
+                                shape = RoundedCornerShape(10.dp),
+                                color = PrimaryGreen,
+                                shadowElevation = 1.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = if (isEnglish) "EN" else "BN",
+                                        color = White,
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.width(2.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = if (isEnglish) "Switch Language" else "ভাষা পরিবর্তন করুন",
+                                        tint = White,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = showHeaderLanguageMenu,
+                                onDismissRequest = { showHeaderLanguageMenu = false },
+                                modifier = Modifier
+                                    .widthIn(min = 250.dp, max = 290.dp)
+                                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
+                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                                    .padding(vertical = 6.dp)
+                            ) {
+                                // Title Header
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Translate,
+                                        contentDescription = null,
+                                        tint = PrimaryGreen,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = if (isEnglish) "App Language" else "অ্যাপের ভাষা",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+
+                                // Option 1: Bangla
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column {
+                                                Text(
+                                                    text = "বাংলা",
+                                                    fontSize = 14.sp,
+                                                    fontWeight = if (!isEnglish) FontWeight.Bold else FontWeight.Medium,
+                                                    color = if (!isEnglish) PrimaryGreen else MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Text(
+                                                    text = "Bengali (BN)",
+                                                    fontSize = 11.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            if (!isEnglish) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = PrimaryGreen,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                    },
+                                    onClick = {
+                                        showHeaderLanguageMenu = false
+                                        if (isEnglish) {
+                                            viewModel.setAppLanguage("bn")
+                                            Toast.makeText(context, "ভাষা পরিবর্তন করে 'বাংলা' করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                                )
+
+                                // Option 2: English
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column {
+                                                Text(
+                                                    text = "English",
+                                                    fontSize = 14.sp,
+                                                    fontWeight = if (isEnglish) FontWeight.Bold else FontWeight.Medium,
+                                                    color = if (isEnglish) PrimaryGreen else MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Text(
+                                                    text = "English (EN)",
+                                                    fontSize = 11.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            if (isEnglish) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = PrimaryGreen,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                    },
+                                    onClick = {
+                                        showHeaderLanguageMenu = false
+                                        if (!isEnglish) {
+                                            viewModel.setAppLanguage("en")
+                                            Toast.makeText(context, "Language changed to English", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                                )
+
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+
+                                // Soft Warning / Disclaimer Note
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+                                        .padding(horizontal = 8.dp, vertical = 7.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.Top) {
+                                        Icon(
+                                            imageVector = Icons.Default.Info,
+                                            contentDescription = null,
+                                            tint = PrimaryGreen,
+                                            modifier = Modifier
+                                                .size(14.dp)
+                                                .padding(top = 1.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = if (isEnglish)
+                                                "Note: Core UI and dynamic text will adapt to selected language. Fixed pre-defined texts and classical references will remain in their primary language."
+                                            else
+                                                "বিশেষ দ্রষ্টব্য: অ্যাপের ইউআই ও ডায়নামিক টেক্সট পরিবর্তিত হবে; নির্দিষ্ট কিছু পূর্বনির্ধারিত নিবন্ধ ও তাফসির মূল ভাষাতেই থাকবে।",
+                                            fontSize = 9.5.sp,
+                                            lineHeight = 13.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 },
@@ -998,6 +1177,7 @@ fun HeroSection(
                                 // Slide 1: Prayer Times Dynamic Card
                                 com.example.ui.components.PrayerTimesBannerSlide(
                                     schedule = prayerSchedule,
+                                    isEnglish = isEnglish,
                                     onClick = onPrayerTimesClick,
                                     onLocationClick = onPrayerTimesClick
                                 )

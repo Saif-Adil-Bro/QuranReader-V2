@@ -74,10 +74,11 @@ import com.example.utils.PrayerSoundManager
 @Composable
 fun WaqtAlarmOverviewSheet(
     schedule: DailyPrayerSchedule,
+    isEnglish: Boolean = false,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val isEn = com.example.utils.LocaleHelper.getLanguage(context) == "en"
+    val isEn = isEnglish || com.example.utils.LocaleHelper.getLanguage(context) == "en"
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     var isMasterEnabled by remember { mutableStateOf(PrayerNotificationHelper.isMasterEnabled(context)) }
@@ -125,6 +126,8 @@ fun WaqtAlarmOverviewSheet(
             prayerName = pName,
             baseTimeFormatted = formattedTime,
             baseTimestampMillis = timestampMillis,
+            isEnglish = isEn,
+            isFriday = schedule.isFriday,
             onDismiss = {
                 selectedWaqtForEdit = null
                 reloadTrigger++

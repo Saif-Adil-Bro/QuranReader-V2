@@ -13,7 +13,8 @@ data class DistrictInfo(
     val timeZoneId: String = "Asia/Dhaka",
     val fajrAngle: Double = 18.0,
     val ishaAngle: Double = 18.0,
-    val ishaFixedIntervalMinutes: Int? = null
+    val ishaFixedIntervalMinutes: Int? = null,
+    val divisionEn: String = ""
 )
 
 enum class PrayerName(val id: String, val nameBn: String, val nameEn: String, val icon: String) {
@@ -134,6 +135,9 @@ data class SinglePrayerTime(
 
     val displayNameBn: String
         get() = name.getDisplayName(isFriday = isFriday, isEn = false)
+
+    val displayNameEn: String
+        get() = name.getDisplayName(isFriday = isFriday, isEn = true)
 }
 
 data class ForbiddenPrayerInterval(

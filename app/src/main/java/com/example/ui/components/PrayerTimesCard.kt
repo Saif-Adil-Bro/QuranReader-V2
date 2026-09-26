@@ -54,11 +54,12 @@ private fun String.toEnglishNumerals(): String {
 @Composable
 fun PrayerTimesBannerSlide(
     schedule: DailyPrayerSchedule,
+    isEnglish: Boolean = false,
     onClick: () -> Unit,
     onLocationClick: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val isEnglish = com.example.utils.NotificationLocalization.isEnglish(context)
+    val effectiveIsEnglish = isEnglish || com.example.utils.NotificationLocalization.isEnglish(context)
 
     var currentTimeMillis by remember { mutableStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
@@ -91,6 +92,15 @@ fun PrayerTimesBannerSlide(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Top-Left: Golden Calendar Icon + Date Capsule
+                val dateDisplay = if (effectiveIsEnglish) {
+                    val now = java.time.LocalDate.now()
+                    val dayName = now.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH)
+                    val monthName = now.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)
+                    "$dayName, ${now.dayOfMonth} $monthName ${now.year}"
+                } else {
+                    schedule.dateStrBn
+                }
+
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
@@ -111,7 +121,7 @@ fun PrayerTimesBannerSlide(
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            text = if (isEnglish) com.example.utils.DateUtil.getTodayEnglishDateStr() else schedule.dateStrBn,
+                            text = dateDisplay,
                             color = TextPrimary,
                             fontSize = 9.5.sp,
                             fontWeight = FontWeight.SemiBold
@@ -130,7 +140,7 @@ fun PrayerTimesBannerSlide(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (isEnglish) "⚠️ Forbidden Prayer Time" else "⚠️ ${schedule.forbiddenTimeReason ?: "নামাযের নিষিদ্ধ সময়"}",
+                            text = if (effectiveIsEnglish) "⚠️ Forbidden Prayer Time" else "⚠️ ${schedule.forbiddenTimeReason ?: "নামাযের নিষিদ্ধ সময়"}",
                             color = Color(0xFFFFCDD2),
                             fontSize = 9.5.sp,
                             fontWeight = FontWeight.Bold,
@@ -147,8 +157,8 @@ fun PrayerTimesBannerSlide(
                     val seconds = totalSeconds % 60
                     val timeFormatted = String.format(java.util.Locale.US, "%02d:%02d:%02d", hours, minutes, seconds)
                     val banglaCountdown = com.example.utils.DateUtil.toBengaliNumerals(timeFormatted)
-                    val countdownDisplay = if (isEnglish) timeFormatted else banglaCountdown
-                    val nextPrayerName = if (isEnglish) nextPrayer.name.nameEn else nextPrayer.displayNameBn
+                    val countdownDisplay = if (effectiveIsEnglish) timeFormatted else banglaCountdown
+                    val nextPrayerName = nextPrayer.getDisplayName(isEn = effectiveIsEnglish)
 
                     Box(
                         modifier = Modifier
@@ -204,7 +214,7 @@ fun PrayerTimesBannerSlide(
                             modifier = Modifier.size(10.5.dp)
                         )
                         Spacer(modifier = Modifier.width(2.5.dp))
-                        val locationName = if (isEnglish) {
+                        val locationName = if (effectiveIsEnglish) {
                             if (schedule.district.countryEn == "Bangladesh") schedule.district.nameEn else "${schedule.district.nameEn}, ${schedule.district.countryEn}"
                         } else {
                             if (schedule.district.countryBn == "বাংলাদেশ") schedule.district.nameBn else "${schedule.district.nameBn}, ${schedule.district.countryBn}"
@@ -264,7 +274,7 @@ fun PrayerTimesBannerSlide(
                         val remainingMillis = (endMillis - currentTimeMillis).coerceAtLeast(0L)
                         val remainingMins = remainingMillis / (1000 * 60)
                         val remainingSecs = (remainingMillis / 1000) % 60
-                        countdownText = if (isEnglish) {
+                        countdownText = if (effectiveIsEnglish) {
                             if (remainingMins >= 60) {
                                 val hrs = remainingMins / 60
                                 val mins = remainingMins % 60
@@ -293,7 +303,7 @@ fun PrayerTimesBannerSlide(
                         isNext = isNext,
                         progress = progressFraction,
                         countdownText = countdownText,
-                        isEnglish = isEnglish,
+                        isEnglish = effectiveIsEnglish,
                         modifier = Modifier.weight(1f)
                     )
 
@@ -339,7 +349,7 @@ fun PrayerTimesBannerSlide(
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            text = if (isEnglish) "Islamic Foundation" else "ইসলামিক ফাউন্ডেশন (বাংলাদেশ)",
+                            text = if (effectiveIsEnglish) "Islamic Foundation" else "ইসলামিক ফাউন্ডেশন (বাংলাদেশ)",
                             color = TextSecondary.copy(alpha = 0.85f),
                             fontSize = 9.sp,
                             maxLines = 1
@@ -351,7 +361,7 @@ fun PrayerTimesBannerSlide(
                         modifier = Modifier.padding(start = 4.dp)
                     ) {
                         Text(
-                            text = if (isEnglish) "Details & Forbidden Times →" else "বিস্তারিত ও নিষিদ্ধ সময় →",
+                            text = if (effectiveIsEnglish) "Details & Forbidden Times →" else "বিস্তারিত ও নিষিদ্ধ সময় →",
                             color = AccentGold,
                             fontSize = 9.5.sp,
                             fontWeight = FontWeight.Bold
@@ -373,7 +383,7 @@ private fun PrayerUnifiedColumnItem(
     isEnglish: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val displayName = if (isEnglish) prayer.name.nameEn else prayer.displayNameBn
+    val displayName = prayer.getDisplayName(isEn = isEnglish)
     val timeDigits = if (isEnglish) prayer.timeDigits.toEnglishNumerals() else prayer.timeDigits
 
     if (isCurrent) {

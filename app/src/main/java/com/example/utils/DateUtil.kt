@@ -11,6 +11,8 @@ object DateUtil {
     private val hijriMonths = listOf("মহররম", "সফর", "রবিউল আউয়াল", "রবিউস সানি", "জমাদিউল আউয়াল", "জমাদিউস সানি", "রজব", "শাবান", "রমজান", "শাওয়াল", "জিলকদ", "জিলহজ")
     private val englishMonthsBengali = listOf("জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর")
     private val daysOfWeekBengali = listOf("রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার")
+    private val englishMonths = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+    private val daysOfWeekEnglish = listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
     private val seasons = listOf("গ্রীষ্মকাল", "বর্ষাকাল", "শরৎকাল", "হেমন্তকাল", "শীতকাল", "বসন্তকাল")
 
     fun toBengaliNumerals(number: Int): String {
@@ -37,8 +39,42 @@ object DateUtil {
         }.joinToString("")
     }
 
+    fun toEnglishNumerals(text: String): String {
+        return text.map { ch ->
+            when (ch) {
+                '০' -> '0'
+                '১' -> '1'
+                '২' -> '2'
+                '৩' -> '3'
+                '৪' -> '4'
+                '৫' -> '5'
+                '৬' -> '6'
+                '৭' -> '7'
+                '৮' -> '8'
+                '৯' -> '9'
+                else -> ch
+            }
+        }.joinToString("")
+    }
+
+    fun formatDateEnglish(date: java.time.LocalDate): String {
+        val dayOfWeekIndex = when (date.dayOfWeek) {
+            java.time.DayOfWeek.SUNDAY -> 0
+            java.time.DayOfWeek.MONDAY -> 1
+            java.time.DayOfWeek.TUESDAY -> 2
+            java.time.DayOfWeek.WEDNESDAY -> 3
+            java.time.DayOfWeek.THURSDAY -> 4
+            java.time.DayOfWeek.FRIDAY -> 5
+            java.time.DayOfWeek.SATURDAY -> 6
+        }
+        val day = date.dayOfMonth
+        val month = date.monthValue - 1
+        val year = date.year
+        return "${daysOfWeekEnglish[dayOfWeekIndex]}, $day ${englishMonths[month]} $year"
+    }
+
     fun getTodayEnglishDateStr(): String {
-        return formatDateStr(java.time.LocalDate.now())
+        return formatDateEnglish(java.time.LocalDate.now())
     }
 
     fun formatDateStr(date: java.time.LocalDate): String {
@@ -57,11 +93,15 @@ object DateUtil {
         return "${daysOfWeekBengali[dayOfWeekIndex]}, ${toBengaliNumerals(day)} ${englishMonthsBengali[month]} ${toBengaliNumerals(year)}"
     }
 
-    fun getTodayHijriDateStr(hijriOffset: Int = 0): String {
+    fun getTodayHijriDateStr(hijriOffset: Int = 0, isEnglish: Boolean = false): String {
         return try {
             val today = java.time.LocalDate.now()
             val info = HijriCalendarUtil.getHijriDate(today, hijriOffset)
-            "${toBengaliNumerals(info.hijriDay)} ${info.hijriMonthNameBn} ${toBengaliNumerals(info.hijriYear)}"
+            if (isEnglish) {
+                "${info.hijriDay} ${info.hijriMonthNameEn} ${info.hijriYear} AH"
+            } else {
+                "${toBengaliNumerals(info.hijriDay)} ${info.hijriMonthNameBn} ${toBengaliNumerals(info.hijriYear)}"
+            }
         } catch (e: Exception) {
             "..."
         }
@@ -118,24 +158,44 @@ object DateUtil {
         return getBengaliDateStr(java.time.LocalDate.now())
     }
 
-    fun getShortDayNameBn(date: java.time.LocalDate): String {
-        return when (date.dayOfWeek) {
-            java.time.DayOfWeek.SATURDAY -> "শনি"
-            java.time.DayOfWeek.SUNDAY -> "রবি"
-            java.time.DayOfWeek.MONDAY -> "সোম"
-            java.time.DayOfWeek.TUESDAY -> "মঙ্গল"
-            java.time.DayOfWeek.WEDNESDAY -> "বুধ"
-            java.time.DayOfWeek.THURSDAY -> "বৃহঃ"
-            java.time.DayOfWeek.FRIDAY -> "শুক্র"
+    fun getShortDayName(date: java.time.LocalDate, isEnglish: Boolean = false): String {
+        return if (isEnglish) {
+            when (date.dayOfWeek) {
+                java.time.DayOfWeek.SATURDAY -> "Sat"
+                java.time.DayOfWeek.SUNDAY -> "Sun"
+                java.time.DayOfWeek.MONDAY -> "Mon"
+                java.time.DayOfWeek.TUESDAY -> "Tue"
+                java.time.DayOfWeek.WEDNESDAY -> "Wed"
+                java.time.DayOfWeek.THURSDAY -> "Thu"
+                java.time.DayOfWeek.FRIDAY -> "Fri"
+            }
+        } else {
+            when (date.dayOfWeek) {
+                java.time.DayOfWeek.SATURDAY -> "শনি"
+                java.time.DayOfWeek.SUNDAY -> "রবি"
+                java.time.DayOfWeek.MONDAY -> "সোম"
+                java.time.DayOfWeek.TUESDAY -> "মঙ্গল"
+                java.time.DayOfWeek.WEDNESDAY -> "বুধ"
+                java.time.DayOfWeek.THURSDAY -> "বৃহঃ"
+                java.time.DayOfWeek.FRIDAY -> "শুক্র"
+            }
         }
     }
 
-    fun getFullHeaderDateStr(date: java.time.LocalDate): String {
-        val engMonth = englishMonthsBengali[date.monthValue - 1]
-        val engDay = toBengaliNumerals(date.dayOfMonth)
-        val engYear = toBengaliNumerals(date.year)
-        val banglaDate = getBengaliDateStr(date).first
-        return "$engDay $engMonth, $engYear • $banglaDate"
+    fun getShortDayNameBn(date: java.time.LocalDate): String = getShortDayName(date, isEnglish = false)
+
+    fun getFullHeaderDateStr(date: java.time.LocalDate, isEnglish: Boolean = false): String {
+        return if (isEnglish) {
+            val engMonth = englishMonths[date.monthValue - 1]
+            val dayName = daysOfWeekEnglish[date.dayOfWeek.value % 7]
+            "${date.dayOfMonth} $engMonth, ${date.year} • $dayName"
+        } else {
+            val engMonth = englishMonthsBengali[date.monthValue - 1]
+            val engDay = toBengaliNumerals(date.dayOfMonth)
+            val engYear = toBengaliNumerals(date.year)
+            val banglaDate = getBengaliDateStr(date).first
+            "$engDay $engMonth, $engYear • $banglaDate"
+        }
     }
 }
 

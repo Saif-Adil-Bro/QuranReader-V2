@@ -68,10 +68,10 @@ private val GreenBullet = Color(0xFF34D399)
 private val AmberWarning = Color(0xFFF59E0B)
 private val DarkModalBg = Color(0xFF182228)
 
-enum class ReferenceType(val title: String) {
-    FARD_PRAYERS("সালাতের ওয়াক্ত সম্পর্কিত হাদিস ও রেফারেন্স"),
-    NAFL_PRAYERS("নফল সালাত সম্পর্কিত হাদিস ও রেফারেন্স"),
-    FORBIDDEN_TIMES("সালাতের নিষিদ্ধ সময় সম্পর্কিত হাদিস ও রেফারেন্স")
+enum class ReferenceType(val titleBn: String, val titleEn: String) {
+    FARD_PRAYERS("সালাতের ওয়াক্ত সম্পর্কিত হাদিস ও রেফারেন্স", "Hadith & References on Fard Prayer Times"),
+    NAFL_PRAYERS("নফল সালাত সম্পর্কিত হাদিস ও রেফারেন্স", "Hadith & References on Nafl Prayers"),
+    FORBIDDEN_TIMES("সালাতের নিষিদ্ধ সময় সম্পর্কিত হাদিস ও রেফারেন্স", "Hadith & References on Forbidden Prayer Times")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,6 +80,7 @@ fun PrayerTimesDetailSheet(
     schedule: DailyPrayerSchedule,
     isHanafi: Boolean,
     hijriOffset: Int = 0,
+    isEnglish: Boolean = false,
     onDistrictSelected: (DistrictInfo) -> Unit,
     onHanafiChanged: (Boolean) -> Unit,
     onDismiss: () -> Unit
@@ -92,6 +93,10 @@ fun PrayerTimesDetailSheet(
     var isSharingImage by remember { mutableStateOf(false) }
     var activeReferenceType by remember { mutableStateOf<ReferenceType?>(null) }
 
+    val settingsRepo = remember(context) { com.example.data.repository.SettingsRepository.getInstance(context) }
+    val storedAppLang by settingsRepo.appLanguageFlow.collectAsState(initial = "bn")
+    val effectiveIsEnglish = isEnglish || storedAppLang == "en"
+
     // Prayer Notification Preferences State
     var isMasterNotifEnabled by remember { mutableStateOf(com.example.utils.PrayerNotificationHelper.isMasterEnabled(context)) }
     var isNotifFajr by remember { mutableStateOf(com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.FAJR)) }
@@ -103,7 +108,6 @@ fun PrayerTimesDetailSheet(
     var isNotifIftar by remember { mutableStateOf(com.example.utils.PrayerNotificationHelper.isPrayerEnabled(context, com.example.data.model.PrayerName.IFTAR)) }
     var isNotifSound by remember { mutableStateOf(com.example.utils.PrayerNotificationHelper.isSoundEnabled(context)) }
 
-    val settingsRepo = remember(context) { com.example.data.repository.SettingsRepository.getInstance(context) }
     val sahriOffset by settingsRepo.sahriOffsetFlow.collectAsState(initial = -3)
     val iftarOffset by settingsRepo.iftarOffsetFlow.collectAsState(initial = 0)
 
@@ -201,14 +205,14 @@ fun PrayerTimesDetailSheet(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "বন্ধ করুন",
+                            contentDescription = if (effectiveIsEnglish) "Close" else "বন্ধ করুন",
                             tint = Color.White,
                             modifier = Modifier.size(22.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "ক্যালেন্ডার ও সময়সূচি",
+                        text = if (effectiveIsEnglish) "Calendar & Schedule" else "ক্যালেন্ডার ও সময়সূচি",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -234,10 +238,10 @@ fun PrayerTimesDetailSheet(
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            val locationLabel = if (schedule.district.countryBn == "বাংলাদেশ") {
-                                schedule.district.nameBn
+                            val locationLabel = if (effectiveIsEnglish) {
+                                if (schedule.district.countryEn == "Bangladesh") schedule.district.nameEn else "${schedule.district.nameEn}, ${schedule.district.countryEn}"
                             } else {
-                                "${schedule.district.nameBn}, ${schedule.district.countryBn}"
+                                if (schedule.district.countryBn == "বাংলাদেশ") schedule.district.nameBn else "${schedule.district.nameBn}, ${schedule.district.countryBn}"
                             }
                             Text(
                                 text = locationLabel,
@@ -267,7 +271,8 @@ fun PrayerTimesDetailSheet(
                                         context = context,
                                         schedule = activeSchedule,
                                         date = selectedDate,
-                                        hijriOffset = hijriOffset
+                                        hijriOffset = hijriOffset,
+                                        isEnglish = effectiveIsEnglish
                                     )
                                     isSharingImage = false
                                 }
@@ -284,7 +289,7 @@ fun PrayerTimesDetailSheet(
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Share,
-                                contentDescription = "শেয়ার করুন",
+                                contentDescription = if (effectiveIsEnglish) "Share" else "শেয়ার করুন",
                                 tint = Color.White,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -299,6 +304,7 @@ fun PrayerTimesDetailSheet(
             if (isToday) {
                 com.example.ui.components.PrayerSunPathCard(
                     schedule = activeSchedule,
+                    isEnglish = effectiveIsEnglish,
                     onDetailsClick = { /* Already in detail view */ },
                     notificationStates = mapOf(
                         com.example.data.model.PrayerName.FAJR to isNotifFajr,
@@ -341,7 +347,7 @@ fun PrayerTimesDetailSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = DateUtil.getFullHeaderDateStr(selectedDate),
+                            text = if (effectiveIsEnglish) DateUtil.formatDateEnglish(selectedDate) else DateUtil.getFullHeaderDateStr(selectedDate),
                             fontSize = 14.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -353,7 +359,7 @@ fun PrayerTimesDetailSheet(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.CalendarMonth,
-                                contentDescription = "ক্যালেন্ডার খুলুন",
+                                contentDescription = if (effectiveIsEnglish) "Open Calendar" else "ক্যালেন্ডার খুলুন",
                                 tint = EmeraldAccent,
                                 modifier = Modifier.size(22.dp)
                             )
@@ -374,8 +380,12 @@ fun PrayerTimesDetailSheet(
                     ) {
                         daysRange.forEach { dayDate ->
                             val isSelected = (dayDate == selectedDate)
-                            val shortName = DateUtil.getShortDayNameBn(dayDate)
-                            val dayNumberStr = dayDate.dayOfMonth.toString()
+                            val shortName = if (effectiveIsEnglish) {
+                                dayDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)
+                            } else {
+                                DateUtil.getShortDayNameBn(dayDate)
+                            }
+                            val dayNumberStr = if (effectiveIsEnglish) dayDate.dayOfMonth.toString() else DateUtil.toBengaliNumerals(dayDate.dayOfMonth)
 
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -427,8 +437,13 @@ fun PrayerTimesDetailSheet(
                             ) {
                                 Text("🌙", fontSize = 12.sp)
                                 Spacer(modifier = Modifier.width(6.dp))
+                                val hijriCapsuleStr = if (effectiveIsEnglish) {
+                                    "${hijriInfo.hijriDay} ${hijriInfo.hijriMonthNameEn}, ${hijriInfo.hijriYear} AH"
+                                } else {
+                                    "${DateUtil.toBengaliNumerals(hijriInfo.hijriDay)} ${hijriInfo.hijriMonthNameBn}, ${DateUtil.toBengaliNumerals(hijriInfo.hijriYear)}"
+                                }
                                 Text(
-                                    text = "${DateUtil.toBengaliNumerals(hijriInfo.hijriDay)} ${hijriInfo.hijriMonthNameBn}, ${DateUtil.toBengaliNumerals(hijriInfo.hijriYear)}",
+                                    text = hijriCapsuleStr,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = EmeraldAccent
@@ -452,7 +467,7 @@ fun PrayerTimesDetailSheet(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "আজকের তারিখে ফিরুন",
+                                text = if (effectiveIsEnglish) "Return to Today" else "আজকের তারিখে ফিরুন",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = EmeraldAccent
@@ -464,69 +479,141 @@ fun PrayerTimesDetailSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // Timetable active waqt calculations for today
+            val zoneId = remember(activeSchedule.district) {
+                try {
+                    java.time.ZoneId.of(activeSchedule.district.timeZoneId)
+                } catch (e: Exception) {
+                    java.time.ZoneId.of("Asia/Dhaka")
+                }
+            }
+            val nowZoned = java.time.ZonedDateTime.now(zoneId)
+            val currentMinutesNow = nowZoned.hour * 60 + nowZoned.minute
+
+            fun getLocalMin(prayerTime: com.example.data.model.SinglePrayerTime?): Int {
+                if (prayerTime == null) return 0
+                val zdt = java.time.Instant.ofEpochMilli(prayerTime.timestampMillis).atZone(zoneId)
+                return zdt.hour * 60 + zdt.minute
+            }
+
+            val fTime = activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.FAJR }
+            val sTime = activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.SUNRISE }
+            val dTime = activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.DHUHR }
+            val aTime = activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.ASR }
+            val mTime = activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.MAGHRIB }
+            val iTime = activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.ISHA }
+
+            val fajrMin = getLocalMin(fTime)
+            val sunriseMin = getLocalMin(sTime)
+            val duhaStartMin = sunriseMin + 16
+            val dhuhrMin = getLocalMin(dTime)
+            val duhaEndMin = (dhuhrMin - 4).coerceAtLeast(duhaStartMin)
+            val asrMin = getLocalMin(aTime)
+            val maghribMin = getLocalMin(mTime)
+            val sunsetMakruhMin = maghribMin - 15
+            val ishaMin = getLocalMin(iTime)
+
+            // Active flags (Accurate, mutually exclusive & timezone aligned)
+            val isFajrActive = isToday && (activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.FAJR }?.isCurrent == true)
+            val isDhuhrActive = isToday && (activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.DHUHR }?.isCurrent == true)
+            val isAsrActive = isToday && (activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.ASR }?.isCurrent == true)
+            val isMaghribActive = isToday && (activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.MAGHRIB }?.isCurrent == true)
+            val isIshaActive = isToday && (activeSchedule.prayers.find { it.name == com.example.data.model.PrayerName.ISHA }?.isCurrent == true)
+
+            // Nafl & Forbidden times
+            val isSunriseMakruhActive = isToday && (currentMinutesNow in sunriseMin until duhaStartMin)
+            val isDuhaActive = isToday && (currentMinutesNow in duhaStartMin until duhaEndMin)
+            val isZawalMakruhActive = isToday && (currentMinutesNow in duhaEndMin until dhuhrMin)
+            val isSunsetMakruhActive = isToday && (currentMinutesNow in sunsetMakruhMin until maghribMin)
+            val isTahajjudActive = isToday && isIshaActive && (currentMinutesNow in 120 until (fajrMin - 15))
+
             // 3. Section 1: সালাতের সময় (5 Fard Prayers)
             DarkSectionCard(
-                title = "সালাতের সময়",
+                title = if (effectiveIsEnglish) "Daily Prayers (Fard)" else "সালাতের সময়",
+                referenceLabel = if (effectiveIsEnglish) "View Reference" else "রেফারেন্স দেখুন",
                 onReferenceClick = { activeReferenceType = ReferenceType.FARD_PRAYERS }
             ) {
                 // Fajr
                 PrayerDetailRow(
                     icon = Icons.Outlined.WbTwilight,
-                    name = "ফজর",
-                    timeRange = activeSchedule.fajrRange,
+                    name = if (effectiveIsEnglish) "Fajr" else "ফজর",
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.fajrRange) else activeSchedule.fajrRange,
                     prayerName = com.example.data.model.PrayerName.FAJR,
+                    isCurrentWaqt = isFajrActive,
+                    currentBadgeText = if (effectiveIsEnglish) "Active" else "চলমান",
                     onAlarmClick = { selectedWaqtForAlarmSettings = it }
                 )
 
-                PrayerDivider()
+                if (!isFajrActive && !isDhuhrActive) PrayerDivider()
 
                 // Dhuhr / Jumu'ah on Friday
-                val dhuhrName = if (activeSchedule.isFriday) "জুমুআ" else "যোহর"
+                val dhuhrName = if (effectiveIsEnglish) {
+                    if (activeSchedule.isFriday) "Jumu'ah" else "Dhuhr"
+                } else {
+                    if (activeSchedule.isFriday) "জুমুআ" else "যোহর"
+                }
                 PrayerDetailRow(
                     icon = Icons.Outlined.WbSunny,
                     name = dhuhrName,
-                    timeRange = activeSchedule.dhuhrRange,
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.dhuhrRange) else activeSchedule.dhuhrRange,
                     prayerName = com.example.data.model.PrayerName.DHUHR,
+                    isCurrentWaqt = isDhuhrActive,
+                    currentBadgeText = if (effectiveIsEnglish) "Active" else "চলমান",
                     onAlarmClick = { selectedWaqtForAlarmSettings = it }
                 )
 
-                PrayerDivider()
+                if (!isDhuhrActive && !isAsrActive) PrayerDivider()
 
                 // Asr
                 PrayerDetailRow(
                     icon = Icons.Outlined.Brightness5,
-                    name = "আসর",
-                    timeRange = activeSchedule.asrRange,
+                    name = if (effectiveIsEnglish) "Asr" else "আসর",
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.asrRange) else activeSchedule.asrRange,
                     subItems = listOf(
-                        BulletSubItem("মাকরূহ: ${activeSchedule.asrMakruhTime}", AmberBullet)
+                        BulletSubItem(
+                            if (effectiveIsEnglish) "Makruh: ${DateUtil.toEnglishNumerals(activeSchedule.asrMakruhTime)}" else "মাকরূহ: ${activeSchedule.asrMakruhTime}",
+                            AmberBullet
+                        )
                     ),
                     prayerName = com.example.data.model.PrayerName.ASR,
+                    isCurrentWaqt = isAsrActive,
+                    currentBadgeText = if (effectiveIsEnglish) "Active" else "চলমান",
                     onAlarmClick = { selectedWaqtForAlarmSettings = it }
                 )
 
-                PrayerDivider()
+                if (!isAsrActive && !isMaghribActive) PrayerDivider()
 
                 // Maghrib
                 PrayerDetailRow(
                     icon = Icons.Outlined.WbCloudy,
-                    name = "মাগরিব",
-                    timeRange = activeSchedule.maghribRange,
+                    name = if (effectiveIsEnglish) "Maghrib" else "মাগরিব",
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.maghribRange) else activeSchedule.maghribRange,
                     prayerName = com.example.data.model.PrayerName.MAGHRIB,
+                    isCurrentWaqt = isMaghribActive,
+                    currentBadgeText = if (effectiveIsEnglish) "Active" else "চলমান",
                     onAlarmClick = { selectedWaqtForAlarmSettings = it }
                 )
 
-                PrayerDivider()
+                if (!isMaghribActive && !isIshaActive) PrayerDivider()
 
                 // Isha
                 PrayerDetailRow(
                     icon = Icons.Outlined.Nightlight,
-                    name = "এশা",
-                    timeRange = activeSchedule.ishaRange,
+                    name = if (effectiveIsEnglish) "Isha" else "এশা",
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.ishaRange) else activeSchedule.ishaRange,
                     subItems = listOf(
-                        BulletSubItem("উত্তম সময় শেষ: ${activeSchedule.ishaUttomTime}", GreenBullet),
-                        BulletSubItem("মাকরূহ: ${activeSchedule.ishaMakruhTime}", AmberBullet)
+                        BulletSubItem(
+                            if (effectiveIsEnglish) "Preferred Time Ends: ${DateUtil.toEnglishNumerals(activeSchedule.ishaUttomTime)}" else "উত্তম সময় শেষ: ${activeSchedule.ishaUttomTime}",
+                            GreenBullet
+                        ),
+                        BulletSubItem(
+                            if (effectiveIsEnglish) "Makruh: ${DateUtil.toEnglishNumerals(activeSchedule.ishaMakruhTime)}" else "মাকরূহ: ${activeSchedule.ishaMakruhTime}",
+                            AmberBullet
+                        )
                     ),
                     prayerName = com.example.data.model.PrayerName.ISHA,
+                    isCurrentWaqt = isIshaActive,
+                    currentBadgeText = if (effectiveIsEnglish) "Active" else "চলমান",
                     onAlarmClick = { selectedWaqtForAlarmSettings = it }
                 )
             }
@@ -535,45 +622,57 @@ fun PrayerTimesDetailSheet(
 
             // 4. Section 2: নফল সালাতের সময়
             DarkSectionCard(
-                title = "নফল সালাতের সময়",
+                title = if (effectiveIsEnglish) "Nafl Prayers" else "নফল সালাতের সময়",
+                referenceLabel = if (effectiveIsEnglish) "View Reference" else "রেফারেন্স দেখুন",
                 onReferenceClick = { activeReferenceType = ReferenceType.NAFL_PRAYERS }
             ) {
-                // Duha
+                // Duha & Chasht (Ishraq)
                 PrayerDetailRow(
                     icon = Icons.Outlined.WbSunny,
-                    name = "দুহা",
-                    timeRange = activeSchedule.duhaRange
+                    name = if (effectiveIsEnglish) "Chasht & Duha (Ishraq)" else "চাশত ও দুহা (ইশরাক)",
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.duhaRange) else activeSchedule.duhaRange,
+                    isCurrentWaqt = isDuhaActive,
+                    currentBadgeText = if (effectiveIsEnglish) "Active Nafl" else "চলমান নফল"
                 )
 
-                PrayerDivider()
+                if (!isDuhaActive && !isZawalMakruhActive) PrayerDivider()
 
                 // Zawal
                 PrayerDetailRow(
                     icon = Icons.Outlined.AccountBalance,
-                    name = "জাওয়াল শুরু",
-                    timeRange = activeSchedule.zawalStartTime
+                    name = if (effectiveIsEnglish) "Zawal Starts" else "জাওয়াল শুরু",
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.zawalStartTime) else activeSchedule.zawalStartTime,
+                    isCurrentWaqt = isZawalMakruhActive,
+                    currentBadgeText = if (effectiveIsEnglish) "Forbidden Time" else "নিষিদ্ধ সময়"
                 )
 
-                PrayerDivider()
+                if (!isZawalMakruhActive) PrayerDivider()
 
                 // Awwabin
                 PrayerDetailRow(
                     icon = Icons.Outlined.WbCloudy,
-                    name = "আওয়াবিন",
-                    timeRange = activeSchedule.awwabinRange
+                    name = if (effectiveIsEnglish) "Awwabin" else "আওয়াবিন",
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.awwabinRange) else activeSchedule.awwabinRange,
+                    isCurrentWaqt = isMaghribActive,
+                    currentBadgeText = if (effectiveIsEnglish) "After Maghrib" else "মাগরিবের পর"
                 )
 
-                PrayerDivider()
+                if (!isTahajjudActive) PrayerDivider()
 
                 // Tahajjud
                 PrayerDetailRow(
                     icon = Icons.Outlined.Bedtime,
-                    name = "তাহাজ্জুদ",
-                    timeRange = activeSchedule.tahajjudRange,
+                    name = if (effectiveIsEnglish) "Tahajjud" else "তাহাজ্জুদ",
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.tahajjudRange) else activeSchedule.tahajjudRange,
                     subItems = listOf(
-                        BulletSubItem("রাতের শেষ ১/৩ শুরু: ${activeSchedule.tahajjudLastThirdStart}", GreenBullet)
+                        BulletSubItem(
+                            if (effectiveIsEnglish) "Last 1/3 of Night Starts: ${DateUtil.toEnglishNumerals(activeSchedule.tahajjudLastThirdStart)}" else "রাতের শেষ ১/৩ শুরু: ${activeSchedule.tahajjudLastThirdStart}",
+                            GreenBullet
+                        )
                     ),
                     prayerName = com.example.data.model.PrayerName.TAHAJJUD,
+                    isCurrentWaqt = isTahajjudActive,
+                    currentBadgeText = if (effectiveIsEnglish) "Best Time" else "উত্তম সময়",
                     onAlarmClick = { selectedWaqtForAlarmSettings = it }
                 )
             }
@@ -594,14 +693,14 @@ fun PrayerTimesDetailSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "সালাতের নিষিদ্ধ সময়",
+                            text = if (effectiveIsEnglish) "Forbidden Prayer Times" else "সালাতের নিষিদ্ধ সময়",
                             fontSize = 15.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = ForbiddenTextRed
                         )
 
                         Text(
-                            text = "রেফারেন্স দেখুন",
+                            text = if (effectiveIsEnglish) "View Reference" else "রেফারেন্স দেখুন",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = EmeraldAccent,
@@ -614,7 +713,7 @@ fun PrayerTimesDetailSheet(
 
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "এই সময়গুলোতে সালাত আদায় নিষিদ্ধ (ব্যতিক্রম: সূর্যাস্তকালীন একই দিনের আসর সালাত)",
+                        text = if (effectiveIsEnglish) "Prayers are prohibited during these times (Exception: Asr of the same day during sunset)" else "এই সময়গুলোতে সালাত আদায় নিষিদ্ধ (ব্যতিক্রম: সূর্যাস্তকালীন একই দিনের আসর সালাত)",
                         fontSize = 11.sp,
                         color = MutedText,
                         lineHeight = 15.sp
@@ -628,23 +727,29 @@ fun PrayerTimesDetailSheet(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         ForbiddenTimeBox(
-                            title = "সকাল",
-                            timeRange = activeSchedule.forbiddenMorningRange,
+                            title = if (effectiveIsEnglish) "Morning" else "সকাল",
+                            timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.forbiddenMorningRange) else activeSchedule.forbiddenMorningRange,
                             prayerName = com.example.data.model.PrayerName.MAKRUH_SUNRISE,
+                            isActive = isSunriseMakruhActive,
+                            isEnglish = effectiveIsEnglish,
                             onAlarmClick = { selectedWaqtForAlarmSettings = it },
                             modifier = Modifier.weight(1f)
                         )
                         ForbiddenTimeBox(
-                            title = "দুপুর",
-                            timeRange = activeSchedule.forbiddenNoonRange,
+                            title = if (effectiveIsEnglish) "Midday" else "দুপুর",
+                            timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.forbiddenNoonRange) else activeSchedule.forbiddenNoonRange,
                             prayerName = com.example.data.model.PrayerName.MAKRUH_ZAWAL,
+                            isActive = isZawalMakruhActive,
+                            isEnglish = effectiveIsEnglish,
                             onAlarmClick = { selectedWaqtForAlarmSettings = it },
                             modifier = Modifier.weight(1f)
                         )
                         ForbiddenTimeBox(
-                            title = "সন্ধ্যা",
-                            timeRange = activeSchedule.forbiddenEveningRange,
+                            title = if (effectiveIsEnglish) "Evening" else "সন্ধ্যা",
+                            timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.forbiddenEveningRange) else activeSchedule.forbiddenEveningRange,
                             prayerName = com.example.data.model.PrayerName.MAKRUH_SUNSET,
+                            isActive = isSunsetMakruhActive,
+                            isEnglish = effectiveIsEnglish,
                             onAlarmClick = { selectedWaqtForAlarmSettings = it },
                             modifier = Modifier.weight(1f)
                         )
@@ -656,17 +761,21 @@ fun PrayerTimesDetailSheet(
 
             // 6. Section 4: সাওমের সময়সূচী (Fasting / Sawm)
             DarkSectionCard(
-                title = "সাওমের সময়সূচী",
-                referenceLabel = "সেটিংস ও সতর্কতা",
+                title = if (effectiveIsEnglish) "Fasting (Sawm) Schedule" else "সাওমের সময়সূচী",
+                referenceLabel = if (effectiveIsEnglish) "Settings & Alerts" else "সেটিংস ও সতর্কতা",
                 onReferenceClick = { showSawmAdjustDialog = true }
             ) {
                 PrayerDetailRow(
                     icon = Icons.Outlined.Restaurant,
-                    name = "সাহরি",
-                    timeRange = activeSchedule.sahriTimeDigits,
+                    name = if (effectiveIsEnglish) "Sahri End" else "সাহরি",
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.sahriTimeDigits) else activeSchedule.sahriTimeDigits,
                     subItems = listOf(
                         BulletSubItem(
-                            text = if (sahriOffset != 0) "সতর্কতামূলক অফসেট: ${DateUtil.toBengaliNumerals(sahriOffset)} মি." else "স্ট্যান্ডার্ড ফজর ওয়াক্ত",
+                            text = if (effectiveIsEnglish) {
+                                if (sahriOffset != 0) "Precautionary offset: ${sahriOffset} mins" else "Standard Fajr start"
+                            } else {
+                                if (sahriOffset != 0) "সতর্কতামূলক অফসেট: ${DateUtil.toBengaliNumerals(sahriOffset)} মি." else "স্ট্যান্ডার্ড ফজর ওয়াক্ত"
+                            },
                             color = EmeraldAccent
                         )
                     )
@@ -676,11 +785,15 @@ fun PrayerTimesDetailSheet(
 
                 PrayerDetailRow(
                     icon = Icons.Outlined.SoupKitchen,
-                    name = "ইফতার",
-                    timeRange = activeSchedule.iftarTimeDigits,
+                    name = if (effectiveIsEnglish) "Iftar" else "ইফতার",
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.iftarTimeDigits) else activeSchedule.iftarTimeDigits,
                     subItems = listOf(
                         BulletSubItem(
-                            text = if (iftarOffset != 0) "সতর্কতামূলক অফসেট: ${DateUtil.toBengaliNumerals(iftarOffset)} মি." else "মাগরিব ওয়াক্ত শুরু",
+                            text = if (effectiveIsEnglish) {
+                                if (iftarOffset != 0) "Precautionary offset: +${iftarOffset} mins" else "Maghrib start"
+                            } else {
+                                if (iftarOffset != 0) "সতর্কতামূলক অফসেট: ${DateUtil.toBengaliNumerals(iftarOffset)} মি." else "মাগরিব ওয়াক্ত শুরু"
+                            },
                             color = AmberWarning
                         )
                     )
@@ -691,20 +804,20 @@ fun PrayerTimesDetailSheet(
 
             // 7. Section 5: সূর্যোদয় ও সূর্যাস্ত
             DarkSectionCard(
-                title = "সূর্যোদয় ও সূর্যাস্ত"
+                title = if (effectiveIsEnglish) "Sunrise & Sunset" else "সূর্যোদয় ও সূর্যাস্ত"
             ) {
                 PrayerDetailRow(
                     icon = Icons.Outlined.WbTwilight,
-                    name = "সূর্যোদয়",
-                    timeRange = activeSchedule.sunriseTimeDigits
+                    name = if (effectiveIsEnglish) "Sunrise" else "সূর্যোদয়",
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.sunriseTimeDigits) else activeSchedule.sunriseTimeDigits
                 )
 
                 PrayerDivider()
 
                 PrayerDetailRow(
                     icon = Icons.Outlined.WbSunny,
-                    name = "সূর্যাস্ত",
-                    timeRange = activeSchedule.sunsetTimeDigits
+                    name = if (effectiveIsEnglish) "Sunset" else "সূর্যাস্ত",
+                    timeRange = if (effectiveIsEnglish) DateUtil.toEnglishNumerals(activeSchedule.sunsetTimeDigits) else activeSchedule.sunsetTimeDigits
                 )
             }
 
@@ -744,13 +857,17 @@ fun PrayerTimesDetailSheet(
                             Spacer(modifier = Modifier.width(10.dp))
                             Column {
                                 Text(
-                                    text = "ওয়াক্ত শুরুর নোটিফিকেশন",
+                                    text = if (effectiveIsEnglish) "Prayer Time Notifications" else "ওয়াক্ত শুরুর নোটিফিকেশন",
                                     fontSize = 14.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
                                 )
                                 Text(
-                                    text = if (isMasterNotifEnabled) "ওয়াক্ত শুরু হলে স্বয়ংক্রিয় অ্যালার্ট আসবে" else "নোটিফিকেশন বন্ধ রয়েছে",
+                                    text = if (effectiveIsEnglish) {
+                                        if (isMasterNotifEnabled) "Automatic alert when waqt begins" else "Notifications are turned off"
+                                    } else {
+                                        if (isMasterNotifEnabled) "ওয়াক্ত শুরু হলে স্বয়ংক্রিয় অ্যালার্ট আসবে" else "নোটিফিকেশন বন্ধ রয়েছে"
+                                    },
                                     fontSize = 11.sp,
                                     color = MutedText
                                 )
@@ -769,11 +886,11 @@ fun PrayerTimesDetailSheet(
                                     }
                                     isMasterNotifEnabled = true
                                     com.example.utils.PrayerNotificationHelper.setMasterEnabled(context, true)
-                                    Toast.makeText(context, "ওয়াক্তের নোটিফিকেশন চালু করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, if (effectiveIsEnglish) "Prayer notifications enabled" else "ওয়াক্তের নোটিফিকেশন চালু করা হয়েছে", Toast.LENGTH_SHORT).show()
                                 } else {
                                     isMasterNotifEnabled = false
                                     com.example.utils.PrayerNotificationHelper.setMasterEnabled(context, false)
-                                    Toast.makeText(context, "ওয়াক্তের নোটিফিকেশন বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, if (effectiveIsEnglish) "Prayer notifications disabled" else "ওয়াক্তের নোটিফিকেশন বন্ধ করা হয়েছে", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             colors = SwitchDefaults.colors(
@@ -791,22 +908,26 @@ fun PrayerTimesDetailSheet(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         Text(
-                            text = "কোন কোন ওয়াক্তের নোটিফিকেশন চান নির্বাচন করুন:",
+                            text = if (effectiveIsEnglish) "Select which waqt notifications you want:" else "কোন কোন ওয়াক্তের নোটিফিকেশন চান নির্বাচন করুন:",
                             fontSize = 11.5.sp,
                             color = MutedText
                         )
                         Spacer(modifier = Modifier.height(8.dp))
 
                         // Chips for individual prayers
-                        val dhuhrToggleName = if (activeSchedule.isFriday) "জুমুআ" else "যোহর"
+                        val dhuhrToggleName = if (effectiveIsEnglish) {
+                            if (activeSchedule.isFriday) "Jumu'ah" else "Dhuhr"
+                        } else {
+                            if (activeSchedule.isFriday) "জুমুআ" else "যোহর"
+                        }
                         val prayersToToggle = listOf(
-                            Triple("সাহরি", isNotifSahri, com.example.data.model.PrayerName.SAHRI),
-                            Triple("ফজর", isNotifFajr, com.example.data.model.PrayerName.FAJR),
+                            Triple(if (effectiveIsEnglish) "Sahri" else "সাহরি", isNotifSahri, com.example.data.model.PrayerName.SAHRI),
+                            Triple(if (effectiveIsEnglish) "Fajr" else "ফজর", isNotifFajr, com.example.data.model.PrayerName.FAJR),
                             Triple(dhuhrToggleName, isNotifDhuhr, com.example.data.model.PrayerName.DHUHR),
-                            Triple("আসর", isNotifAsr, com.example.data.model.PrayerName.ASR),
-                            Triple("মাগরিব", isNotifMaghrib, com.example.data.model.PrayerName.MAGHRIB),
-                            Triple("ইফতার", isNotifIftar, com.example.data.model.PrayerName.IFTAR),
-                            Triple("এশা", isNotifIsha, com.example.data.model.PrayerName.ISHA)
+                            Triple(if (effectiveIsEnglish) "Asr" else "আসর", isNotifAsr, com.example.data.model.PrayerName.ASR),
+                            Triple(if (effectiveIsEnglish) "Maghrib" else "মাগরিব", isNotifMaghrib, com.example.data.model.PrayerName.MAGHRIB),
+                            Triple(if (effectiveIsEnglish) "Iftar" else "ইফতার", isNotifIftar, com.example.data.model.PrayerName.IFTAR),
+                            Triple(if (effectiveIsEnglish) "Isha" else "এশা", isNotifIsha, com.example.data.model.PrayerName.ISHA)
                         )
 
                         Row(
@@ -825,18 +946,18 @@ fun PrayerTimesDetailSheet(
                                         .weight(1f)
                                         .padding(horizontal = 2.dp)
                                         .clickable {
-                                            val nextVal = !isEnabled
-                                            when (pEnum) {
-                                                com.example.data.model.PrayerName.SAHRI -> isNotifSahri = nextVal
-                                                com.example.data.model.PrayerName.FAJR -> isNotifFajr = nextVal
-                                                com.example.data.model.PrayerName.DHUHR -> isNotifDhuhr = nextVal
-                                                com.example.data.model.PrayerName.ASR -> isNotifAsr = nextVal
-                                                com.example.data.model.PrayerName.MAGHRIB -> isNotifMaghrib = nextVal
-                                                com.example.data.model.PrayerName.IFTAR -> isNotifIftar = nextVal
-                                                com.example.data.model.PrayerName.ISHA -> isNotifIsha = nextVal
-                                                else -> {}
-                                            }
-                                            com.example.utils.PrayerNotificationHelper.setPrayerEnabled(context, pEnum, nextVal)
+                                             val nextVal = !isEnabled
+                                             when (pEnum) {
+                                                 com.example.data.model.PrayerName.SAHRI -> isNotifSahri = nextVal
+                                                 com.example.data.model.PrayerName.FAJR -> isNotifFajr = nextVal
+                                                 com.example.data.model.PrayerName.DHUHR -> isNotifDhuhr = nextVal
+                                                 com.example.data.model.PrayerName.ASR -> isNotifAsr = nextVal
+                                                 com.example.data.model.PrayerName.MAGHRIB -> isNotifMaghrib = nextVal
+                                                 com.example.data.model.PrayerName.IFTAR -> isNotifIftar = nextVal
+                                                 com.example.data.model.PrayerName.ISHA -> isNotifIsha = nextVal
+                                                 else -> {}
+                                             }
+                                             com.example.utils.PrayerNotificationHelper.setPrayerEnabled(context, pEnum, nextVal)
                                         }
                                 ) {
                                     Box(
@@ -879,7 +1000,7 @@ fun PrayerTimesDetailSheet(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "সাউন্ড ও ভাইব্রেশন",
+                                    text = if (effectiveIsEnglish) "Sound & Vibration" else "সাউন্ড ও ভাইব্রেশন",
                                     fontSize = 12.sp,
                                     color = Color.White.copy(alpha = 0.85f)
                                 )
@@ -925,13 +1046,13 @@ fun PrayerTimesDetailSheet(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Column {
                                         Text(
-                                            text = "ডায়নামিক অ্যালার্ম ও আজান সেটিংস",
+                                            text = if (effectiveIsEnglish) "Dynamic Alarm & Adhan Settings" else "ডায়নামিক অ্যালার্ম ও আজান সেটিংস",
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White
                                         )
                                         Text(
-                                            text = "ওয়াক্ত অনুযায়ী সময় সমন্বয়, আজান ও রিংটোন নির্বাচন",
+                                            text = if (effectiveIsEnglish) "Waqt time adjustments, Adhan & ringtone selection" else "ওয়াক্ত অনুযায়ী সময় সমন্বয়, আজান ও রিংটোন নির্বাচন",
                                             fontSize = 10.5.sp,
                                             color = EmeraldAccent
                                         )
@@ -976,8 +1097,13 @@ fun PrayerTimesDetailSheet(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
+                        val asrMethodStr = if (effectiveIsEnglish) {
+                            "Asr Method: ${if (isHanafi) "Hanafi (2x Shadow)" else "Shafi'i / Standard"}"
+                        } else {
+                            "আসরের পদ্ধতি: ${if (isHanafi) "হানাফী (মিছলে সানি)" else "শাফেয়ী / জমহুর"}"
+                        }
                         Text(
-                            text = "আসরের পদ্ধতি: ${if (isHanafi) "হানাফী (মিছলে সানি)" else "শাফেয়ী / জমহুর"}",
+                            text = asrMethodStr,
                             fontSize = 12.sp,
                             color = MutedText
                         )
@@ -987,8 +1113,13 @@ fun PrayerTimesDetailSheet(
                         onClick = { onHanafiChanged(!isHanafi) },
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                     ) {
+                        val asrBtnStr = if (effectiveIsEnglish) {
+                            if (isHanafi) "Change" else "Use Hanafi"
+                        } else {
+                            if (isHanafi) "পরিবর্তন" else "হানাফী করুন"
+                        }
                         Text(
-                            text = if (isHanafi) "পরিবর্তন" else "হানাফী করুন",
+                            text = asrBtnStr,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = EmeraldAccent
@@ -1016,7 +1147,11 @@ fun PrayerTimesDetailSheet(
                     tint = EmeraldAccent
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("সময়সূচির টেক্সট কপি করুন", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = if (effectiveIsEnglish) "Copy Prayer Times Text" else "সময়সূচির টেক্সট কপি করুন",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
@@ -1025,6 +1160,7 @@ fun PrayerTimesDetailSheet(
     if (activeReferenceType != null) {
         PrayerReferenceDialog(
             type = activeReferenceType!!,
+            isEnglish = effectiveIsEnglish,
             onDismiss = { activeReferenceType = null }
         )
     }
@@ -1034,6 +1170,7 @@ fun PrayerTimesDetailSheet(
         PrayerTimesCalendarDialog(
             selectedDate = selectedDate,
             hijriOffset = hijriOffset,
+            isEnglish = effectiveIsEnglish,
             onDateSelected = {
                 selectedDate = it
                 showCalendarDialog = false
@@ -1051,6 +1188,7 @@ fun PrayerTimesDetailSheet(
             onTabSelected = { selectedLocationTab = it },
             filteredLocations = filteredLocations,
             selectedDistrict = schedule.district,
+            isEnglish = effectiveIsEnglish,
             onSelect = {
                 onDistrictSelected(it)
                 showDistrictPicker = false
@@ -1070,6 +1208,7 @@ fun PrayerTimesDetailSheet(
             currentIftarOffset = iftarOffset,
             isNotifSahri = isNotifSahri,
             isNotifIftar = isNotifIftar,
+            isEnglish = effectiveIsEnglish,
             onUpdateSahriOffset = { newOffset ->
                 coroutineScope.launch {
                     settingsRepo.setSahriOffset(newOffset)
@@ -1116,6 +1255,8 @@ fun PrayerTimesDetailSheet(
             prayerName = pName,
             baseTimeFormatted = formattedTime,
             baseTimestampMillis = timestampMillis,
+            isEnglish = effectiveIsEnglish,
+            isFriday = activeSchedule.isFriday,
             onDismiss = {
                 selectedWaqtForAlarmSettings = null
                 isMasterNotifEnabled = com.example.utils.PrayerNotificationHelper.isMasterEnabled(context)
@@ -1135,6 +1276,7 @@ fun PrayerTimesDetailSheet(
     if (showAlarmOverviewSheet) {
         WaqtAlarmOverviewSheet(
             schedule = activeSchedule,
+            isEnglish = effectiveIsEnglish,
             onDismiss = {
                 showAlarmOverviewSheet = false
                 isMasterNotifEnabled = com.example.utils.PrayerNotificationHelper.isMasterEnabled(context)
@@ -1206,6 +1348,8 @@ private fun PrayerDetailRow(
     timeRange: String,
     subItems: List<BulletSubItem> = emptyList(),
     prayerName: com.example.data.model.PrayerName? = null,
+    isCurrentWaqt: Boolean = false,
+    currentBadgeText: String = "চলমান",
     onAlarmClick: ((com.example.data.model.PrayerName) -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -1213,77 +1357,128 @@ private fun PrayerDetailRow(
         com.example.utils.PrayerNotificationHelper.getPrayerAlarmConfig(context, it)
     }
 
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    // Pure soft background highlight without any heavy borders
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (isCurrentWaqt) Color(0xFF10B981).copy(alpha = 0.14f) else Color.Transparent)
+            .padding(
+                horizontal = if (isCurrentWaqt) 10.dp else 4.dp,
+                vertical = if (isCurrentWaqt) 8.dp else 5.dp
+            )
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = Color(0xFFE2E8F0),
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = name,
-                    fontSize = 14.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFFF1F5F9)
-                )
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = timeRange,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
-                )
-
-                if (prayerName != null && onAlarmClick != null) {
-                    Spacer(modifier = Modifier.width(6.dp))
-                    IconButton(
-                        onClick = { onAlarmClick(prayerName) },
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (config?.isEnabled == true) Icons.Filled.NotificationsActive else Icons.Outlined.Notifications,
-                            contentDescription = "অ্যালার্ম কাস্টমাইজ করুন",
-                            tint = if (config?.isEnabled == true) EmeraldAccent else Color(0xFF64748B),
-                            modifier = Modifier.size(17.dp)
-                        )
-                    }
-                }
-            }
-        }
-
-        // Sub items (e.g. Makruh, Uttom somoy)
-        if (subItems.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(4.dp))
-            subItems.forEach { subItem ->
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(6.dp)
+                            .size(28.dp)
                             .clip(CircleShape)
-                            .background(subItem.color)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
+                            .background(if (isCurrentWaqt) Color(0xFF10B981).copy(alpha = 0.22f) else Color.White.copy(alpha = 0.06f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = if (isCurrentWaqt) Color(0xFF34D399) else Color(0xFFE2E8F0),
+                            modifier = Modifier.size(17.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = name,
+                                fontSize = 14.5.sp,
+                                fontWeight = if (isCurrentWaqt) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isCurrentWaqt) Color.White else Color(0xFFF1F5F9)
+                            )
+                            if (isCurrentWaqt) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(100.dp))
+                                        .background(Color(0xFF10B981).copy(alpha = 0.25f))
+                                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(5.dp)
+                                                .clip(CircleShape)
+                                                .background(Color(0xFF34D399))
+                                        )
+                                        Spacer(modifier = Modifier.width(3.5.dp))
+                                        Text(
+                                            text = currentBadgeText,
+                                            fontSize = 9.5.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color(0xFF34D399)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = subItem.text,
-                        fontSize = 11.5.sp,
-                        color = subItem.color
+                        text = timeRange,
+                        fontSize = 15.sp,
+                        fontWeight = if (isCurrentWaqt) FontWeight.Bold else FontWeight.SemiBold,
+                        color = if (isCurrentWaqt) Color(0xFF6EE7B7) else Color.White
                     )
+
+                    if (prayerName != null && onAlarmClick != null) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        IconButton(
+                            onClick = { onAlarmClick(prayerName) },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (config?.isEnabled == true) Icons.Filled.NotificationsActive else Icons.Outlined.Notifications,
+                                contentDescription = "অ্যালার্ম কাস্টমাইজ করুন",
+                                tint = if (config?.isEnabled == true) EmeraldAccent else Color(0xFF64748B),
+                                modifier = Modifier.size(17.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Sub items (e.g. Makruh, Uttom somoy)
+            if (subItems.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(3.dp))
+                subItems.forEach { subItem ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(5.dp)
+                                .clip(CircleShape)
+                                .background(subItem.color)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = subItem.text,
+                            fontSize = 11.sp,
+                            color = subItem.color
+                        )
+                    }
                 }
             }
         }
@@ -1295,6 +1490,8 @@ private fun ForbiddenTimeBox(
     title: String,
     timeRange: String,
     prayerName: com.example.data.model.PrayerName? = null,
+    isActive: Boolean = false,
+    isEnglish: Boolean = false,
     onAlarmClick: ((com.example.data.model.PrayerName) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -1305,8 +1502,11 @@ private fun ForbiddenTimeBox(
 
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = ForbiddenCardBg,
-        border = androidx.compose.foundation.BorderStroke(1.dp, ForbiddenCardBorder),
+        color = if (isActive) Color(0xFFDC2626).copy(alpha = 0.15f) else ForbiddenCardBg,
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = if (isActive) Color(0xFFEF4444).copy(alpha = 0.4f) else ForbiddenCardBorder
+        ),
         modifier = modifier
             .then(
                 if (prayerName != null && onAlarmClick != null) {
@@ -1318,6 +1518,22 @@ private fun ForbiddenTimeBox(
             modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (isActive) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(100.dp))
+                        .background(Color(0xFFDC2626).copy(alpha = 0.35f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = if (isEnglish) "● Forbidden" else "● এখন নিষিদ্ধ",
+                        color = Color(0xFFFCA5A5),
+                        fontSize = 8.5.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.height(3.dp))
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
@@ -1326,7 +1542,7 @@ private fun ForbiddenTimeBox(
                     text = title,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFFFD1D5)
+                    color = if (isActive) Color(0xFFFCA5A5) else Color(0xFFFFD1D5)
                 )
                 if (prayerName != null && config != null) {
                     Spacer(modifier = Modifier.width(4.dp))
@@ -1362,6 +1578,7 @@ private fun PrayerDivider() {
 @Composable
 private fun PrayerReferenceDialog(
     type: ReferenceType,
+    isEnglish: Boolean = false,
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -1383,7 +1600,7 @@ private fun PrayerReferenceDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = type.title,
+                        text = if (isEnglish) type.titleEn else type.titleBn,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = EmeraldAccent,
@@ -1401,7 +1618,13 @@ private fun PrayerReferenceDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 val referenceContent = when (type) {
-                    ReferenceType.FARD_PRAYERS -> """
+                    ReferenceType.FARD_PRAYERS -> if (isEnglish) """
+                        • Fajr: From dawn (Subh Sadiq) until before sunrise. (Sahih Muslim 612)
+                        • Dhuhr: After the sun passes the meridian until an object's shadow equals its length. (Sahih Bukhari 541)
+                        • Asr: When shadow is twice the length (Hanafi) or equal length (Jumhoor) until sunset.
+                        • Maghrib: From sunset until the red twilight (Shafaq) disappears.
+                        • Isha: From disappearance of twilight until dawn (preferred in the first half of night).
+                    """.trimIndent() else """
                         • ফজর: সুবহে সাদিক থেকে শুরু হয়ে সূর্যোদয়ের পূর্ব পর্যন্ত। (সহীহ মুসলিম ৬১২)
                         • যোহর: সূর্য পশ্চিমাকাশে ঢলে পড়ার পর থেকে শুরু করে প্রতিটি বস্তুর ছায়া সমপরিমাণ হওয়া পর্যন্ত। (সহীহ বুখারী ৫৪১)
                         • আসর: আসরের ওয়াক্ত শুরু হয় ছায়া দ্বিগুণ হওয়ার পর (হানাফী) বা এক গুণ পর (জমহুর) থেকে সূর্যাস্তের পূর্ব পর্যন্ত।
@@ -1409,14 +1632,27 @@ private fun PrayerReferenceDialog(
                         • এশা: পশ্চিমাকাশের লালিমা দূর হওয়ার পর থেকে ফজর উদয় পর্যন্ত (উত্তম সময় রাতের প্রথমার্ধ)।
                     """.trimIndent()
 
-                    ReferenceType.NAFL_PRAYERS -> """
+                    ReferenceType.NAFL_PRAYERS -> if (isEnglish) """
+                        • Duha (Ishraq / Chasht): From 15-20 minutes after sunrise until 10 minutes before midday (Zawal). The Prophet (ﷺ) advised observing Duha prayer regularly. (Sahih Bukhari 1981)
+                        • Zawal: Midday zenith when the sun is at its highest point; praying is forbidden until the sun declines slightly.
+                        • Awwabin: 6 rak'ahs of voluntary prayer after Maghrib fard are recommended.
+                        • Tahajjud: After Isha prayer and sleep until Subh Sadiq (dawn). The last third of the night is the most virtuous time. (Sahih Bukhari 1145)
+                    """.trimIndent() else """
                         • দুহা (ইশরাক/চাশত): সূর্যোদয়ের ১৫-২০ মিনিট পর থেকে ঠিক দ্বিপ্রহরের (জাওয়াল) ১০ মিনিট পূর্ব পর্যন্ত। রাসুলুল্লাহ (ﷺ) নিয়মিত দুহার সালাত পড়ার অসিয়ত করেছেন। (বুখারী ১৯৮১)
                         • জাওয়াল: ঠিক দুপুরে সূর্য যখন মধ্যাকাশে অবস্থান করে, তখন সালাত মাকরূহ। সূর্য সামান্য ঢলে পড়ার পরই যোহরের ওয়াক্ত হয়।
                         • আওয়াবিন: মাগরিবের ফরজের পর ৬ রাকাত পর্যন্ত নফল সালাত আদায় করা মুস্তাহাব।
                         • তাহাজ্জুদ: এশার সালাত ও ঘুমের পর থেকে সুবহে সাদিক পর্যন্ত। রাতের শেষ তৃতীয়াংশ সর্বোত্তম সময়। (সহীহ বুখারী ১১৪৫)
                     """.trimIndent()
 
-                    ReferenceType.FORBIDDEN_TIMES -> """
+                    ReferenceType.FORBIDDEN_TIMES -> if (isEnglish) """
+                        The Messenger of Allah (ﷺ) forbade prayers and burying the dead at three times:
+                        1. At sunrise, until it has fully risen (approx. 15 mins).
+                        2. At midday when the sun is at its meridian, until it declines.
+                        3. At sunset, until it has completely set.
+                        (Sahih Muslim 831, Jami` at-Tirmidhi 1060)
+
+                        Exception: If Asr prayer was delayed for a valid reason, it must be performed even shortly before sunset.
+                    """.trimIndent() else """
                         রাসূলুল্লাহ (ﷺ) তিন সময়ে সালাত আদায় এবং মৃতদের দাফন করতে নিষেধ করেছেন:
                         ১. সূর্যোদয়ের সময়, যতক্ষণ না তা সম্পূর্ণ ওপরে ওঠে (১৫ মিনিট)।
                         ২. ঠিক দুপুরে সূর্য মধ্যাকাশে অবস্থানকালে, যতক্ষণ না তা ঢলে পড়ে।
@@ -1442,7 +1678,7 @@ private fun PrayerReferenceDialog(
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = EmeraldAccent)
                 ) {
-                    Text("ঠিক আছে", color = Color.Black, fontWeight = FontWeight.Bold)
+                    Text(if (isEnglish) "OK" else "ঠিক আছে", color = Color.Black, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -1457,6 +1693,7 @@ private fun DistrictSelectionModal(
     onTabSelected: (Int) -> Unit,
     filteredLocations: List<DistrictInfo>,
     selectedDistrict: DistrictInfo,
+    isEnglish: Boolean = false,
     onSelect: (DistrictInfo) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -1478,7 +1715,8 @@ private fun DistrictSelectionModal(
                 if (lastKnown != null) {
                     val closest = PrayerTimesCalculator.findClosestDistrict(lastKnown.latitude, lastKnown.longitude)
                     isDetectingLocation = false
-                    Toast.makeText(context, "📍 আপনার অবস্থান: ${closest.nameBn} (${closest.countryBn})", Toast.LENGTH_SHORT).show()
+                    val locMsg = if (isEnglish) "📍 Your location: ${closest.nameEn} (${closest.countryEn})" else "📍 আপনার অবস্থান: ${closest.nameBn} (${closest.countryBn})"
+                    Toast.makeText(context, locMsg, Toast.LENGTH_SHORT).show()
                     onSelect(closest)
                 } else {
                     // Request single update
@@ -1486,7 +1724,8 @@ private fun DistrictSelectionModal(
                         override fun onLocationChanged(loc: Location) {
                             val closest = PrayerTimesCalculator.findClosestDistrict(loc.latitude, loc.longitude)
                             isDetectingLocation = false
-                            Toast.makeText(context, "📍 আপনার অবস্থান: ${closest.nameBn} (${closest.countryBn})", Toast.LENGTH_SHORT).show()
+                            val locMsg = if (isEnglish) "📍 Your location: ${closest.nameEn} (${closest.countryEn})" else "📍 আপনার অবস্থান: ${closest.nameBn} (${closest.countryBn})"
+                            Toast.makeText(context, locMsg, Toast.LENGTH_SHORT).show()
                             onSelect(closest)
                             try { locationManager.removeUpdates(this) } catch (e: Exception) {}
                         }
@@ -1497,7 +1736,7 @@ private fun DistrictSelectionModal(
                         locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, listener, null)
                     } else {
                         isDetectingLocation = false
-                        Toast.makeText(context, "ডিভাইসের লোকেশন (GPS) চালু করুন", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, if (isEnglish) "Please enable device location (GPS)" else "ডিভাইসের লোকেশন (GPS) চালু করুন", Toast.LENGTH_SHORT).show()
                     }
                 }
             } else {
@@ -1505,7 +1744,7 @@ private fun DistrictSelectionModal(
             }
         } catch (e: Exception) {
             isDetectingLocation = false
-            Toast.makeText(context, "লোকেশন নির্ণয় করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, if (isEnglish) "Failed to detect location" else "লোকেশন নির্ণয় করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -1518,7 +1757,7 @@ private fun DistrictSelectionModal(
             detectLocation()
         } else {
             isDetectingLocation = false
-            Toast.makeText(context, "লোকেশন পারমিশন প্রয়োজন", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, if (isEnglish) "Location permission required" else "লোকেশন পারমিশন প্রয়োজন", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -1543,7 +1782,7 @@ private fun DistrictSelectionModal(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "স্থান বা দেশ নির্বাচন করুন",
+                        text = if (isEnglish) "Select Location or Country" else "স্থান বা দেশ নির্বাচন করুন",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -1592,7 +1831,7 @@ private fun DistrictSelectionModal(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "জিপিএস লোকেশন শনাক্ত করা হচ্ছে...",
+                                text = if (isEnglish) "Detecting GPS location..." else "জিপিএস লোকেশন শনাক্ত করা হচ্ছে...",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = EmeraldAccent
@@ -1606,7 +1845,7 @@ private fun DistrictSelectionModal(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "বর্তমান অবস্থান স্বয়ংক্রিয়ভাবে শনাক্ত করুন (GPS)",
+                                text = if (isEnglish) "Auto-detect current location (GPS)" else "বর্তমান অবস্থান স্বয়ংক্রিয়ভাবে শনাক্ত করুন (GPS)",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = EmeraldAccent
@@ -1621,7 +1860,7 @@ private fun DistrictSelectionModal(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
-                    placeholder = { Text("জেলা, শহর বা দেশের নাম দিয়ে খুঁজুন...", fontSize = 12.5.sp, color = MutedText) },
+                    placeholder = { Text(if (isEnglish) "Search district, city or country..." else "জেলা, শহর বা দেশের নাম দিয়ে খুঁজুন...", fontSize = 12.5.sp, color = MutedText) },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = EmeraldAccent) },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
@@ -1662,7 +1901,7 @@ private fun DistrictSelectionModal(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                text = "🇧🇩 বাংলাদেশ",
+                                text = if (isEnglish) "🇧🇩 Bangladesh" else "🇧🇩 বাংলাদেশ",
                                 fontSize = 12.5.sp,
                                 fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium,
                                 color = if (selectedTab == 0) Color.Black else MutedText,
@@ -1678,7 +1917,7 @@ private fun DistrictSelectionModal(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                text = "🌍 আন্তর্জাতিক",
+                                text = if (isEnglish) "🌍 International" else "🌍 আন্তর্জাতিক",
                                 fontSize = 12.5.sp,
                                 fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium,
                                 color = if (selectedTab == 1) Color.Black else MutedText,
@@ -1700,7 +1939,7 @@ private fun DistrictSelectionModal(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "কোনো স্থান খুঁজে পাওয়া যায়নি",
+                            text = if (isEnglish) "No locations found" else "কোনো স্থান খুঁজে পাওয়া যায়নি",
                             fontSize = 13.sp,
                             color = MutedText
                         )
@@ -1732,14 +1971,14 @@ private fun DistrictSelectionModal(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Text(
-                                                text = dist.nameBn,
+                                                text = if (isEnglish) dist.nameEn else dist.nameBn,
                                                 fontSize = 14.sp,
                                                 fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
                                                 color = if (isSel) EmeraldAccent else Color.White
                                             )
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text(
-                                                text = "(${dist.nameEn})",
+                                                text = if (isEnglish) "(${dist.nameBn})" else "(${dist.nameEn})",
                                                 fontSize = 12.sp,
                                                 color = MutedText
                                             )
@@ -1748,9 +1987,11 @@ private fun DistrictSelectionModal(
                                         Spacer(modifier = Modifier.height(2.dp))
 
                                         val subInfo = if (isInternational) {
-                                            "দেশ: ${dist.countryBn} • অঞ্চল: ${dist.divisionBn}"
+                                            if (isEnglish) "Country: ${dist.countryEn}" + (if (dist.divisionEn.isNotBlank()) " • Region: ${dist.divisionEn}" else "")
+                                            else "দেশ: ${dist.countryBn} • অঞ্চল: ${dist.divisionBn}"
                                         } else {
-                                            "বিভাগ: ${dist.divisionBn}"
+                                            val divName = if (isEnglish && dist.divisionEn.isNotBlank()) dist.divisionEn else dist.divisionBn
+                                            if (isEnglish) "Division: $divName" else "বিভাগ: ${dist.divisionBn}"
                                         }
 
                                         Text(
@@ -1782,6 +2023,7 @@ private fun DistrictSelectionModal(
 private fun PrayerTimesCalendarDialog(
     selectedDate: LocalDate,
     hijriOffset: Int,
+    isEnglish: Boolean = false,
     onDateSelected: (LocalDate) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -1791,9 +2033,17 @@ private fun PrayerTimesCalendarDialog(
         "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
         "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"
     )
+    val monthNamesEn = listOf(
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    )
 
-    val displayedMonthName = monthNamesBn.getOrElse(displayedMonth.monthValue - 1) { "" }
-    val displayedYearBn = DateUtil.toBengaliNumerals(displayedMonth.year)
+    val displayedMonthName = if (isEnglish) {
+        monthNamesEn.getOrElse(displayedMonth.monthValue - 1) { "" }
+    } else {
+        monthNamesBn.getOrElse(displayedMonth.monthValue - 1) { "" }
+    }
+    val displayedYearStr = if (isEnglish) displayedMonth.year.toString() else DateUtil.toBengaliNumerals(displayedMonth.year)
 
     // Hijri month for current viewed month
     val firstDayHijri = remember(displayedMonth, hijriOffset) {
@@ -1802,10 +2052,18 @@ private fun PrayerTimesCalendarDialog(
     val lastDayHijri = remember(displayedMonth, hijriOffset) {
         HijriCalendarUtil.getHijriDate(displayedMonth.atEndOfMonth(), hijriOffset)
     }
-    val hijriMonthHeader = if (firstDayHijri.hijriMonth == lastDayHijri.hijriMonth) {
-        "${firstDayHijri.hijriMonthNameBn} ${DateUtil.toBengaliNumerals(firstDayHijri.hijriYear)} হিজরী"
+    val hijriMonthHeader = if (isEnglish) {
+        if (firstDayHijri.hijriMonth == lastDayHijri.hijriMonth) {
+            "${firstDayHijri.hijriMonthNameEn} ${firstDayHijri.hijriYear} AH"
+        } else {
+            "${firstDayHijri.hijriMonthNameEn} - ${lastDayHijri.hijriMonthNameEn} ${lastDayHijri.hijriYear} AH"
+        }
     } else {
-        "${firstDayHijri.hijriMonthNameBn} - ${lastDayHijri.hijriMonthNameBn} ${DateUtil.toBengaliNumerals(lastDayHijri.hijriYear)} হিজরী"
+        if (firstDayHijri.hijriMonth == lastDayHijri.hijriMonth) {
+            "${firstDayHijri.hijriMonthNameBn} ${DateUtil.toBengaliNumerals(firstDayHijri.hijriYear)} হিজরী"
+        } else {
+            "${firstDayHijri.hijriMonthNameBn} - ${lastDayHijri.hijriMonthNameBn} ${DateUtil.toBengaliNumerals(lastDayHijri.hijriYear)} হিজরী"
+        }
     }
 
     Dialog(
@@ -1830,7 +2088,7 @@ private fun PrayerTimesCalendarDialog(
                 ) {
                     Column {
                         Text(
-                            text = "$displayedMonthName $displayedYearBn",
+                            text = "$displayedMonthName $displayedYearStr",
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -1878,7 +2136,11 @@ private fun PrayerTimesCalendarDialog(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 // Days of week header (Saturday to Friday)
-                val weekDays = listOf("শনি", "রবি", "সোম", "মঙ্গল", "বুধ", "বৃহঃ", "শুক্র")
+                val weekDays = if (isEnglish) {
+                    listOf("Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri")
+                } else {
+                    listOf("শনি", "রবি", "সোম", "মঙ্গল", "বুধ", "বৃহঃ", "শুক্র")
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -1952,7 +2214,7 @@ private fun PrayerTimesCalendarDialog(
                                                 color = if (isSelected) Color.Black else Color.White
                                             )
                                             Text(
-                                                text = DateUtil.toBengaliNumerals(hijriDateInfo.hijriDay),
+                                                text = if (isEnglish) hijriDateInfo.hijriDay.toString() else DateUtil.toBengaliNumerals(hijriDateInfo.hijriDay),
                                                 fontSize = 10.sp,
                                                 fontWeight = FontWeight.SemiBold,
                                                 color = if (isSelected) Color.Black.copy(alpha = 0.85f) else EmeraldAccent
@@ -1989,7 +2251,7 @@ private fun PrayerTimesCalendarDialog(
                         ),
                         border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldAccent.copy(alpha = 0.4f))
                     ) {
-                        Text("আজকের তারিখ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(if (isEnglish) "Today" else "আজকের তারিখ", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Button(
@@ -1997,7 +2259,7 @@ private fun PrayerTimesCalendarDialog(
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = EmeraldAccent)
                     ) {
-                        Text("ঠিক আছে", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(if (isEnglish) "OK" else "ঠিক আছে", color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -2011,6 +2273,7 @@ private fun SawmSettingsDialog(
     currentIftarOffset: Int,
     isNotifSahri: Boolean,
     isNotifIftar: Boolean,
+    isEnglish: Boolean = false,
     onUpdateSahriOffset: (Int) -> Unit,
     onUpdateIftarOffset: (Int) -> Unit,
     onToggleSahriNotif: (Boolean) -> Unit,
@@ -2052,7 +2315,7 @@ private fun SawmSettingsDialog(
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "সাওম (রোজা) সেটিংস",
+                            text = if (isEnglish) "Sawm (Fasting) Settings" else "সাওম (রোজা) সেটিংস",
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -2078,13 +2341,13 @@ private fun SawmSettingsDialog(
 
                 // 1. Sahri Offset Selector
                 Text(
-                    text = "সাহরির সতর্কতামূলক অফসেট",
+                    text = if (isEnglish) "Sahri Precautionary Offset" else "সাহরির সতর্কতামূলক অফসেট",
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFFF1F5F9)
                 )
                 Text(
-                    text = "ফজর ওয়াক্ত শুরুর আগে সাহরি শেষ করার সতর্কতা সময় (ডিফল্ট -৩ মিনিট)",
+                    text = if (isEnglish) "Precautionary buffer before Fajr begins (default -3 mins)" else "ফজর ওয়াক্ত শুরুর আগে সাহরি শেষ করার সতর্কতা সময় (ডিফল্ট -৩ মিনিট)",
                     fontSize = 11.sp,
                     color = MutedText,
                     lineHeight = 15.sp
@@ -2098,7 +2361,11 @@ private fun SawmSettingsDialog(
                 ) {
                     sahriOptions.forEach { offset ->
                         val isSelected = currentSahriOffset == offset
-                        val label = if (offset == 0) "০ মি." else "${DateUtil.toBengaliNumerals(offset)} মি."
+                        val label = if (offset == 0) {
+                            if (isEnglish) "0 min" else "০ মি."
+                        } else {
+                            if (isEnglish) "$offset min" else "${DateUtil.toBengaliNumerals(offset)} মি."
+                        }
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = if (isSelected) EmeraldAccent.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.05f),
@@ -2129,13 +2396,13 @@ private fun SawmSettingsDialog(
 
                 // 2. Iftar Offset Selector
                 Text(
-                    text = "ইফতারের সতর্কতামূলক অফসেট",
+                    text = if (isEnglish) "Iftar Precautionary Offset" else "ইফতারের সতর্কতামূলক অফসেট",
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFFF1F5F9)
                 )
                 Text(
-                    text = "মাগরিব ওয়াক্তের সাথে সতর্কতামূলক অতিরিক্ত সময় (ডিফল্ট ০ মিনিট)",
+                    text = if (isEnglish) "Additional buffer added to Maghrib time (default 0 min)" else "মাগরিব ওয়াক্তের সাথে সতর্কতামূলক অতিরিক্ত সময় (ডিফল্ট ০ মিনিট)",
                     fontSize = 11.sp,
                     color = MutedText,
                     lineHeight = 15.sp
@@ -2149,7 +2416,11 @@ private fun SawmSettingsDialog(
                 ) {
                     iftarOptions.forEach { offset ->
                         val isSelected = currentIftarOffset == offset
-                        val label = if (offset == 0) "০ মি." else "+${DateUtil.toBengaliNumerals(offset)} মি."
+                        val label = if (offset == 0) {
+                            if (isEnglish) "0 min" else "০ মি."
+                        } else {
+                            if (isEnglish) "+$offset min" else "+${DateUtil.toBengaliNumerals(offset)} মি."
+                        }
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = if (isSelected) AmberWarning.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.05f),
@@ -2188,13 +2459,13 @@ private fun SawmSettingsDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "সাহরির শেষ সময়ের নোটিফিকেশন",
+                            text = if (isEnglish) "Sahri End Time Notification" else "সাহরির শেষ সময়ের নোটিফিকেশন",
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color.White
                         )
                         Text(
-                            text = "সাহরির শেষ সময় হলে সতর্কবার্তা দেবে",
+                            text = if (isEnglish) "Alert when Sahri time is ending" else "সাহরির শেষ সময় হলে সতর্কবার্তা দেবে",
                             fontSize = 11.sp,
                             color = MutedText
                         )
@@ -2220,13 +2491,13 @@ private fun SawmSettingsDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "ইফতারের সময়ের নোটিফিকেশন",
+                            text = if (isEnglish) "Iftar Time Notification" else "ইফতারের সময়ের নোটিফিকেশন",
                             fontSize = 13.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color.White
                         )
                         Text(
-                            text = "ইফতারের ওয়াক্ত হওয়ার সাথে সাথে বার্তা পাঠাবে",
+                            text = if (isEnglish) "Alert immediately when Iftar arrives" else "ইফতারের ওয়াক্ত হওয়ার সাথে সাথে বার্তা পাঠাবে",
                             fontSize = 11.sp,
                             color = MutedText
                         )
@@ -2252,7 +2523,7 @@ private fun SawmSettingsDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = EmeraldAccent),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("সংরক্ষণ করুন ও বন্ধ করুন", color = Color.Black, fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
+                    Text(if (isEnglish) "Save & Close" else "সংরক্ষণ করুন ও বন্ধ করুন", color = Color.Black, fontSize = 13.5.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

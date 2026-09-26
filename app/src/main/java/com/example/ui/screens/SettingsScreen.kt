@@ -1091,6 +1091,7 @@ fun SettingsScreen(
             schedule = prayerSchedule,
             isHanafi = isHanafiAsr,
             hijriOffset = combinedHijriOffset,
+            isEnglish = currentLanguage == "en",
             onDistrictSelected = { prayerRepo.setDistrict(it) },
             onHanafiChanged = { prayerRepo.setHanafi(it) },
             onDismiss = {
@@ -6655,6 +6656,49 @@ fun LanguageDialogContent(
                             modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
+                }
+            }
+        }
+
+        // Soft informative warning note
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = null,
+                    tint = PrimaryGreen,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .padding(top = 1.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = if (currentLanguage == "en") "Language Scope Notice" else "ভাষা পরিবর্তন সংক্রান্ত তথ্য",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (currentLanguage == "en")
+                            "Note: Core UI navigation, controls, and dynamic contents will be updated in English. Certain static or pre-defined contents, classical texts, and fixed references will remain in their original primary language."
+                        else
+                            "বিশেষ দ্রষ্টব্য: অ্যাপের ন্যাভিগেশন, মেনু ও ডায়নামিক ইউজার ইন্টারফেস পরিবর্তন হবে। নির্দিষ্ট কিছু পূর্বনির্ধারিত নিবন্ধ, কন্টেন্ট ও তাফসির রেফারেন্স তাদের মূল ভাষাতেই সংরক্ষিত থাকবে।",
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
