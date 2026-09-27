@@ -93,6 +93,7 @@ fun SettingsScreen(
     onNavigateToAyah: (Int, Int) -> Unit = { _, _ -> },
     onNavigateToPlayer: () -> Unit = {},
     onNavigateToPosts: () -> Unit = {},
+    onNavigateToUmrah: () -> Unit = {},
     onNavigateToMushafPage: (String, Int) -> Unit = { _, _ -> },
     initialSubScreen: String? = null,
     initialDuaId: Int? = null,
@@ -153,6 +154,7 @@ fun SettingsScreen(
                     MenuItem("dua", com.example.utils.SettingsLocalization.get("item_dua", currentLanguage), Icons.Default.Schedule, Color(0xFF8B5CF6)),
                     MenuItem("morning_evening_dua", com.example.utils.SettingsLocalization.get("item_morning_evening_dua", currentLanguage), Icons.Default.WbSunny, Color(0xFFF59E0B)),
                     MenuItem("mosque", com.example.utils.SettingsLocalization.get("item_mosque", currentLanguage), Icons.Default.Place, Color(0xFF059669)),
+                    MenuItem("umrah", com.example.utils.SettingsLocalization.get("item_umrah", currentLanguage), Icons.Default.Place, Color(0xFF0D9488)),
                     MenuItem("manzil", com.example.utils.SettingsLocalization.get("item_manzil", currentLanguage), Icons.Default.AutoAwesome, Color(0xFF10B981)),
                     MenuItem("qibla", com.example.utils.SettingsLocalization.get("item_qibla", currentLanguage), Icons.Default.Explore, Color(0xFFEAB308)),
                     MenuItem("prayer_times", com.example.utils.SettingsLocalization.get("item_prayer_times", currentLanguage), Icons.Default.AccessTime, Color(0xFF059669)),
@@ -485,6 +487,8 @@ fun SettingsScreen(
                                             android.widget.Toast.makeText(context, "শীঘ্রই আসছে!", android.widget.Toast.LENGTH_SHORT).show()
                                         } else if (item.id == "player") {
                                             onNavigateToPlayer()
+                                        } else if (item.id == "umrah") {
+                                            onNavigateToUmrah()
                                         } else {
                                             activeDialog = item.id
                                         }

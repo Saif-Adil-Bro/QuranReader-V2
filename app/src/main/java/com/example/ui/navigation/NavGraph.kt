@@ -569,6 +569,9 @@ fun AppNavGraph(
                 onNavigateToPosts = {
                     navController.navigate("posts")
                 },
+                onNavigateToUmrah = {
+                    navController.navigate("umrah_tracker")
+                },
                 onNavigateToMushafPage = { mushafId, page ->
                     navController.navigate("mushaf/viewer/$mushafId?page=$page")
                 },

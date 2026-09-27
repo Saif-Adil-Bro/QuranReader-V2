@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.umrah.UmrahContentData
 import com.example.data.umrah.UmrahSessionEntity
+import com.example.utils.DateUtil
 
 enum class UmrahSubScreen {
     MAIN_TRACKER,
@@ -478,8 +479,8 @@ fun StepperOverviewContent(
                     // Progress circle
                     val progressPercent = when (session.currentStep) {
                         "IHRAM" -> "০%"
-                        "TAWAF" -> "${(session.currentTawafRound * 100) / 28}%"
-                        "SAI" -> "${50 + (session.currentSaiRound * 50) / 7}%"
+                        "TAWAF" -> "${DateUtil.toBengaliNumerals((session.currentTawafRound * 100) / 28)}%"
+                        "SAI" -> "${DateUtil.toBengaliNumerals(50 + (session.currentSaiRound * 50) / 7)}%"
                         "HALQ" -> "৯০%"
                         else -> "১০০%"
                     }
@@ -945,7 +946,7 @@ fun TawafStepContent(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "৭ এর মধ্যে $round তম চক্কর",
+                    text = "৭ এর মধ্যে ${DateUtil.toBengaliNumerals(round)} তম চক্কর",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -1205,7 +1206,7 @@ fun TawafStepContent(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
             ) {
                 Text(
-                    text = if (round < 7) "$round তম চক্কর সম্পন্ন করুন" else "তাওয়াফ শেষ করুন",
+                    text = if (round < 7) "${DateUtil.toBengaliNumerals(round)} তম চক্কর সম্পন্ন করুন" else "তাওয়াফ শেষ করুন",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -1274,7 +1275,7 @@ fun SaiStepContent(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = if (round == 0) "০/৭ চক্কর" else "$round এর মধ্যে ৭ তম চক্কর (সাঈ)",
+                    text = if (round == 0) "০/৭ চক্কর" else "৭ এর মধ্যে ${DateUtil.toBengaliNumerals(round)} তম চক্কর (সাঈ)",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -1557,7 +1558,7 @@ fun SaiStepContent(
                 Text(
                     text = when (round) {
                         0 -> "১ম চক্কর শুরু করুন"
-                        in 1..6 -> "$round তম চক্কর সম্পন্ন করুন"
+                        in 1..6 -> "${DateUtil.toBengaliNumerals(round)} তম চক্কর সম্পন্ন করুন"
                         else -> "সাঈ শেষ করুন"
                     },
                     fontSize = 15.sp,

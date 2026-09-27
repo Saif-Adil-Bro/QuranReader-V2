@@ -46,27 +46,31 @@ fun UmrahSessionDetailScreen(
     val checklist by repository.getChecklistForSession(sessionId).collectAsState(initial = emptyList())
     val roundLogs by repository.getRoundLogsForSession(sessionId).collectAsState(initial = emptyList())
 
-    val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
-    val amPmFormat = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
+    val amPmFormat = remember { SimpleDateFormat("hh:mm a", Locale.ENGLISH) }
     val dateFormat = remember { SimpleDateFormat("dd MMMM, yyyy", Locale("bn", "BD")) }
 
-    fun formatDuration(start: Long?, end: Long?): String {
-        if (start == null || end == null || end < start) return "0m"
-        val diffMins = (end - start) / (1000 * 60)
-        return "${diffMins}m"
+    fun formatAmPmTime(timeMillis: Long?): String {
+        if (timeMillis == null) return ""
+        return DateUtil.toBengaliNumerals(amPmFormat.format(Date(timeMillis)))
     }
 
-    fun formatTimeRange(start: Long?, end: Long?): String {
-        if (start == null) return "১৫:১৮ - ১৫:২০"
-        val s = timeFormat.format(Date(start))
-        val e = if (end != null) timeFormat.format(Date(end)) else s
-        return "$s - $e"
+    fun formatDuration(start: Long?, end: Long?): String {
+        if (start == null || end == null || end < start) return "০ মিনিট"
+        val totalSeconds = (end - start) / 1000
+        val hours = totalSeconds / 3600
+        val mins = (totalSeconds % 3600) / 60
+        return when {
+            hours > 0 && mins > 0 -> "${DateUtil.toBengaliNumerals(hours)} ঘণ্টা ${DateUtil.toBengaliNumerals(mins)} মিনিট"
+            hours > 0 -> "${DateUtil.toBengaliNumerals(hours)} ঘণ্টা"
+            mins > 0 -> "${DateUtil.toBengaliNumerals(mins)} মিনিট"
+            else -> "${DateUtil.toBengaliNumerals(totalSeconds)} সেকেন্ড"
+        }
     }
 
     fun formatAmPmRange(start: Long?, end: Long?): String {
         if (start == null) return "০৩:১৮ PM - ০৩:১৯ PM"
-        val s = amPmFormat.format(Date(start))
-        val e = if (end != null) amPmFormat.format(Date(end)) else s
+        val s = formatAmPmTime(start)
+        val e = if (end != null) formatAmPmTime(end) else s
         return "$s - $e"
     }
 
@@ -153,7 +157,7 @@ fun UmrahSessionDetailScreen(
                             Spacer(modifier = Modifier.height(6.dp))
 
                             Text(
-                                text = formatTimeRange(curr.startTime, curr.endTime ?: curr.startTime),
+                                text = formatAmPmRange(curr.startTime, curr.endTime ?: curr.startTime),
                                 fontSize = 14.sp,
                                 color = Color(0xFFD1FAE5)
                             )
@@ -237,7 +241,7 @@ fun UmrahSessionDetailScreen(
                     RitualLogHeader(
                         icon = Icons.Default.Person,
                         title = "ইহরাম",
-                        timeText = formatTimeRange(curr.ihramStartTime ?: curr.startTime, curr.ihramEndTime ?: curr.startTime),
+                        timeText = formatAmPmRange(curr.ihramStartTime ?: curr.startTime, curr.ihramEndTime ?: curr.startTime),
                         badgeText = "COMPLETED"
                     )
 
@@ -286,7 +290,7 @@ fun UmrahSessionDetailScreen(
                     RitualLogHeader(
                         icon = Icons.Default.Sync,
                         title = "তাওয়াফ লগ",
-                        timeText = formatTimeRange(curr.tawafStartTime ?: curr.startTime, curr.tawafEndTime ?: curr.startTime),
+                        timeText = formatAmPmRange(curr.tawafStartTime ?: curr.startTime, curr.tawafEndTime ?: curr.startTime),
                         subtitle = "চক্কর সম্পন্ন ৭ / ৭"
                     )
 
@@ -325,12 +329,12 @@ fun UmrahSessionDetailScreen(
                 // Tawaf 1 to 7 rounds logs (Screenshot 26 & 27)
                 items((1..7).toList()) { roundNum ->
                     val tLogs = roundLogs.filter { it.ritualType == "TAWAF" && it.roundNumber == roundNum }
-                    val logTime = if (tLogs.isNotEmpty()) timeFormat.format(Date(tLogs.first().completedAt)) else timeFormat.format(Date(curr.tawafEndTime ?: curr.startTime))
+                    val logTime = if (tLogs.isNotEmpty()) formatAmPmTime(tLogs.first().completedAt) else formatAmPmTime(curr.tawafEndTime ?: curr.startTime)
 
                     RoundLogCard(
                         roundNumber = roundNum,
                         timeRange = "$logTime - $logTime",
-                        labelText = "$roundNum তম চক্কর"
+                        labelText = "${DateUtil.toBengaliNumerals(roundNum)} তম চক্কর"
                     )
                 }
 
@@ -340,7 +344,7 @@ fun UmrahSessionDetailScreen(
                     RitualLogHeader(
                         icon = Icons.Default.DirectionsWalk,
                         title = "সাঈ লগ",
-                        timeText = formatTimeRange(curr.saiStartTime ?: curr.startTime, curr.saiEndTime ?: curr.startTime),
+                        timeText = formatAmPmRange(curr.saiStartTime ?: curr.startTime, curr.saiEndTime ?: curr.startTime),
                         subtitle = "চক্কর সম্পন্ন ৭ / ৭"
                     )
 
@@ -378,12 +382,12 @@ fun UmrahSessionDetailScreen(
                 // Sa'i 1 to 7 rounds logs (Screenshots 27 & 28)
                 items((1..7).toList()) { roundNum ->
                     val sLogs = roundLogs.filter { it.ritualType == "SAI" && it.roundNumber == roundNum }
-                    val logTime = if (sLogs.isNotEmpty()) timeFormat.format(Date(sLogs.first().completedAt)) else timeFormat.format(Date(curr.saiEndTime ?: curr.startTime))
+                    val logTime = if (sLogs.isNotEmpty()) formatAmPmTime(sLogs.first().completedAt) else formatAmPmTime(curr.saiEndTime ?: curr.startTime)
 
                     RoundLogCard(
                         roundNumber = roundNum,
                         timeRange = "$logTime - $logTime",
-                        labelText = "$roundNum তম চক্কর"
+                        labelText = "${DateUtil.toBengaliNumerals(roundNum)} তম চক্কর"
                     )
                 }
 
@@ -393,7 +397,7 @@ fun UmrahSessionDetailScreen(
                     RitualLogHeader(
                         icon = Icons.Default.ContentCut,
                         title = "হলক / কসর",
-                        timeText = formatTimeRange(curr.halqStartTime ?: curr.startTime, curr.halqEndTime ?: curr.startTime),
+                        timeText = formatAmPmRange(curr.halqStartTime ?: curr.startTime, curr.halqEndTime ?: curr.startTime),
                         badgeText = "COMPLETED"
                     )
 
@@ -558,14 +562,14 @@ fun RoundLogCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "${roundNumber}",
+                            text = DateUtil.toBengaliNumerals(roundNumber),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF34D399)
                         )
                     }
                     Text(
-                        text = "$roundNumber তম চক্কর",
+                        text = "${DateUtil.toBengaliNumerals(roundNumber)} তম চক্কর",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.White

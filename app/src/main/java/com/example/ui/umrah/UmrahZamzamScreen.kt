@@ -81,7 +81,7 @@ fun UmrahZamzamScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "${index + 1}",
+                            text = com.example.utils.DateUtil.toBengaliNumerals(index + 1),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White

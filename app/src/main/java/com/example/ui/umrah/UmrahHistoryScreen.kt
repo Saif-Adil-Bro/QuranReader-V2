@@ -37,7 +37,7 @@ fun UmrahHistoryScreen(
 ) {
     val completedSessions by viewModel.completedSessions.collectAsState()
     val dateFormat = remember { SimpleDateFormat("dd MMM, yyyy", Locale.ENGLISH) }
-    val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    val timeFormat = remember { SimpleDateFormat("hh:mm a", Locale.ENGLISH) }
 
     Scaffold(
         topBar = {
@@ -117,7 +117,7 @@ fun UmrahHistoryScreen(
                 items(completedSessions, key = { it.id }) { session ->
                     val rawDateStr = dateFormat.format(Date(session.startTime)).uppercase(Locale.ENGLISH)
                     val dateStr = DateUtil.toBengaliNumerals(rawDateStr)
-                    val timeStr = timeFormat.format(Date(session.startTime))
+                    val timeStr = DateUtil.toBengaliNumerals(timeFormat.format(Date(session.startTime)))
 
                     Card(
                         modifier = Modifier
