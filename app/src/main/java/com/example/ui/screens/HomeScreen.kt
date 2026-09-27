@@ -838,6 +838,35 @@ fun HomeScreen(
                         onNavigateToSurahWithAyah = onNavigateToSurahWithAyah
                     )
                 }
+                if (recentReads.isNotEmpty() || bookmarks.isNotEmpty() || lastReadSurah > 0 || lastReadPage > 0) {
+                    item {
+                        Spacer(modifier = Modifier.height(20.dp))
+                        BookmarksAndLastReadSection(
+                            lastReadSurah = lastReadSurah,
+                            lastReadPage = lastReadPage,
+                            lastReadMode = lastReadMode,
+                            lastReadMushafId = lastReadMushafId,
+                            lastReadMushafPage = lastReadMushafPage,
+                            lastReadMushafName = if (isEnglish) {
+                                (viewModel.getMushafStyle(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)?.name ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId))
+                            } else {
+                                (viewModel.getMushafStyle(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)?.nameBengali ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId))
+                            },
+                            defaultMushafId = defaultMushafId,
+                            bookmarks = bookmarks,
+                            lastReadAyah = lastReadAyah,
+                            recentReads = recentReads,
+                            isEnglish = isEnglish,
+                            onSurahClick = onNavigateToSurah,
+                            onNavigateToHafeziMode = onNavigateToHafeziMode,
+                            onNavigateToReadingMode = onNavigateToReadingMode,
+                            onNavigateToTajweedMode = onNavigateToTajweedMode,
+                            onNavigateToMushafPage = onNavigateToMushafPage,
+                            onNavigateToSurahWithAyah = onNavigateToSurahWithAyah,
+                            onDeleteBookmark = { viewModel.deleteBookmark(it) }
+                        )
+                    }
+                }
                 item {
                     Spacer(modifier = Modifier.height(24.dp))
                     ModesGridSection(
@@ -925,35 +954,7 @@ fun HomeScreen(
                         },
                         onViewAllClick = onNavigateToPosts
                     )
-                }
-                if (recentReads.isNotEmpty() || bookmarks.isNotEmpty()) {
-                    item {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        BookmarksAndLastReadSection(
-                            lastReadSurah = lastReadSurah,
-                            lastReadPage = lastReadPage,
-                            lastReadMode = lastReadMode,
-                            lastReadMushafId = lastReadMushafId,
-                            lastReadMushafPage = lastReadMushafPage,
-                            lastReadMushafName = if (isEnglish) {
-                                (viewModel.getMushafStyle(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)?.name ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId))
-                            } else {
-                                (viewModel.getMushafStyle(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)?.nameBengali ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId))
-                            },
-                            defaultMushafId = defaultMushafId,
-                            bookmarks = bookmarks,
-                            lastReadAyah = lastReadAyah,
-                            recentReads = recentReads,
-                            isEnglish = isEnglish,
-                            onSurahClick = onNavigateToSurah,
-                            onNavigateToHafeziMode = onNavigateToHafeziMode,
-                            onNavigateToReadingMode = onNavigateToReadingMode,
-                            onNavigateToTajweedMode = onNavigateToTajweedMode,
-                            onNavigateToMushafPage = onNavigateToMushafPage,
-                            onNavigateToSurahWithAyah = onNavigateToSurahWithAyah,
-                            onDeleteBookmark = { viewModel.deleteBookmark(it) }
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
             }
         }
@@ -2177,7 +2178,28 @@ fun BookmarksAndLastReadSection(
     onNavigateToSurahWithAyah: (Int, String, Int) -> Unit,
     onDeleteBookmark: (com.example.data.local.entity.BookmarkEntity) -> Unit
 ) {
-    val displayRecentReads = recentReads.take(5)
+    val displayRecentReads = if (recentReads.isNotEmpty()) {
+        recentReads.take(5)
+    } else if (lastReadSurah > 0 || lastReadPage > 0) {
+        val surahNum = if (lastReadSurah > 0) lastReadSurah else 1
+        val sName = if (isEnglish) {
+            QuranData.surahNames.find { it.first == surahNum }?.second?.second ?: "Al-Fatihah"
+        } else {
+            QuranData.surahNames.find { it.first == surahNum }?.second?.first ?: "আল ফাতিহা"
+        }
+        listOf(
+            com.example.data.repository.RecentReadTrack(
+                title = sName,
+                surahNumber = surahNum,
+                ayahNumber = lastReadAyah,
+                pageNumber = if (lastReadPage > 0) lastReadPage else null,
+                mode = lastReadMode.ifEmpty { "DETAIL" },
+                mushafId = lastReadMushafId
+            )
+        )
+    } else {
+        emptyList()
+    }
     
     Column(
         modifier = Modifier
