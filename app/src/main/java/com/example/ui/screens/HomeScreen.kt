@@ -169,6 +169,7 @@ fun HomeScreen(
     onNavigateToQibla: () -> Unit = {},
     onNavigateToMosque: () -> Unit = {},
     onNavigateToVideoCreator: () -> Unit = {},
+    onNavigateToUmrah: () -> Unit = {},
     postsViewModel: com.example.ui.viewmodels.PostsViewModel? = null
 ) {
     val context = LocalContext.current
@@ -875,6 +876,14 @@ fun HomeScreen(
                         isDark = isDark,
                         isEnglish = isEnglish,
                         onMosqueClick = onNavigateToMosque
+                    )
+                }
+                item {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    UmrahTrackerHomeBanner(
+                        isDark = isDark,
+                        isEnglish = isEnglish,
+                        onUmrahClick = onNavigateToUmrah
                     )
                 }
                 item {
@@ -3030,6 +3039,106 @@ fun NearbyMosqueHomeBanner(
 
             IconButton(
                 onClick = onMosqueClick,
+                modifier = Modifier
+                    .size(34.dp)
+                    .background(PrimaryGreen.copy(alpha = 0.15f), CircleShape)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = null,
+                    tint = PrimaryGreen,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun UmrahTrackerHomeBanner(
+    isDark: Boolean,
+    isEnglish: Boolean = false,
+    onUmrahClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clickable(onClick = onUmrahClick),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isDark) Color(0xFF102621) else Color(0xFFE8F5E9)
+        ),
+        border = BorderStroke(1.dp, if (isDark) Color(0xFF1B4D40) else Color(0xFFA7D7C5)),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isDark) 0.dp else 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .background(
+                            color = PrimaryGreen,
+                            shape = RoundedCornerShape(14.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Mosque,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = if (isEnglish) "Umrah Tracker" else "উমরাহ ট্র্যাকার",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Surface(
+                            color = PrimaryGreen.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = if (isEnglish) "NEW" else "নতুন",
+                                fontSize = 9.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDark) Color(0xFF34D399) else Color(0xFF047857),
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = if (isEnglish) "Tawaf, Sa'i, Ihram step-by-step counter & guide" else "ইহরাম, তাওয়াফ ও সাঈ ৭ চক্কর কাউন্টার ও সুন্নাহ গাইড",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 16.sp,
+                        maxLines = 2
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = onUmrahClick,
                 modifier = Modifier
                     .size(34.dp)
                     .background(PrimaryGreen.copy(alpha = 0.15f), CircleShape)

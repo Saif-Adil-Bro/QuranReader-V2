@@ -254,6 +254,9 @@ fun AppNavGraph(
                 onNavigateToVideoCreator = {
                     navController.navigate("video_creator")
                 },
+                onNavigateToUmrah = {
+                    navController.navigate("umrah_tracker")
+                },
                 postsViewModel = postsViewModel
             )
         }
@@ -618,6 +621,12 @@ fun AppNavGraph(
         composable("mosque_map") {
             com.example.ui.screens.mosque.MosqueMapScreen(
                 onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable("umrah_tracker") {
+            com.example.ui.umrah.UmrahTrackerScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
