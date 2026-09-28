@@ -1,5 +1,7 @@
 package com.example.data
 
+import com.example.data.model.Surah
+
 data class SurahInfo(val arabicName: String, val ayahCount: Int, val rukuCount: Int)
 val surahInfoList = listOf(
         Pair(1, SurahInfo("سُورَةُ ٱلْفَاتِحَةِ", 7, 1)),
@@ -498,4 +500,27 @@ object QuranData {
         "সূরা আল মুলক ১ - আল মুরসালাত ৫০",
         "সূরা আন নাবা ১ - আন নাস ৬"
     )
+
+    fun getAllSurahsBuiltin(): List<Surah> {
+        return (1..114).map { num ->
+            val info = surahInfoList.find { it.first == num }?.second
+            val namePair = surahNames.find { it.first == num }?.second
+            val arName = info?.arabicName ?: "سورة"
+            val bnName = namePair?.first ?: "সূরা $num"
+            val meaning = namePair?.second ?: ""
+            val count = info?.ayahCount ?: 7
+            val rType = when (num) {
+                2, 3, 4, 5, 8, 9, 22, 24, 33, 47, 48, 49, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 76, 98, 110 -> "Medinan"
+                else -> "Meccan"
+            }
+            Surah(
+                number = num,
+                name = arName,
+                englishName = bnName,
+                englishNameTranslation = meaning,
+                numberOfAyahs = count,
+                revelationType = rType
+            )
+        }
+    }
 }
