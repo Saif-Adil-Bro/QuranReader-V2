@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import com.example.utils.findActivity
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -139,7 +141,7 @@ fun SurahDetailScreen(
     val selectedTranslationIds by viewModel.selectedTranslationIds.collectAsState()
     
     val context = LocalContext.current
-    val activity = context as? android.app.Activity
+    val activity = context.findActivity()
     DisposableEffect(keepScreenOn) {
         if (keepScreenOn) {
             activity?.window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

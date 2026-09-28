@@ -68,6 +68,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import com.example.data.model.BlogPost
+import com.example.utils.findActivity
 
 fun String.toArabicNumerals(): String {
     val englishNumerals = "0123456789"
@@ -190,17 +191,15 @@ fun HomeScreen(
     }
 
     androidx.activity.compose.BackHandler {
-        if (isScrolled) {
-            coroutineScope.launch {
-                listState.animateScrollToItem(0)
-            }
-            backPressedOnce = false
+        if (backPressedOnce) {
+            context.findActivity()?.finish()
         } else {
-            if (backPressedOnce) {
-                (context as? android.app.Activity)?.finish()
-            } else {
-                backPressedOnce = true
-                android.widget.Toast.makeText(context, context.getString(R.string.exit_prompt), android.widget.Toast.LENGTH_SHORT).show()
+            backPressedOnce = true
+            android.widget.Toast.makeText(context, context.getString(R.string.exit_prompt), android.widget.Toast.LENGTH_SHORT).show()
+            if (isScrolled) {
+                coroutineScope.launch {
+                    listState.animateScrollToItem(0)
+                }
             }
         }
     }
@@ -513,6 +512,10 @@ fun HomeScreen(
         )
     }
 
+    val mediaBlogPosts = remember(rawBlogPosts) {
+        rawBlogPosts.filter { it.category != "নোটিফিকেশন" && it.category != "নোটিশ" }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -775,30 +778,36 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = horizontalPadding, end = horizontalPadding, bottom = 48.dp)
             ) {
-                item {
+                item(key = "hero_section", contentType = "hero") {
                     Box(modifier = Modifier.fillMaxWidth()) {
-                        val lastReadSurahNameForHero = if (isEnglish) {
-                            QuranData.surahNames.find { it.first == lastReadSurah }?.second?.second ?: "Al-Fatihah"
-                        } else {
-                            QuranData.surahNames.find { it.first == lastReadSurah }?.second?.first ?: "আল ফাতিহা"
+                        val lastReadSurahNameForHero = remember(lastReadSurah, isEnglish) {
+                            if (isEnglish) {
+                                QuranData.surahNames.find { it.first == lastReadSurah }?.second?.second ?: "Al-Fatihah"
+                            } else {
+                                QuranData.surahNames.find { it.first == lastReadSurah }?.second?.first ?: "আল ফাতিহা"
+                            }
                         }
                         
-                        val actionTextForHero = when (lastReadMode) {
-                            "HAFEZI" -> if (isEnglish) "Last Read Page: $lastReadPage" else "সর্বশেষ পঠিত পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(lastReadPage)}"
-                            "TAJWEED" -> if (isEnglish) "Last Read Page: $lastReadPage (Surah $lastReadSurahNameForHero)" else "সর্বশেষ পঠিত পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(lastReadPage)} (সূরা $lastReadSurahNameForHero)"
-                            "MUSHAF" -> if (isEnglish) "Last Read Page: $lastReadMushafPage" else "সর্বশেষ পঠিত পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(lastReadMushafPage)}"
-                            "READING" -> if (isEnglish) "Last Read in Reading Mode" else "সর্বশেষ পঠিত রিডিং মোড"
-                            else -> if (isEnglish) "Last Read Surah" else "সর্বশেষ পঠিত সূরা"
-                        }
-                        val subTextForHero = when (lastReadMode) {
-                            "HAFEZI" -> if (isEnglish) "Hafezi Quran (15 Lines)" else "হাফেজী কুরআন (১৫ লাইন)"
-                            "TAJWEED" -> if (isEnglish) "Color Tajweed Quran" else "রঙিন তাজবীদ কুরআন"
-                            "MUSHAF" -> {
-                                val style = viewModel.getMushafStyle(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)
-                                if (isEnglish) (style?.name ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId))
-                                else (style?.nameBengali ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId))
+                        val actionTextForHero = remember(lastReadMode, lastReadPage, lastReadMushafPage, lastReadSurahNameForHero, isEnglish) {
+                            when (lastReadMode) {
+                                "HAFEZI" -> if (isEnglish) "Last Read Page: $lastReadPage" else "সর্বশেষ পঠিত পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(lastReadPage)}"
+                                "TAJWEED" -> if (isEnglish) "Last Read Page: $lastReadPage (Surah $lastReadSurahNameForHero)" else "সর্বশেষ পঠিত পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(lastReadPage)} (সূরা $lastReadSurahNameForHero)"
+                                "MUSHAF" -> if (isEnglish) "Last Read Page: $lastReadMushafPage" else "সর্বশেষ পঠিত পৃষ্ঠা: ${com.example.utils.DateUtil.toBengaliNumerals(lastReadMushafPage)}"
+                                "READING" -> if (isEnglish) "Last Read in Reading Mode" else "সর্বশেষ পঠিত রিডিং মোড"
+                                else -> if (isEnglish) "Last Read Surah" else "সর্বশেষ পঠিত সূরা"
                             }
-                            else -> lastReadSurahNameForHero
+                        }
+                        val subTextForHero = remember(lastReadMode, lastReadMushafId, defaultMushafId, lastReadSurahNameForHero, isEnglish) {
+                            when (lastReadMode) {
+                                "HAFEZI" -> if (isEnglish) "Hafezi Quran (15 Lines)" else "হাফেজী কুরআন (১৫ লাইন)"
+                                "TAJWEED" -> if (isEnglish) "Color Tajweed Quran" else "রঙিন তাজবীদ কুরআন"
+                                "MUSHAF" -> {
+                                    val style = viewModel.getMushafStyle(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId)
+                                    if (isEnglish) (style?.name ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId))
+                                    else (style?.nameBengali ?: (lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId))
+                                }
+                                else -> lastReadSurahNameForHero
+                            }
                         }
                         
                         HeroSection(
@@ -831,7 +840,7 @@ fun HomeScreen(
                         }
                     }
                 }
-                item {
+                item(key = "quick_pills", contentType = "pills") {
                     Spacer(modifier = Modifier.height(36.dp))
                     QuickSurahPills(
                         isEnglish = isEnglish,
@@ -839,7 +848,7 @@ fun HomeScreen(
                     )
                 }
                 if (recentReads.isNotEmpty() || bookmarks.isNotEmpty() || lastReadSurah > 0 || lastReadPage > 0) {
-                    item {
+                    item(key = "bookmarks_last_read", contentType = "bookmarks") {
                         Spacer(modifier = Modifier.height(20.dp))
                         BookmarksAndLastReadSection(
                             lastReadSurah = lastReadSurah,
@@ -867,7 +876,7 @@ fun HomeScreen(
                         )
                     }
                 }
-                item {
+                item(key = "modes_grid", contentType = "modes") {
                     Spacer(modifier = Modifier.height(24.dp))
                     ModesGridSection(
                         isHafeziDownloaded = viewModel.isMushafDownloaded(defaultMushafId),
@@ -882,7 +891,7 @@ fun HomeScreen(
                         onPostsClick = onNavigateToPosts
                     )
                 }
-                item {
+                item(key = "top_features", contentType = "features") {
                     Spacer(modifier = Modifier.height(24.dp))
                     TopFeaturesGridSection(
                         isDark = isDark,
@@ -899,7 +908,7 @@ fun HomeScreen(
                         onMoreClick = onSettingsClick
                     )
                 }
-                item {
+                item(key = "nearby_mosque", contentType = "banner") {
                     Spacer(modifier = Modifier.height(20.dp))
                     NearbyMosqueHomeBanner(
                         isDark = isDark,
@@ -907,7 +916,7 @@ fun HomeScreen(
                         onMosqueClick = onNavigateToMosque
                     )
                 }
-                item {
+                item(key = "umrah_tracker", contentType = "banner") {
                     Spacer(modifier = Modifier.height(14.dp))
                     UmrahTrackerHomeBanner(
                         isDark = isDark,
@@ -915,7 +924,7 @@ fun HomeScreen(
                         onUmrahClick = onNavigateToUmrah
                     )
                 }
-                item {
+                item(key = "daily_dua", contentType = "dua") {
                     Spacer(modifier = Modifier.height(24.dp))
                     DailyDuaFeaturedSection(
                         isDark = isDark,
@@ -925,7 +934,7 @@ fun HomeScreen(
                         onViewAllDuas = { onNavigateToDua(null) }
                     )
                 }
-                item {
+                item(key = "dhikr_habit", contentType = "dhikr") {
                     Spacer(modifier = Modifier.height(24.dp))
                     DhikrHabitSection(
                         isDark = isDark,
@@ -933,7 +942,7 @@ fun HomeScreen(
                         onNavigateToDhikrReminder = onNavigateToDhikrReminder
                     )
                 }
-                item {
+                item(key = "subjectwise_topics", contentType = "subjectwise") {
                     Spacer(modifier = Modifier.height(24.dp))
                     SubjectwiseTopCategoriesSection(
                         isDark = isDark,
@@ -942,12 +951,12 @@ fun HomeScreen(
                         onViewAllClick = { onNavigateToSubjectwise(null) }
                     )
                 }
-                item {
+                item(key = "featured_media", contentType = "media") {
                     Spacer(modifier = Modifier.height(24.dp))
                     FeaturedIslamicMediaSection(
                         isDark = isDark,
                         isEnglish = isEnglish,
-                        blogPosts = rawBlogPosts.filter { it.category != "নোটিফিকেশন" && it.category != "নোটিশ" },
+                        blogPosts = mediaBlogPosts,
                         onPostClick = { post ->
                             postsViewModel?.setPendingBlogPost(post)
                             onNavigateToPosts()
@@ -1119,6 +1128,22 @@ fun HeroSection(
     val totalSlides = 4
     val pagerState = rememberPagerState(pageCount = { totalSlides })
     
+    val bengaliDate = remember { com.example.utils.DateUtil.getTodayBengaliDateStr() }
+    val todayEnglishDate = remember { com.example.utils.DateUtil.getTodayEnglishDateStr() }
+    val hijriDateStr = remember(hijriOffset, isEnglish) {
+        if (isEnglish) {
+            val hijriInfo = com.example.utils.HijriCalendarUtil.getHijriDate(java.time.LocalDate.now(), hijriOffset)
+            "${hijriInfo.hijriDay} ${hijriInfo.hijriMonthNameEn} ${hijriInfo.hijriYear} AH"
+        } else {
+            com.example.utils.DateUtil.getTodayHijriDateStr(hijriOffset)
+        }
+    }
+    val hijriNoteStr = remember(hijriOffset, isEnglish) {
+        if (isEnglish) "Lunar Calendar" else com.example.utils.DateUtil.getHijriNoteStr(hijriOffset)
+    }
+    val duaItem = remember { com.example.data.DuaData.getDuaItemOfTheDay() }
+    val ayahOfTheDay = remember { com.example.data.AyahData.getAyahOfTheDay() }
+
     // Auto-scroll loop: whenever user changes the page manually (or page scrolls), 
     // the coroutine restarts, resetting the 9-second countdown for the active slide.
     LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
@@ -1194,19 +1219,6 @@ fun HeroSection(
                             }
                             1 -> {
                                 // Slide 2: Quick Info (Today's Date & Calendars)
-                                val bengaliDate = com.example.utils.DateUtil.getTodayBengaliDateStr()
-                                val hijriInfo = com.example.utils.HijriCalendarUtil.getHijriDate(java.time.LocalDate.now(), hijriOffset)
-                                val hijriDateStr = if (isEnglish) {
-                                    "${hijriInfo.hijriDay} ${hijriInfo.hijriMonthNameEn} ${hijriInfo.hijriYear} AH"
-                                } else {
-                                    com.example.utils.DateUtil.getTodayHijriDateStr(hijriOffset)
-                                }
-                                val hijriNoteStr = if (isEnglish) {
-                                    "Lunar Calendar"
-                                } else {
-                                    com.example.utils.DateUtil.getHijriNoteStr(hijriOffset)
-                                }
-
                                 Column(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -1229,7 +1241,7 @@ fun HeroSection(
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
-                                            text = com.example.utils.DateUtil.getTodayEnglishDateStr(),
+                                            text = todayEnglishDate,
                                             color = White,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold
@@ -1304,7 +1316,6 @@ fun HeroSection(
                             }
                             2 -> {
                                 // Slide 3: Dua of the day
-                                val duaItem = com.example.data.DuaData.getDuaItemOfTheDay()
                                 val duaNumStr = if (isEnglish) duaItem.id.toString() else com.example.utils.DateUtil.toBengaliNumerals(duaItem.id)
                                 val duaTitle = duaItem.title
 
@@ -1387,7 +1398,7 @@ fun HeroSection(
                                     }
                                     Spacer(modifier = Modifier.height(10.dp))
                                     Text(
-                                        text = com.example.data.AyahData.getAyahOfTheDay(),
+                                        text = ayahOfTheDay,
                                         color = White,
                                         fontSize = 14.5.sp,
                                         textAlign = TextAlign.Center,
@@ -1705,80 +1716,43 @@ fun QuickSurahPills(
         )
     }
     
-    val infiniteTransition = rememberInfiniteTransition(label = "amal_pulse")
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 1.0f,
-        targetValue = 2.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "scale"
-    )
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 0.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "alpha"
-    )
-    val borderAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.2f,
-        targetValue = 0.8f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "borderAlpha"
-    )
-
     val sortedAmaliList = remember(currentTime, amaliList) {
         amaliList.sortedByDescending { it.isActive(currentTime) }
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp)
-            .height(IntrinsicSize.Max),
+    val lazyRowState = rememberLazyListState()
+
+    LazyRow(
+        state = lazyRowState,
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        sortedAmaliList.forEach { item ->
+        items(
+            items = sortedAmaliList,
+            key = { "${it.surahId}_${it.startAyah ?: 1}" }
+        ) { item ->
             val isActive = item.isActive(currentTime)
             
-            Box(
+            Surface(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .shadow(if (isActive) 4.dp else 2.dp, RoundedCornerShape(100.dp))
-                    .background(
-                        color = MaterialTheme.colorScheme.surface,
-                        shape = RoundedCornerShape(100.dp)
-                    )
-                    .then(
-                        if (isActive) {
-                            Modifier.border(
-                                width = 1.5.dp,
-                                color = item.dotColor.copy(alpha = borderAlpha),
-                                shape = RoundedCornerShape(100.dp)
-                            )
-                        } else {
-                            Modifier.border(
-                                width = 1.dp,
-                                color = if (isDark) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.05f),
-                                shape = RoundedCornerShape(100.dp)
-                            )
-                        }
-                    )
+                    .clip(RoundedCornerShape(100.dp))
                     .clickable {
                         onNavigateToSurahWithAyah(item.surahId, "MUSHAF", item.startAyah ?: 1)
-                    }
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                contentAlignment = Alignment.Center
+                    },
+                shape = RoundedCornerShape(100.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = if (isActive) 3.dp else 1.dp,
+                shadowElevation = if (isActive) 2.dp else 0.dp,
+                border = BorderStroke(
+                    width = if (isActive) 1.5.dp else 1.dp,
+                    color = if (isActive) item.dotColor.copy(alpha = 0.75f) else if (isDark) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.08f)
+                )
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier.size(16.dp),
                         contentAlignment = Alignment.Center
@@ -1786,14 +1760,14 @@ fun QuickSurahPills(
                         if (isActive) {
                             Box(
                                 modifier = Modifier
-                                    .size((12 * pulseScale).dp)
-                                    .background(item.dotColor.copy(alpha = pulseAlpha), RoundedCornerShape(50))
+                                    .size(14.dp)
+                                    .background(item.dotColor.copy(alpha = 0.25f), CircleShape)
                             )
                         }
                         Box(
                             modifier = Modifier
-                                .size(6.dp)
-                                .background(item.dotColor, RoundedCornerShape(50))
+                                .size(7.dp)
+                                .background(item.dotColor, CircleShape)
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
@@ -1810,7 +1784,7 @@ fun QuickSurahPills(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Box(
                                     modifier = Modifier
-                                        .background(item.dotColor.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                                        .background(item.dotColor.copy(alpha = 0.18f), RoundedCornerShape(4.dp))
                                         .padding(horizontal = 4.dp, vertical = 1.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -1829,7 +1803,7 @@ fun QuickSurahPills(
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            lineHeight = 12.sp
+                            lineHeight = 14.sp
                         )
                     }
                 }
@@ -3954,6 +3928,13 @@ fun DynamicBlogPostCard(
     isEnglish: Boolean = false,
     onClick: () -> Unit
 ) {
+    val cleanContent = remember(post.content) {
+        post.content.replace("\n", " ").trim()
+    }
+    val timeAgo = remember(post.timestamp, isEnglish) {
+        formatPostTimeAgo(post.timestamp, isEnglish)
+    }
+
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(18.dp),
@@ -4066,7 +4047,7 @@ fun DynamicBlogPostCard(
                             modifier = Modifier.size(11.dp)
                         )
                         Text(
-                            text = formatPostTimeAgo(post.timestamp, isEnglish),
+                            text = timeAgo,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color.White
@@ -4098,7 +4079,7 @@ fun DynamicBlogPostCard(
                     Spacer(modifier = Modifier.height(3.dp))
 
                     Text(
-                        text = post.content.replace("\n", " ").trim(),
+                        text = cleanContent,
                         fontSize = 11.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,

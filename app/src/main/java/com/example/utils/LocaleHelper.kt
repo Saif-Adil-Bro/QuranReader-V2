@@ -89,3 +89,18 @@ object LocaleHelper {
         return context.createConfigurationContext(config)
     }
 }
+
+/**
+ * Traverses ContextWrapper hierarchy to find the underlying Activity.
+ * Needed when CompositionLocalProvider wraps the Context with localized ConfigurationContext.
+ */
+fun Context.findActivity(): android.app.Activity? {
+    var currentContext: Context? = this
+    while (currentContext is android.content.ContextWrapper) {
+        if (currentContext is android.app.Activity) {
+            return currentContext
+        }
+        currentContext = currentContext.baseContext
+    }
+    return null
+}

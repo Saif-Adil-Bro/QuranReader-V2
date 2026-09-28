@@ -50,6 +50,7 @@ import com.example.data.model.UserLocation
 import com.example.ui.theme.PrimaryGreen
 import com.example.ui.viewmodels.NearbyMosqueViewModel
 import com.example.utils.DateUtil
+import com.example.utils.findActivity
 import java.util.UUID
 
 enum class MosqueDisplayMode {
@@ -114,7 +115,7 @@ fun NearbyMosqueScreen(
         }
     }
 
-    val activity = context as? Activity
+    val activity = context.findActivity()
 
     // GPS Settings hardware enable launcher
     val gpsSettingsLauncher = rememberLauncherForActivityResult(
