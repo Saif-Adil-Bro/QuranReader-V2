@@ -107,8 +107,8 @@ fun UmrahTrackerScreen(
     }
 
     val session = uiState.activeSession
+    val isCompleted = session != null && (session.isCompleted || session.currentStep == "COMPLETED")
     val isNotStarted = session == null || session.currentStep == "NOT_STARTED"
-    val isCompleted = session?.isCompleted == true || session?.currentStep == "COMPLETED"
 
     Scaffold(
         topBar = {
@@ -116,7 +116,7 @@ fun UmrahTrackerScreen(
                 title = {
                     Text(
                         text = when {
-                            isNotStarted || isCompleted -> "উমরাহ ট্র্যাকার"
+                            isCompleted || isNotStarted -> "উমরাহ ট্র্যাকার"
                             session?.currentStep == "IHRAM" -> "ইহরাম"
                             session?.currentStep == "TAWAF" -> "তাওয়াফের বিস্তারিত"
                             session?.currentStep == "SAI" -> "সা'য়ী-এর বিবরণ"
@@ -165,11 +165,12 @@ fun UmrahTrackerScreen(
                 .padding(paddingValues)
         ) {
             when {
-                // 1. NOT STARTED (Screenshots 1 & 2)
-                isNotStarted -> {
-                    NotStartedContent(
-                        onBeginUmrah = { viewModel.startUmrah() },
-                        onReviewGuidelines = { currentSubScreen = UmrahSubScreen.GUIDELINES }
+                // 1. COMPLETED (Screenshot 2 / User sample: "আলহামদুলিল্লাহ / উমরাহ সম্পন্ন")
+                isCompleted -> {
+                    UmrahCompletedContent(
+                        onNavigateToDuas = { currentSubScreen = UmrahSubScreen.POST_DUAS },
+                        onNavigateToZamzam = { currentSubScreen = UmrahSubScreen.ZAMZAM },
+                        onStartNewUmrah = { viewModel.resetOrStartNewUmrah() }
                     )
                 }
 
@@ -235,12 +236,11 @@ fun UmrahTrackerScreen(
                     )
                 }
 
-                // 7. COMPLETED (Screenshot 19)
-                isCompleted -> {
-                    UmrahCompletedContent(
-                        onNavigateToDuas = { currentSubScreen = UmrahSubScreen.POST_DUAS },
-                        onNavigateToZamzam = { currentSubScreen = UmrahSubScreen.ZAMZAM },
-                        onStartNewUmrah = { viewModel.resetOrStartNewUmrah() }
+                // 7. NOT STARTED / DEFAULT (Screenshots 1 & 2)
+                else -> {
+                    NotStartedContent(
+                        onBeginUmrah = { viewModel.startUmrah() },
+                        onReviewGuidelines = { currentSubScreen = UmrahSubScreen.GUIDELINES }
                     )
                 }
             }

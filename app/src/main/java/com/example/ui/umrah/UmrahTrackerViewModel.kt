@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -38,35 +41,34 @@ class UmrahTrackerViewModel(application: Application) : AndroidViewModel(applica
         observeActiveSession()
     }
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun observeActiveSession() {
         viewModelScope.launch {
-            repository.activeSessionFlow.collect { session ->
+            repository.latestSessionFlow.flatMapLatest { session ->
                 if (session != null) {
-                    // Collect checklist and round logs for this active session
-                    launch {
-                        repository.getChecklistForSession(session.id).collect { checklist ->
-                            _uiState.value = _uiState.value.copy(
-                                activeSession = session,
-                                checklistItems = checklist,
-                                isLoading = false
-                            )
-                        }
-                    }
-                    launch {
-                        repository.getRoundLogsForSession(session.id).collect { logs ->
-                            _uiState.value = _uiState.value.copy(
-                                roundLogs = logs
-                            )
-                        }
+                    combine(
+                        repository.getChecklistForSession(session.id),
+                        repository.getRoundLogsForSession(session.id)
+                    ) { checklist, logs ->
+                        UmrahUiState(
+                            activeSession = session,
+                            checklistItems = checklist,
+                            roundLogs = logs,
+                            isLoading = false
+                        )
                     }
                 } else {
-                    _uiState.value = _uiState.value.copy(
-                        activeSession = null,
-                        checklistItems = emptyList(),
-                        roundLogs = emptyList(),
-                        isLoading = false
+                    flowOf(
+                        UmrahUiState(
+                            activeSession = null,
+                            checklistItems = emptyList(),
+                            roundLogs = emptyList(),
+                            isLoading = false
+                        )
                     )
                 }
+            }.collect { state ->
+                _uiState.value = state
             }
         }
     }

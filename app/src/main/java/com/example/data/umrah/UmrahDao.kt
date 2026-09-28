@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UmrahDao {
+    @Query("SELECT * FROM umrah_sessions ORDER BY id DESC LIMIT 1")
+    fun getLatestSessionFlow(): Flow<UmrahSessionEntity?>
+
     @Query("SELECT * FROM umrah_sessions WHERE isCompleted = 0 ORDER BY id DESC LIMIT 1")
     fun getActiveSessionFlow(): Flow<UmrahSessionEntity?>
 
@@ -39,6 +42,12 @@ interface UmrahDao {
 
     @Query("SELECT * FROM umrah_checklist_items WHERE sessionId = :sessionId")
     suspend fun getChecklistForSessionOnce(sessionId: Long): List<UmrahChecklistEntity>
+
+    @Query("SELECT * FROM umrah_checklist_items WHERE sessionId = :sessionId AND stepKey = :stepKey AND itemIndex = :itemIndex LIMIT 1")
+    suspend fun getChecklistItem(sessionId: Long, stepKey: String, itemIndex: Int): UmrahChecklistEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertChecklistItem(item: UmrahChecklistEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertChecklistItems(items: List<UmrahChecklistEntity>)

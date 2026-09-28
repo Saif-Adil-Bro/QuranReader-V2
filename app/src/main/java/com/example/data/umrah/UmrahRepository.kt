@@ -9,6 +9,7 @@ class UmrahRepository(context: Context) {
     private val database = UmrahDatabase.getDatabase(context)
     private val dao = database.umrahDao()
 
+    val latestSessionFlow: Flow<UmrahSessionEntity?> = dao.getLatestSessionFlow()
     val activeSessionFlow: Flow<UmrahSessionEntity?> = dao.getActiveSessionFlow()
     val allCompletedSessionsFlow: Flow<List<UmrahSessionEntity>> = dao.getAllCompletedSessions()
 
@@ -75,7 +76,32 @@ class UmrahRepository(context: Context) {
 
     suspend fun updateChecklistItem(sessionId: Long, stepKey: String, itemIndex: Int, isChecked: Boolean) = withContext(Dispatchers.IO) {
         val checkedAt = if (isChecked) System.currentTimeMillis() else null
-        dao.updateChecklistItem(sessionId, stepKey, itemIndex, isChecked, checkedAt)
+        val existing = dao.getChecklistItem(sessionId, stepKey, itemIndex)
+        if (existing != null) {
+            dao.updateChecklistItem(sessionId, stepKey, itemIndex, isChecked, checkedAt)
+        } else {
+            val text = when (stepKey) {
+                "IHRAM" -> UmrahContentData.IHRAM_CHECKLIST.getOrNull(itemIndex) ?: "ইহরাম আইটেম"
+                "TAWAF_PREP" -> UmrahContentData.TAWAF_PREP_CHECKLIST.getOrNull(itemIndex) ?: "তাওয়াফ প্রস্তুতি"
+                "TAWAF_ROUND" -> UmrahContentData.TAWAF_ROUND_CHECKLIST.getOrNull(itemIndex) ?: "তাওয়াফ চক্কর"
+                "TAWAF_FINAL" -> UmrahContentData.TAWAF_FINAL_CHECKLIST.getOrNull(itemIndex) ?: "তাওয়াফ শেষ ধাপ"
+                "SAI_PREP" -> UmrahContentData.SAI_PREP_CHECKLIST.getOrNull(itemIndex) ?: "সাঈ প্রস্তুতি"
+                "SAI_ROUND" -> UmrahContentData.SAI_ROUND_CHECKLIST.getOrNull(itemIndex) ?: "সাঈ চক্কর"
+                "SAI_FINAL" -> UmrahContentData.SAI_FINAL_CHECKLIST.getOrNull(itemIndex) ?: "সাঈ শেষ ধাপ"
+                "HALQ" -> "হলক / কসর সম্পন্ন করা হয়েছে"
+                else -> "আইটেম"
+            }
+            dao.insertChecklistItem(
+                UmrahChecklistEntity(
+                    sessionId = sessionId,
+                    stepKey = stepKey,
+                    itemIndex = itemIndex,
+                    itemTextBn = text,
+                    isChecked = isChecked,
+                    checkedAt = checkedAt
+                )
+            )
+        }
     }
 
     suspend fun updateSession(session: UmrahSessionEntity) = withContext(Dispatchers.IO) {
