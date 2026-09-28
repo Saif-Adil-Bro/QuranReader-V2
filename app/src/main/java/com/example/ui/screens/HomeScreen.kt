@@ -847,7 +847,7 @@ fun HomeScreen(
                         onNavigateToSurahWithAyah = onNavigateToSurahWithAyah
                     )
                 }
-                if (recentReads.isNotEmpty() || bookmarks.isNotEmpty() || lastReadSurah > 0 || lastReadPage > 0) {
+                if (recentReads.isNotEmpty() || bookmarks.isNotEmpty()) {
                     item(key = "bookmarks_last_read", contentType = "bookmarks") {
                         Spacer(modifier = Modifier.height(20.dp))
                         BookmarksAndLastReadSection(
@@ -2152,28 +2152,7 @@ fun BookmarksAndLastReadSection(
     onNavigateToSurahWithAyah: (Int, String, Int) -> Unit,
     onDeleteBookmark: (com.example.data.local.entity.BookmarkEntity) -> Unit
 ) {
-    val displayRecentReads = if (recentReads.isNotEmpty()) {
-        recentReads.take(5)
-    } else if (lastReadSurah > 0 || lastReadPage > 0) {
-        val surahNum = if (lastReadSurah > 0) lastReadSurah else 1
-        val sName = if (isEnglish) {
-            QuranData.surahNames.find { it.first == surahNum }?.second?.second ?: "Al-Fatihah"
-        } else {
-            QuranData.surahNames.find { it.first == surahNum }?.second?.first ?: "আল ফাতিহা"
-        }
-        listOf(
-            com.example.data.repository.RecentReadTrack(
-                title = sName,
-                surahNumber = surahNum,
-                ayahNumber = lastReadAyah,
-                pageNumber = if (lastReadPage > 0) lastReadPage else null,
-                mode = lastReadMode.ifEmpty { "DETAIL" },
-                mushafId = lastReadMushafId
-            )
-        )
-    } else {
-        emptyList()
-    }
+    val displayRecentReads = recentReads.take(5)
     
     Column(
         modifier = Modifier
