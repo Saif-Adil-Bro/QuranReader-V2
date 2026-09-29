@@ -47,6 +47,9 @@ fun UmrahTrackerScreen(
     viewModel: UmrahTrackerViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val appLanguage by viewModel.appLanguage.collectAsState()
+    val isEnglish = appLanguage.startsWith("en", ignoreCase = true)
+
     var currentSubScreen by remember { mutableStateOf(UmrahSubScreen.MAIN_TRACKER) }
     var selectedSessionIdForDetail by remember { mutableStateOf<Long?>(null) }
     var showProhibitionsSheet by remember { mutableStateOf(false) }
@@ -65,6 +68,7 @@ fun UmrahTrackerScreen(
     when (currentSubScreen) {
         UmrahSubScreen.GUIDELINES -> {
             UmrahGuidelinesScreen(
+                isEnglish = isEnglish,
                 onNavigateBack = { currentSubScreen = UmrahSubScreen.MAIN_TRACKER }
             )
             return
@@ -72,6 +76,7 @@ fun UmrahTrackerScreen(
         UmrahSubScreen.HISTORY -> {
             UmrahHistoryScreen(
                 viewModel = viewModel,
+                isEnglish = isEnglish,
                 onNavigateBack = { currentSubScreen = UmrahSubScreen.MAIN_TRACKER },
                 onSelectSession = { id ->
                     selectedSessionIdForDetail = id
@@ -84,6 +89,7 @@ fun UmrahTrackerScreen(
             selectedSessionIdForDetail?.let { sId ->
                 UmrahSessionDetailScreen(
                     sessionId = sId,
+                    isEnglish = isEnglish,
                     onNavigateBack = { currentSubScreen = UmrahSubScreen.HISTORY }
                 )
             }
@@ -91,12 +97,14 @@ fun UmrahTrackerScreen(
         }
         UmrahSubScreen.POST_DUAS -> {
             UmrahPostDuasScreen(
+                isEnglish = isEnglish,
                 onNavigateBack = { currentSubScreen = UmrahSubScreen.MAIN_TRACKER }
             )
             return
         }
         UmrahSubScreen.ZAMZAM -> {
             UmrahZamzamScreen(
+                isEnglish = isEnglish,
                 onNavigateBack = { currentSubScreen = UmrahSubScreen.MAIN_TRACKER }
             )
             return
@@ -116,12 +124,12 @@ fun UmrahTrackerScreen(
                 title = {
                     Text(
                         text = when {
-                            isCompleted || isNotStarted -> "উমরাহ ট্র্যাকার"
-                            session?.currentStep == "IHRAM" -> "ইহরাম"
-                            session?.currentStep == "TAWAF" -> "তাওয়াফের বিস্তারিত"
-                            session?.currentStep == "SAI" -> "সা'য়ী-এর বিবরণ"
-                            session?.currentStep == "HALQ" -> "হলক / কসর"
-                            else -> "উমরাহ ট্র্যাকার"
+                            isCompleted || isNotStarted -> if (isEnglish) "Umrah Tracker" else "উমরাহ ট্র্যাকার"
+                            session?.currentStep == "IHRAM" -> if (isEnglish) "Ihram" else "ইহরাম"
+                            session?.currentStep == "TAWAF" -> if (isEnglish) "Tawaf Details" else "তাওয়াফের বিস্তারিত"
+                            session?.currentStep == "SAI" -> if (isEnglish) "Sa'i Details" else "সা'য়ী-এর বিবরণ"
+                            session?.currentStep == "HALQ" -> if (isEnglish) "Halq / Qasr" else "হলক / কসর"
+                            else -> if (isEnglish) "Umrah Tracker" else "উমরাহ ট্র্যাকার"
                         },
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
@@ -138,7 +146,7 @@ fun UmrahTrackerScreen(
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "ফিরে যান",
+                            contentDescription = if (isEnglish) "Back" else "ফিরে যান",
                             tint = Color.White
                         )
                     }
@@ -147,7 +155,7 @@ fun UmrahTrackerScreen(
                     IconButton(onClick = { currentSubScreen = UmrahSubScreen.HISTORY }) {
                         Icon(
                             imageVector = Icons.Default.History,
-                            contentDescription = "ইতিহাস",
+                            contentDescription = if (isEnglish) "History" else "ইতিহাস",
                             tint = Color.White
                         )
                     }
@@ -168,6 +176,7 @@ fun UmrahTrackerScreen(
                 // 1. COMPLETED (Screenshot 2 / User sample: "আলহামদুলিল্লাহ / উমরাহ সম্পন্ন")
                 isCompleted -> {
                     UmrahCompletedContent(
+                        isEnglish = isEnglish,
                         onNavigateToDuas = { currentSubScreen = UmrahSubScreen.POST_DUAS },
                         onNavigateToZamzam = { currentSubScreen = UmrahSubScreen.ZAMZAM },
                         onStartNewUmrah = { viewModel.resetOrStartNewUmrah() }
@@ -179,6 +188,7 @@ fun UmrahTrackerScreen(
                     session?.let { activeSession ->
                         StepperOverviewContent(
                             session = activeSession,
+                            isEnglish = isEnglish,
                             onContinue = { showStepperOverview = false }
                         )
                     }
@@ -188,6 +198,7 @@ fun UmrahTrackerScreen(
                 session?.currentStep == "IHRAM" -> {
                     IhramStepContent(
                         checklist = uiState.checklistItems.filter { it.stepKey == "IHRAM" },
+                        isEnglish = isEnglish,
                         onToggleChecklist = { idx, checked ->
                             viewModel.toggleChecklistItem("IHRAM", idx, checked)
                         },
@@ -204,6 +215,7 @@ fun UmrahTrackerScreen(
                         prepChecklist = uiState.checklistItems.filter { it.stepKey == "TAWAF_PREP" },
                         roundChecklist = uiState.checklistItems.filter { it.stepKey == "TAWAF_ROUND" },
                         finalChecklist = uiState.checklistItems.filter { it.stepKey == "TAWAF_FINAL" },
+                        isEnglish = isEnglish,
                         onToggleChecklist = { stepKey, idx, checked ->
                             viewModel.toggleChecklistItem(stepKey, idx, checked)
                         },
@@ -220,6 +232,7 @@ fun UmrahTrackerScreen(
                         prepChecklist = uiState.checklistItems.filter { it.stepKey == "SAI_PREP" },
                         roundChecklist = uiState.checklistItems.filter { it.stepKey == "SAI_ROUND" },
                         finalChecklist = uiState.checklistItems.filter { it.stepKey == "SAI_FINAL" },
+                        isEnglish = isEnglish,
                         onToggleChecklist = { stepKey, idx, checked ->
                             viewModel.toggleChecklistItem(stepKey, idx, checked)
                         },
@@ -232,6 +245,7 @@ fun UmrahTrackerScreen(
                 // 6. STEP 4: HALQ / QASR (Screenshots 17 & 18)
                 session?.currentStep == "HALQ" -> {
                     HalqStepContent(
+                        isEnglish = isEnglish,
                         onCompleteUmrah = { viewModel.completeUmrah() }
                     )
                 }
@@ -239,6 +253,7 @@ fun UmrahTrackerScreen(
                 // 7. NOT STARTED / DEFAULT (Screenshots 1 & 2)
                 else -> {
                     NotStartedContent(
+                        isEnglish = isEnglish,
                         onBeginUmrah = { viewModel.startUmrah() },
                         onReviewGuidelines = { currentSubScreen = UmrahSubScreen.GUIDELINES }
                     )
@@ -249,6 +264,7 @@ fun UmrahTrackerScreen(
 
     if (showProhibitionsSheet) {
         UmrahProhibitionsDialog(
+            isEnglish = isEnglish,
             onDismiss = { showProhibitionsSheet = false }
         )
     }
@@ -257,6 +273,7 @@ fun UmrahTrackerScreen(
 // ==================== 1. NOT STARTED CONTENT ====================
 @Composable
 fun NotStartedContent(
+    isEnglish: Boolean = false,
     onBeginUmrah: () -> Unit,
     onReviewGuidelines: () -> Unit
 ) {
@@ -282,14 +299,14 @@ fun NotStartedContent(
                 ) {
                     Column {
                         Text(
-                            text = "আপনার সফর",
+                            text = if (isEnglish) "Your Journey" else "আপনার সফর",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "আল্লাহ কবুল করুন",
+                            text = if (isEnglish) "May Allah accept it" else "আল্লাহ কবুল করুন",
                             fontSize = 14.sp,
                             color = Color(0xFF94A3B8)
                         )
@@ -299,7 +316,7 @@ fun NotStartedContent(
                             color = Color(0xFF1E2D3A)
                         ) {
                             Text(
-                                text = "শুরু হয়নি",
+                                text = if (isEnglish) "Not Started" else "শুরু হয়নি",
                                 fontSize = 12.sp,
                                 color = Color(0xFF94A3B8),
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -315,7 +332,7 @@ fun NotStartedContent(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "০%",
+                            text = if (isEnglish) "0%" else "০%",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -326,7 +343,7 @@ fun NotStartedContent(
 
             // Preparation Section
             Text(
-                text = "প্রস্তুতি",
+                text = if (isEnglish) "Preparation" else "প্রস্তুতি",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFFCBD5E1)
@@ -362,14 +379,14 @@ fun NotStartedContent(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "নির্দেশিকা দেখুন",
+                            text = if (isEnglish) "View Guidelines" else "নির্দেশিকা দেখুন",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White
                         )
                         Spacer(modifier = Modifier.height(3.dp))
                         Text(
-                            text = "শুরু করার আগে নিয়ম, বিধি এবং নিষেধ সম্পর্কে জেনে নিন।",
+                            text = if (isEnglish) "Learn rules, rituals, and prohibitions before starting." else "শুরু করার আগে নিয়ম, বিধি এবং নিষেধ সম্পর্কে জেনে নিন।",
                             fontSize = 12.sp,
                             color = Color(0xFF94A3B8),
                             lineHeight = 17.sp
@@ -394,7 +411,7 @@ fun NotStartedContent(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "উমরাহ শুরু করুন",
+                    text = if (isEnglish) "Start Umrah" else "উমরাহ শুরু করুন",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -414,6 +431,7 @@ fun NotStartedContent(
 @Composable
 fun StepperOverviewContent(
     session: UmrahSessionEntity,
+    isEnglish: Boolean = false,
     onContinue: () -> Unit
 ) {
     Column(
@@ -424,7 +442,7 @@ fun StepperOverviewContent(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
-                text = "বর্তমান অগ্রগতি",
+                text = if (isEnglish) "Current Progress" else "বর্তমান অগ্রগতি",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFFCBD5E1)
@@ -449,11 +467,11 @@ fun StepperOverviewContent(
                     ) {
                         Text(
                             text = when (session.currentStep) {
-                                "IHRAM" -> "ধাপ ১ (৪ এর মধ্যে)"
-                                "TAWAF" -> "ধাপ ২ (৪ এর মধ্যে)"
-                                "SAI" -> "ধাপ ৩ (৪ এর মধ্যে)"
-                                "HALQ" -> "ধাপ ৪ (৪ এর মধ্যে)"
-                                else -> "চলমান ধাপ"
+                                "IHRAM" -> if (isEnglish) "Step 1 of 4" else "ধাপ ১ (৪ এর মধ্যে)"
+                                "TAWAF" -> if (isEnglish) "Step 2 of 4" else "ধাপ ২ (৪ এর মধ্যে)"
+                                "SAI" -> if (isEnglish) "Step 3 of 4" else "ধাপ ৩ (৪ এর মধ্যে)"
+                                "HALQ" -> if (isEnglish) "Step 4 of 4" else "ধাপ ৪ (৪ এর মধ্যে)"
+                                else -> if (isEnglish) "Current Step" else "চলমান ধাপ"
                             },
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
@@ -465,7 +483,7 @@ fun StepperOverviewContent(
                             color = Color(0xFF0F766E).copy(alpha = 0.35f)
                         ) {
                             Text(
-                                text = "চলমান",
+                                text = if (isEnglish) "In Progress" else "চলমান",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF2DD4BF),
@@ -478,11 +496,11 @@ fun StepperOverviewContent(
 
                     // Progress circle
                     val progressPercent = when (session.currentStep) {
-                        "IHRAM" -> "০%"
-                        "TAWAF" -> "${DateUtil.toBengaliNumerals((session.currentTawafRound * 100) / 28)}%"
-                        "SAI" -> "${DateUtil.toBengaliNumerals(50 + (session.currentSaiRound * 50) / 7)}%"
-                        "HALQ" -> "৯০%"
-                        else -> "১০০%"
+                        "IHRAM" -> if (isEnglish) "0%" else "০%"
+                        "TAWAF" -> if (isEnglish) "${(session.currentTawafRound * 100) / 28}%" else "${DateUtil.toBengaliNumerals((session.currentTawafRound * 100) / 28)}%"
+                        "SAI" -> if (isEnglish) "${50 + (session.currentSaiRound * 50) / 7}%" else "${DateUtil.toBengaliNumerals(50 + (session.currentSaiRound * 50) / 7)}%"
+                        "HALQ" -> if (isEnglish) "90%" else "৯০%"
+                        else -> if (isEnglish) "100%" else "১০০%"
                     }
 
                     Box(
@@ -503,11 +521,11 @@ fun StepperOverviewContent(
 
                     Text(
                         text = when (session.currentStep) {
-                            "IHRAM" -> "ইহরাম"
-                            "TAWAF" -> "তাওয়াফ"
-                            "SAI" -> "সাঈ"
-                            "HALQ" -> "হলক / কসর"
-                            else -> "উমরাহ"
+                            "IHRAM" -> if (isEnglish) "Ihram" else "ইহরাম"
+                            "TAWAF" -> if (isEnglish) "Tawaf" else "তাওয়াফ"
+                            "SAI" -> if (isEnglish) "Sa'i" else "সাঈ"
+                            "HALQ" -> if (isEnglish) "Halq / Qasr" else "হলক / কসর"
+                            else -> if (isEnglish) "Umrah" else "উমরাহ"
                         },
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
@@ -518,10 +536,10 @@ fun StepperOverviewContent(
 
                     Text(
                         text = when (session.currentStep) {
-                            "IHRAM" -> "নিয়ত ও পবিত্রতা বজায় রাখুন"
-                            "TAWAF" -> "কাবা শরীফ প্রদক্ষিণ করুন"
-                            "SAI" -> "সাফা ও মারওয়া পাহাড়ের মধ্যে সাঈ করুন"
-                            "HALQ" -> "চুল কেটে উমরাহ সমাপ্ত করুন"
+                            "IHRAM" -> if (isEnglish) "Maintain intention and state of purity" else "নিয়ত ও পবিত্রতা বজায় রাখুন"
+                            "TAWAF" -> if (isEnglish) "Circumambulate the Holy Ka'bah" else "কাবা শরীফ প্রদক্ষিণ করুন"
+                            "SAI" -> if (isEnglish) "Perform Sa'i between Mount Safa and Marwah" else "সাফা ও মারওয়া পাহাড়ের মধ্যে সাঈ করুন"
+                            "HALQ" -> if (isEnglish) "Cut or shave hair to conclude Umrah" else "চুল কেটে উমরাহ সমাপ্ত করুন"
                             else -> ""
                         },
                         fontSize = 13.sp,
@@ -542,14 +560,15 @@ fun StepperOverviewContent(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            val stepName = when (session.currentStep) {
+                                "IHRAM" -> if (isEnglish) "Ihram" else "ইহরাম"
+                                "TAWAF" -> if (isEnglish) "Tawaf" else "তাওয়াফ"
+                                "SAI" -> if (isEnglish) "Sa'i" else "সাঈ"
+                                "HALQ" -> if (isEnglish) "Halq / Qasr" else "হলক / কসর"
+                                else -> if (isEnglish) "Step" else "ধাপ"
+                            }
                             Text(
-                                text = "${when (session.currentStep) {
-                                    "IHRAM" -> "ইহরাম"
-                                    "TAWAF" -> "তাওয়াফ"
-                                    "SAI" -> "সাঈ"
-                                    "HALQ" -> "হলক / কসর"
-                                    else -> "ধাপ"
-                                }} সম্পন্ন করে এগিয়ে যান",
+                                text = if (isEnglish) "Proceed with $stepName" else "$stepName সম্পন্ন করে এগিয়ে যান",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -567,25 +586,40 @@ fun StepperOverviewContent(
 
             // Stepper timeline section
             Text(
-                text = "ভ্রমণসূচী",
+                text = if (isEnglish) "Itinerary" else "ভ্রমণসূচী",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFFCBD5E1)
             )
 
-            StepperTimelineCard(currentStep = session.currentStep)
+            StepperTimelineCard(
+                currentStep = session.currentStep,
+                isEnglish = isEnglish
+            )
         }
     }
 }
 
 @Composable
-fun StepperTimelineCard(currentStep: String) {
-    val steps = listOf(
-        Pair("১. ইহরাম", "IHRAM"),
-        Pair("২. তাওয়াফ", "TAWAF"),
-        Pair("৩. সাঈ", "SAI"),
-        Pair("৪. হলক / কসর", "HALQ")
-    )
+fun StepperTimelineCard(
+    currentStep: String,
+    isEnglish: Boolean = false
+) {
+    val steps = if (isEnglish) {
+        listOf(
+            Pair("1. Ihram", "IHRAM"),
+            Pair("2. Tawaf", "TAWAF"),
+            Pair("3. Sa'i", "SAI"),
+            Pair("4. Halq / Qasr", "HALQ")
+        )
+    } else {
+        listOf(
+            Pair("১. ইহরাম", "IHRAM"),
+            Pair("২. তাওয়াফ", "TAWAF"),
+            Pair("৩. সাঈ", "SAI"),
+            Pair("৪. হলক / কসর", "HALQ")
+        )
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -643,9 +677,9 @@ fun StepperTimelineCard(currentStep: String) {
 
                     Text(
                         text = when {
-                            isDone -> "সম্পন্ন"
-                            isCurrent -> "চলমান ➔"
-                            else -> "অপেক্ষমান"
+                            isDone -> if (isEnglish) "Completed" else "সম্পন্ন"
+                            isCurrent -> if (isEnglish) "Current ➔" else "চলমান ➔"
+                            else -> if (isEnglish) "Pending" else "অপেক্ষমান"
                         },
                         fontSize = 12.sp,
                         color = if (isCurrent) Color(0xFF34D399) else Color(0xFF64748B)
@@ -665,6 +699,7 @@ fun isStepCompleted(stepKey: String, currentStep: String): Boolean {
 @Composable
 fun IhramStepContent(
     checklist: List<com.example.data.umrah.UmrahChecklistEntity>,
+    isEnglish: Boolean = false,
     onToggleChecklist: (Int, Boolean) -> Unit,
     onViewProhibitions: () -> Unit,
     onCompleteIhram: () -> Unit,
@@ -685,7 +720,7 @@ fun IhramStepContent(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "ধাপ ১: ইহরাম",
+                    text = if (isEnglish) "Step 1: Ihram" else "ধাপ ১: ইহরাম",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -695,7 +730,7 @@ fun IhramStepContent(
                     color = Color(0xFF0F766E).copy(alpha = 0.35f)
                 ) {
                     Text(
-                        text = "চলমান",
+                        text = if (isEnglish) "In Progress" else "চলমান",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF2DD4BF),
@@ -724,7 +759,10 @@ fun IhramStepContent(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = "আপনি ইহরামের অবস্থায় প্রবেশ করেছেন। তাওয়াফ শুরু করার জন্য কাবাপ্রাঙ্গণে না পৌঁছানো পর্যন্ত ঘনঘন তালবিয়া পাঠ করতে থাকুন।",
+                            text = if (isEnglish)
+                                "You have entered the state of Ihram. Continue reciting the Talbiyah frequently until you reach the Ka'bah to begin Tawaf."
+                            else
+                                "আপনি ইহরামের অবস্থায় প্রবেশ করেছেন। তাওয়াফ শুরু করার জন্য কাবাপ্রাঙ্গণে না পৌঁছানো পর্যন্ত ঘনঘন তালবিয়া পাঠ করতে থাকুন।",
                             fontSize = 13.sp,
                             color = Color(0xFFD1FAE5),
                             lineHeight = 18.sp
@@ -741,7 +779,7 @@ fun IhramStepContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "নিষিদ্ধ কাজগুলো দেখে নিন >",
+                            text = if (isEnglish) "View Prohibitions >" else "নিষিদ্ধ কাজগুলো দেখে নিন >",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF34D399)
@@ -754,7 +792,7 @@ fun IhramStepContent(
         // Preparation Section
         item {
             Text(
-                text = "প্রস্তুতি",
+                text = if (isEnglish) "Preparation" else "প্রস্তুতি",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFFCBD5E1)
@@ -762,7 +800,7 @@ fun IhramStepContent(
         }
 
         // Checklist items
-        itemsIndexed(UmrahContentData.IHRAM_CHECKLIST) { index, itemText ->
+        itemsIndexed(UmrahContentData.getIhramChecklist(isEnglish)) { index, itemText ->
             val entity = checklist.find { it.itemIndex == index }
             val isChecked = entity?.isChecked == true
 
@@ -806,7 +844,7 @@ fun IhramStepContent(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "নিয়ত (সংকল্প)",
+                        text = if (isEnglish) "Intention (Niyyah)" else "নিয়ত (সংকল্প)",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF10B981)
@@ -822,7 +860,7 @@ fun IhramStepContent(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = UmrahContentData.IHRAM_NIYYAH_BN,
+                        text = UmrahContentData.getIhramNiyyahTranslation(isEnglish),
                         fontSize = 13.sp,
                         color = Color(0xFFCBD5E1)
                     )
@@ -839,7 +877,7 @@ fun IhramStepContent(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "তালবিয়া",
+                        text = if (isEnglish) "Talbiyah" else "তালবিয়া",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF10B981)
@@ -856,7 +894,7 @@ fun IhramStepContent(
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = UmrahContentData.TALBIYAH_BN,
+                        text = UmrahContentData.getTalbiyahTranslation(isEnglish),
                         fontSize = 13.sp,
                         color = Color(0xFFCBD5E1),
                         lineHeight = 19.sp
@@ -877,7 +915,7 @@ fun IhramStepContent(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
             ) {
                 Text(
-                    text = "ইহরাম সম্পন্ন করে এগিয়ে যান",
+                    text = if (isEnglish) "Complete Ihram and Proceed" else "ইহরাম সম্পন্ন করে এগিয়ে যান",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -894,6 +932,7 @@ fun TawafStepContent(
     prepChecklist: List<com.example.data.umrah.UmrahChecklistEntity>,
     roundChecklist: List<com.example.data.umrah.UmrahChecklistEntity>,
     finalChecklist: List<com.example.data.umrah.UmrahChecklistEntity>,
+    isEnglish: Boolean = false,
     onToggleChecklist: (String, Int, Boolean) -> Unit,
     onSelectRound: (Int) -> Unit,
     onCompleteRound: (Int) -> Unit,
@@ -916,7 +955,7 @@ fun TawafStepContent(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "তাওয়াফ",
+                    text = if (isEnglish) "Tawaf" else "তাওয়াফ",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -926,7 +965,7 @@ fun TawafStepContent(
                     color = Color(0xFF0F766E).copy(alpha = 0.35f)
                 ) {
                     Text(
-                        text = "চলমান",
+                        text = if (isEnglish) "In Progress" else "চলমান",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF2DD4BF),
@@ -940,13 +979,13 @@ fun TawafStepContent(
         item {
             Column {
                 Text(
-                    text = "বর্তমান অগ্রগতি",
+                    text = if (isEnglish) "Current Progress" else "বর্তমান অগ্রগতি",
                     fontSize = 13.sp,
                     color = Color(0xFF94A3B8)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "৭ এর মধ্যে ${DateUtil.toBengaliNumerals(round)} তম চক্কর",
+                    text = if (isEnglish) "Circuit $round of 7" else "৭ এর মধ্যে ${DateUtil.toBengaliNumerals(round)} তম চক্কর",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -984,7 +1023,7 @@ fun TawafStepContent(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = com.example.utils.DateUtil.toBengaliNumerals("$r"),
+                            text = if (isEnglish) "$r" else com.example.utils.DateUtil.toBengaliNumerals("$r"),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (isActive || isPast) Color(0xFF2DD4BF) else Color(0xFF94A3B8)
@@ -998,7 +1037,7 @@ fun TawafStepContent(
         if (round == 1) {
             item {
                 Text(
-                    text = "প্রস্তুতি",
+                    text = if (isEnglish) "Preparation" else "প্রস্তুতি",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF10B981),
@@ -1006,7 +1045,7 @@ fun TawafStepContent(
                 )
             }
 
-            itemsIndexed(UmrahContentData.TAWAF_PREP_CHECKLIST) { index, itemText ->
+            itemsIndexed(UmrahContentData.getTawafPrepChecklist(isEnglish)) { index, itemText ->
                 val entity = prepChecklist.find { it.itemIndex == index }
                 val isChecked = entity?.isChecked == true
 
@@ -1024,7 +1063,7 @@ fun TawafStepContent(
                             .size(22.dp)
                             .background(if (isChecked) Color(0xFF10B981) else Color.Transparent, CircleShape)
                             .border(1.5.dp, if (isChecked) Color(0xFF10B981) else Color(0xFF64748B), CircleShape),
-                        contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center
                     ) {
                         if (isChecked) {
                             Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
@@ -1045,7 +1084,7 @@ fun TawafStepContent(
         // Current round checklist items
         item {
             Text(
-                text = "বর্তমান অগ্রগতি",
+                text = if (isEnglish) "Current Progress" else "বর্তমান অগ্রগতি",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF10B981),
@@ -1053,7 +1092,7 @@ fun TawafStepContent(
             )
         }
 
-        itemsIndexed(UmrahContentData.TAWAF_ROUND_CHECKLIST) { index, itemText ->
+        itemsIndexed(UmrahContentData.getTawafRoundChecklist(isEnglish)) { index, itemText ->
             val entity = roundChecklist.find { it.itemIndex == index }
             val isChecked = entity?.isChecked == true
 
@@ -1096,7 +1135,10 @@ fun TawafStepContent(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF0F4236))
             ) {
                 Text(
-                    text = "তাওয়াফের প্রতি চক্করে রুকন-ই ইয়ামানি এবং হাজরে আসওয়াদ এর মাঝখানে অনবরত নিচের দোয়াটি পাঠ করুন।",
+                    text = if (isEnglish)
+                        "Recite the following supplication continuously between the Yemeni Corner (Rukn al-Yamani) and the Black Stone during each circuit."
+                    else
+                        "তাওয়াফের প্রতি চক্করে রুকন-ই ইয়ামানি এবং হাজরে আসওয়াদ এর মাঝখানে অনবরত নিচের দোয়াটি পাঠ করুন।",
                     fontSize = 13.sp,
                     color = Color(0xFFD1FAE5),
                     lineHeight = 18.sp,
@@ -1114,7 +1156,7 @@ fun TawafStepContent(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "রুকন-ই ইয়ামানি ও হাজরে আসওয়াদ-এর মাঝখানের দুয়া",
+                        text = if (isEnglish) "Dua between Rukn al-Yamani & Black Stone" else "রুকন-ই ইয়ামানি ও হাজরে আসওয়াদ-এর মাঝখানের দুয়া",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF10B981)
@@ -1131,7 +1173,7 @@ fun TawafStepContent(
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = UmrahContentData.TAWAF_RUKN_YAMANI_DUA_BN,
+                        text = UmrahContentData.getTawafRuknYamaniDuaTranslation(isEnglish),
                         fontSize = 13.sp,
                         color = Color(0xFFCBD5E1),
                         lineHeight = 19.sp
@@ -1144,7 +1186,7 @@ fun TawafStepContent(
         if (round == 7) {
             item {
                 Text(
-                    text = "তাওয়াফের শেষ ধাপ",
+                    text = if (isEnglish) "Final Step of Tawaf" else "তাওয়াফের শেষ ধাপ",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF10B981),
@@ -1152,7 +1194,7 @@ fun TawafStepContent(
                 )
             }
 
-            itemsIndexed(UmrahContentData.TAWAF_FINAL_CHECKLIST) { index, itemText ->
+            itemsIndexed(UmrahContentData.getTawafFinalChecklist(isEnglish)) { index, itemText ->
                 val entity = finalChecklist.find { it.itemIndex == index }
                 val isChecked = entity?.isChecked == true
 
@@ -1206,7 +1248,11 @@ fun TawafStepContent(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
             ) {
                 Text(
-                    text = if (round < 7) "${DateUtil.toBengaliNumerals(round)} তম চক্কর সম্পন্ন করুন" else "তাওয়াফ শেষ করুন",
+                    text = if (round < 7) {
+                        if (isEnglish) "Complete Circuit $round" else "${DateUtil.toBengaliNumerals(round)} তম চক্কর সম্পন্ন করুন"
+                    } else {
+                        if (isEnglish) "Finish Tawaf" else "তাওয়াফ শেষ করুন"
+                    },
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -1223,6 +1269,7 @@ fun SaiStepContent(
     prepChecklist: List<com.example.data.umrah.UmrahChecklistEntity>,
     roundChecklist: List<com.example.data.umrah.UmrahChecklistEntity>,
     finalChecklist: List<com.example.data.umrah.UmrahChecklistEntity>,
+    isEnglish: Boolean = false,
     onToggleChecklist: (String, Int, Boolean) -> Unit,
     onSelectRound: (Int) -> Unit,
     onCompleteRound: (Int) -> Unit,
@@ -1245,7 +1292,7 @@ fun SaiStepContent(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "সাঈ",
+                    text = if (isEnglish) "Sa'i" else "সাঈ",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -1255,7 +1302,11 @@ fun SaiStepContent(
                     color = Color(0xFF0F766E).copy(alpha = 0.35f)
                 ) {
                     Text(
-                        text = if (round == 0) "শুরু করার জন্য প্রস্তুত" else "চলমান",
+                        text = if (round == 0) {
+                            if (isEnglish) "Ready to Start" else "শুরু করার জন্য প্রস্তুত"
+                        } else {
+                            if (isEnglish) "In Progress" else "চলমান"
+                        },
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF2DD4BF),
@@ -1269,13 +1320,17 @@ fun SaiStepContent(
         item {
             Column {
                 Text(
-                    text = "বর্তমান অগ্রগতি",
+                    text = if (isEnglish) "Current Progress" else "বর্তমান অগ্রগতি",
                     fontSize = 13.sp,
                     color = Color(0xFF94A3B8)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = if (round == 0) "০/৭ চক্কর" else "৭ এর মধ্যে ${DateUtil.toBengaliNumerals(round)} তম চক্কর (সাঈ)",
+                    text = if (round == 0) {
+                        if (isEnglish) "0/7 Laps" else "০/৭ চক্কর"
+                    } else {
+                        if (isEnglish) "Lap $round of 7 (Sa'i)" else "৭ এর মধ্যে ${DateUtil.toBengaliNumerals(round)} তম চক্কর (সাঈ)"
+                    },
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -1289,8 +1344,8 @@ fun SaiStepContent(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = "সাফা", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2DD4BF))
-                Text(text = "মারওয়াহ", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2DD4BF))
+                Text(text = if (isEnglish) "Safa" else "সাফা", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2DD4BF))
+                Text(text = if (isEnglish) "Marwah" else "মারওয়াহ", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2DD4BF))
             }
         }
 
@@ -1324,7 +1379,7 @@ fun SaiStepContent(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = com.example.utils.DateUtil.toBengaliNumerals("$r"),
+                            text = if (isEnglish) "$r" else com.example.utils.DateUtil.toBengaliNumerals("$r"),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (isActive || isPast) Color(0xFF2DD4BF) else Color(0xFF94A3B8)
@@ -1343,14 +1398,17 @@ fun SaiStepContent(
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
-                        text = "সবুজ বাতি এলাকা",
+                        text = if (isEnglish) "Green Light Area" else "সবুজ বাতি এলাকা",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF6EE7B7)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "সবুজ চিহ্নিত এলাকায় পুরুষদের কিছুটা দ্রুত হাঁটা বা দৌড়ানো সুন্নত। মহিলাদের জন্য স্বাভাবিক গতিতে হাঁটা নিয়ম।",
+                        text = if (isEnglish)
+                            "It is sunnah for men to walk briskly / jog lightly between the green markers. Women continue at a normal walking pace."
+                        else
+                            "সবুজ চিহ্নিত এলাকায় পুরুষদের কিছুটা দ্রুত হাঁটা বা দৌড়ানো সুন্নত। মহিলাদের জন্য স্বাভাবিক গতিতে হাঁটা নিয়ম।",
                         fontSize = 13.sp,
                         color = Color(0xFFD1FAE5),
                         lineHeight = 18.sp
@@ -1363,7 +1421,7 @@ fun SaiStepContent(
         if (round == 0) {
             item {
                 Text(
-                    text = "প্রস্তুতি",
+                    text = if (isEnglish) "Preparation" else "প্রস্তুতি",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF10B981),
@@ -1371,7 +1429,7 @@ fun SaiStepContent(
                 )
             }
 
-            itemsIndexed(UmrahContentData.SAI_PREP_CHECKLIST) { index, itemText ->
+            itemsIndexed(UmrahContentData.getSaiPrepChecklist(isEnglish)) { index, itemText ->
                 val entity = prepChecklist.find { it.itemIndex == index }
                 val isChecked = entity?.isChecked == true
 
@@ -1410,7 +1468,7 @@ fun SaiStepContent(
         // Current round checklist items
         item {
             Text(
-                text = "বর্তমান অগ্রগতি",
+                text = if (isEnglish) "Current Progress" else "বর্তমান অগ্রগতি",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF10B981),
@@ -1418,7 +1476,7 @@ fun SaiStepContent(
             )
         }
 
-        itemsIndexed(UmrahContentData.SAI_ROUND_CHECKLIST) { index, itemText ->
+        itemsIndexed(UmrahContentData.getSaiRoundChecklist(isEnglish)) { index, itemText ->
             val entity = roundChecklist.find { it.itemIndex == index }
             val isChecked = entity?.isChecked == true
 
@@ -1462,7 +1520,7 @@ fun SaiStepContent(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "সাফা ও মারওয়াহ-এর দুয়া",
+                        text = if (isEnglish) "Supplication at Safa and Marwah" else "সাফা ও মারওয়াহ-এর দুয়া",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF10B981)
@@ -1479,7 +1537,7 @@ fun SaiStepContent(
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = UmrahContentData.SAI_SAFA_MARWAH_DUA_BN,
+                        text = UmrahContentData.getSaiSafaMarwahDuaTranslation(isEnglish),
                         fontSize = 13.sp,
                         color = Color(0xFFCBD5E1),
                         lineHeight = 19.sp
@@ -1492,7 +1550,7 @@ fun SaiStepContent(
         if (round == 7) {
             item {
                 Text(
-                    text = "সাঈর শেষ ধাপ",
+                    text = if (isEnglish) "Final Step of Sa'i" else "সাঈর শেষ ধাপ",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF10B981),
@@ -1500,7 +1558,7 @@ fun SaiStepContent(
                 )
             }
 
-            itemsIndexed(UmrahContentData.SAI_FINAL_CHECKLIST) { index, itemText ->
+            itemsIndexed(UmrahContentData.getSaiFinalChecklist(isEnglish)) { index, itemText ->
                 val entity = finalChecklist.find { it.itemIndex == index }
                 val isChecked = entity?.isChecked == true
 
@@ -1557,9 +1615,9 @@ fun SaiStepContent(
             ) {
                 Text(
                     text = when (round) {
-                        0 -> "১ম চক্কর শুরু করুন"
-                        in 1..6 -> "${DateUtil.toBengaliNumerals(round)} তম চক্কর সম্পন্ন করুন"
-                        else -> "সাঈ শেষ করুন"
+                        0 -> if (isEnglish) "Start Lap 1" else "১ম চক্কর শুরু করুন"
+                        in 1..6 -> if (isEnglish) "Complete Lap $round" else "${DateUtil.toBengaliNumerals(round)} তম চক্কর সম্পন্ন করুন"
+                        else -> if (isEnglish) "Finish Sa'i" else "সাঈ শেষ করুন"
                     },
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
@@ -1573,6 +1631,7 @@ fun SaiStepContent(
 // ==================== 6. STEP 4: HALQ / QASR CONTENT (Screenshots 17 & 18) ====================
 @Composable
 fun HalqStepContent(
+    isEnglish: Boolean = false,
     onCompleteUmrah: () -> Unit
 ) {
     LazyColumn(
@@ -1590,7 +1649,7 @@ fun HalqStepContent(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "ধাপ ৪: হলক / কসর",
+                    text = if (isEnglish) "Step 4: Halq / Qasr" else "ধাপ ৪: হলক / কসর",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -1600,7 +1659,7 @@ fun HalqStepContent(
                     color = Color(0xFF0F766E).copy(alpha = 0.35f)
                 ) {
                     Text(
-                        text = "চলমান",
+                        text = if (isEnglish) "In Progress" else "চলমান",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF2DD4BF),
@@ -1618,7 +1677,10 @@ fun HalqStepContent(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF09332A))
             ) {
                 Text(
-                    text = "আপনি শেষ ধাপে আছেন। এটি সম্পন্ন করার পর আপনি ইহরাম অবস্থা থেকে বের হবেন এবং আপনার উমরাহ সম্পন্ন হবে।",
+                    text = if (isEnglish)
+                        "You are on the final step. After completing this, you will exit the state of Ihram and your Umrah will be complete."
+                    else
+                        "আপনি শেষ ধাপে আছেন। এটি সম্পন্ন করার পর আপনি ইহরাম অবস্থা থেকে বের হবেন এবং আপনার উমরাহ সম্পন্ন হবে।",
                     fontSize = 13.sp,
                     color = Color(0xFFD1FAE5),
                     lineHeight = 18.sp,
@@ -1630,7 +1692,7 @@ fun HalqStepContent(
         // Definitions Section (সংজ্ঞা)
         item {
             Text(
-                text = "সংজ্ঞা",
+                text = if (isEnglish) "Definitions" else "সংজ্ঞা",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFFCBD5E1)
@@ -1645,14 +1707,14 @@ fun HalqStepContent(
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
-                        text = UmrahContentData.HALQ_DEF_TITLE,
+                        text = UmrahContentData.getHalqDefTitle(isEnglish),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = UmrahContentData.HALQ_DEF_DESC,
+                        text = UmrahContentData.getHalqDefDesc(isEnglish),
                         fontSize = 13.sp,
                         color = Color(0xFF94A3B8),
                         lineHeight = 18.sp
@@ -1669,14 +1731,14 @@ fun HalqStepContent(
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Text(
-                        text = UmrahContentData.QASR_DEF_TITLE,
+                        text = UmrahContentData.getQasrDefTitle(isEnglish),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = UmrahContentData.QASR_DEF_DESC,
+                        text = UmrahContentData.getQasrDefDesc(isEnglish),
                         fontSize = 13.sp,
                         color = Color(0xFF94A3B8),
                         lineHeight = 18.sp
@@ -1688,7 +1750,7 @@ fun HalqStepContent(
         // Men's Guidelines
         item {
             Text(
-                text = "পুরুষদের জন্য নির্দেশিকা",
+                text = if (isEnglish) "Guidelines for Men" else "পুরুষদের জন্য নির্দেশিকা",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFFCBD5E1),
@@ -1696,7 +1758,7 @@ fun HalqStepContent(
             )
         }
 
-        itemsIndexed(UmrahContentData.HALQ_MEN_GUIDELINES) { _, guideline ->
+        itemsIndexed(UmrahContentData.getHalqMenGuidelines(isEnglish)) { _, guideline ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top,
@@ -1721,7 +1783,7 @@ fun HalqStepContent(
         // Women's Guidelines
         item {
             Text(
-                text = "মহিলাদের জন্য নির্দেশিকা",
+                text = if (isEnglish) "Guidelines for Women" else "মহিলাদের জন্য নির্দেশিকা",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFFCBD5E1),
@@ -1729,7 +1791,7 @@ fun HalqStepContent(
             )
         }
 
-        itemsIndexed(UmrahContentData.HALQ_WOMEN_GUIDELINES) { _, guideline ->
+        itemsIndexed(UmrahContentData.getHalqWomenGuidelines(isEnglish)) { _, guideline ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top,
@@ -1770,7 +1832,7 @@ fun HalqStepContent(
                         modifier = Modifier.size(20.dp).padding(top = 2.dp)
                     )
                     Text(
-                        text = UmrahContentData.HALQ_WARNING_TEXT,
+                        text = UmrahContentData.getHalqWarningText(isEnglish),
                         fontSize = 13.sp,
                         color = Color(0xFFFECACA),
                         lineHeight = 18.sp,
@@ -1789,7 +1851,7 @@ fun HalqStepContent(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "হলক / কসর পরবর্তী দুয়া",
+                        text = if (isEnglish) "Supplication after Halq / Qasr" else "হলক / কসর পরবর্তী দুয়া",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color(0xFF10B981)
@@ -1806,7 +1868,7 @@ fun HalqStepContent(
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(
-                        text = UmrahContentData.HALQ_DUA_BN,
+                        text = UmrahContentData.getHalqDuaTranslation(isEnglish),
                         fontSize = 13.sp,
                         color = Color(0xFFCBD5E1),
                         lineHeight = 19.sp
@@ -1827,7 +1889,7 @@ fun HalqStepContent(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
             ) {
                 Text(
-                    text = "উমরাহ সম্পন্ন করুন",
+                    text = if (isEnglish) "Complete Umrah" else "উমরাহ সম্পন্ন করুন",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -1840,6 +1902,7 @@ fun HalqStepContent(
 // ==================== 7. COMPLETED CONTENT (Screenshot 19) ====================
 @Composable
 fun UmrahCompletedContent(
+    isEnglish: Boolean = false,
     onNavigateToDuas: () -> Unit,
     onNavigateToZamzam: () -> Unit,
     onStartNewUmrah: () -> Unit
@@ -1867,14 +1930,14 @@ fun UmrahCompletedContent(
                 ) {
                     Column {
                         Text(
-                            text = "আলহামদুলিল্লাহ",
+                            text = if (isEnglish) "Alhamdulillah" else "আলহামদুলিল্লাহ",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "উমরাহ সম্পন্ন",
+                            text = if (isEnglish) "Umrah Completed" else "উমরাহ সম্পন্ন",
                             fontSize = 14.sp,
                             color = Color(0xFFD1FAE5)
                         )
@@ -1884,7 +1947,7 @@ fun UmrahCompletedContent(
                             color = Color(0xFF064E3B)
                         ) {
                             Text(
-                                text = "সম্পন্ন",
+                                text = if (isEnglish) "Completed" else "সম্পন্ন",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF34D399),
@@ -1901,7 +1964,7 @@ fun UmrahCompletedContent(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "১০০%",
+                            text = if (isEnglish) "100%" else "১০০%",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -1925,16 +1988,32 @@ fun UmrahCompletedContent(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "উমরাহর ধাপসমূহ",
+                        text = if (isEnglish) "Umrah Steps" else "উমরাহর ধাপসমূহ",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White
                     )
 
-                    CompletedStepItem("ইহরাম", "নিয়ত ও পবিত্রতা বজায় রাখা হয়েছে")
-                    CompletedStepItem("তাওয়াফ", "৭ চক্কর সম্পন্ন")
-                    CompletedStepItem("সাঈ", "৭টি চক্কর সম্পন্ন হয়েছে")
-                    CompletedStepItem("হলক / কসর", "চুল কাটা সম্পন্ন")
+                    CompletedStepItem(
+                        title = if (isEnglish) "Ihram" else "ইহরাম",
+                        subtitle = if (isEnglish) "Intention & state of purity maintained" else "নিয়ত ও পবিত্রতা বজায় রাখা হয়েছে",
+                        isEnglish = isEnglish
+                    )
+                    CompletedStepItem(
+                        title = if (isEnglish) "Tawaf" else "তাওয়াফ",
+                        subtitle = if (isEnglish) "7 circuits completed" else "৭ চক্কর সম্পন্ন",
+                        isEnglish = isEnglish
+                    )
+                    CompletedStepItem(
+                        title = if (isEnglish) "Sa'i" else "সাঈ",
+                        subtitle = if (isEnglish) "7 laps completed" else "৭টি চক্কর সম্পন্ন হয়েছে",
+                        isEnglish = isEnglish
+                    )
+                    CompletedStepItem(
+                        title = if (isEnglish) "Halq / Qasr" else "হলক / কসর",
+                        subtitle = if (isEnglish) "Hair cutting completed" else "চুল কাটা সম্পন্ন",
+                        isEnglish = isEnglish
+                    )
                 }
             }
         }
@@ -1953,7 +2032,7 @@ fun UmrahCompletedContent(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "উমরাহ পরবর্তী",
+                        text = if (isEnglish) "Post-Umrah" else "উমরাহ পরবর্তী",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White
@@ -1969,14 +2048,14 @@ fun UmrahCompletedContent(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "দোয়াসমূহ",
+                                text = if (isEnglish) "Supplications & Duas" else "দোয়াসমূহ",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "উমরাহ সম্পন্ন করার পর সুপারিশকৃত দুয়াসমূহ।",
+                                text = if (isEnglish) "Recommended supplications after completing Umrah." else "উমরাহ সম্পন্ন করার পর সুপারিশকৃত দুয়াসমূহ।",
                                 fontSize = 12.sp,
                                 color = Color(0xFF94A3B8)
                             )
@@ -2001,14 +2080,14 @@ fun UmrahCompletedContent(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "জমজমের পানি",
+                                text = if (isEnglish) "Zamzam Water" else "জমজমের পানি",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "জমজম পানি পান করুন এবং প্রচুর দুআ করুন।",
+                                text = if (isEnglish) "Drink Zamzam water and make abundant supplications." else "জমজম পানি পান করুন এবং প্রচুর দুআ করুন।",
                                 fontSize = 12.sp,
                                 color = Color(0xFF94A3B8)
                             )
@@ -2035,7 +2114,7 @@ fun UmrahCompletedContent(
                 border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.5f))
             ) {
                 Text(
-                    text = "নতুন উমরাহ শুরু করুন",
+                    text = if (isEnglish) "Start New Umrah" else "নতুন উমরাহ শুরু করুন",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF10B981)
@@ -2046,7 +2125,11 @@ fun UmrahCompletedContent(
 }
 
 @Composable
-fun CompletedStepItem(title: String, subtitle: String) {
+fun CompletedStepItem(
+    title: String,
+    subtitle: String,
+    isEnglish: Boolean = false
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -2090,7 +2173,7 @@ fun CompletedStepItem(title: String, subtitle: String) {
             color = Color(0xFF0F766E).copy(alpha = 0.35f)
         ) {
             Text(
-                text = "সম্পন্ন",
+                text = if (isEnglish) "Completed" else "সম্পন্ন",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF2DD4BF),

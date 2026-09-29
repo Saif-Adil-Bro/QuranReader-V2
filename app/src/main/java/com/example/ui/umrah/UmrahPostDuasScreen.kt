@@ -20,14 +20,17 @@ import com.example.data.umrah.UmrahContentData
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UmrahPostDuasScreen(
+    isEnglish: Boolean = false,
     onNavigateBack: () -> Unit
 ) {
+    val duasList = UmrahContentData.getPostUmrahDuas(isEnglish)
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "দোয়াসমূহ",
+                        text = if (isEnglish) "Supplications & Duas" else "দোয়াসমূহ",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -37,7 +40,7 @@ fun UmrahPostDuasScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "ফিরে যান",
+                            contentDescription = if (isEnglish) "Back" else "ফিরে যান",
                             tint = Color.White
                         )
                     }
@@ -59,7 +62,10 @@ fun UmrahPostDuasScreen(
         ) {
             item {
                 Text(
-                    text = "আলহামদুলিল্লাহ, আপনার উমরাহ সম্পন্ন হয়েছে। উমরার আমলগুলো শেষ করার পর এখানে কিছু আমল এবং দোয়ার পরামর্শ দেওয়া হলো।",
+                    text = if (isEnglish)
+                        "Alhamdulillah, your Umrah is completed! After finishing your rituals, here are some recommended supplications to recite:"
+                    else
+                        "আলহামদুলিল্লাহ, আপনার উমরাহ সম্পন্ন হয়েছে। উমরার আমলগুলো শেষ করার পর এখানে কিছু আমল এবং দোয়ার পরামর্শ দেওয়া হলো।",
                     fontSize = 14.sp,
                     color = Color(0xFF94A3B8),
                     lineHeight = 20.sp,
@@ -67,7 +73,7 @@ fun UmrahPostDuasScreen(
                 )
             }
 
-            items(UmrahContentData.POST_UMRAH_DUAS) { duaItem ->
+            items(duasList) { duaItem ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -105,7 +111,7 @@ fun UmrahPostDuasScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = "অনুবাদ",
+                            text = if (isEnglish) "Translation" else "অনুবাদ",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFF10B981)
@@ -123,7 +129,7 @@ fun UmrahPostDuasScreen(
                         if (duaItem.reference.isNotBlank()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "সূত্র: ${duaItem.reference}",
+                                text = if (isEnglish) "Reference: ${duaItem.reference}" else "সূত্র: ${duaItem.reference}",
                                 fontSize = 12.sp,
                                 color = Color(0xFF64748B)
                             )

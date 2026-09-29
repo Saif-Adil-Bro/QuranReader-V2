@@ -32,6 +32,7 @@ import java.util.Locale
 @Composable
 fun UmrahHistoryScreen(
     viewModel: UmrahTrackerViewModel,
+    isEnglish: Boolean = false,
     onNavigateBack: () -> Unit,
     onSelectSession: (Long) -> Unit
 ) {
@@ -44,7 +45,7 @@ fun UmrahHistoryScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "উমরাহর ইতিহাস",
+                        text = if (isEnglish) "Umrah History" else "উমরাহর ইতিহাস",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -54,7 +55,7 @@ fun UmrahHistoryScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "ফিরে যান",
+                            contentDescription = if (isEnglish) "Back" else "ফিরে যান",
                             tint = Color.White
                         )
                     }
@@ -90,14 +91,17 @@ fun UmrahHistoryScreen(
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "এখনো কোনো উমরাহর ইতিহাস নেই",
+                        text = if (isEnglish) "No Umrah history recorded yet" else "এখনো কোনো উমরাহর ইতিহাস নেই",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "একটি উমরাহ শুরু করে সম্পন্ন করলে তার বিবরণ ও চক্করের সময়সূচী এখানে সংরক্ষিত থাকবে।",
+                        text = if (isEnglish)
+                            "When you start and complete an Umrah, your full timeline, checklist progress, and lap records will be saved here."
+                        else
+                            "একটি উমরাহ শুরু করে সম্পন্ন করলে তার বিবরণ ও চক্করের সময়সূচী এখানে সংরক্ষিত থাকবে।",
                         fontSize = 13.sp,
                         color = Color(0xFF94A3B8),
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -116,8 +120,9 @@ fun UmrahHistoryScreen(
             ) {
                 items(completedSessions, key = { it.id }) { session ->
                     val rawDateStr = dateFormat.format(Date(session.startTime)).uppercase(Locale.ENGLISH)
-                    val dateStr = DateUtil.toBengaliNumerals(rawDateStr)
-                    val timeStr = DateUtil.toBengaliNumerals(timeFormat.format(Date(session.startTime)))
+                    val rawTimeStr = timeFormat.format(Date(session.startTime))
+                    val dateStr = if (isEnglish) rawDateStr else DateUtil.toBengaliNumerals(rawDateStr)
+                    val timeStr = if (isEnglish) rawTimeStr else DateUtil.toBengaliNumerals(rawTimeStr)
 
                     Card(
                         modifier = Modifier
@@ -159,7 +164,10 @@ fun UmrahHistoryScreen(
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "$timeStr • ৭ তাওয়াফ চক্কর • ৭ সাঈ চক্কর",
+                                    text = if (isEnglish)
+                                        "$timeStr • 7 Tawaf Laps • 7 Sa'i Laps"
+                                    else
+                                        "$timeStr • ৭ তাওয়াফ চক্কর • ৭ সাঈ চক্কর",
                                     fontSize = 12.sp,
                                     color = Color(0xFF94A3B8)
                                 )
@@ -182,7 +190,7 @@ fun UmrahHistoryScreen(
                                             modifier = Modifier.size(12.dp)
                                         )
                                         Text(
-                                            text = "সম্পন্ন",
+                                            text = if (isEnglish) "Completed" else "সম্পন্ন",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             color = Color(0xFF34D399)
@@ -193,7 +201,7 @@ fun UmrahHistoryScreen(
                                 Spacer(modifier = Modifier.height(4.dp))
 
                                 Text(
-                                    text = "১০০%",
+                                    text = if (isEnglish) "100%" else "১০০%",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF10B981)

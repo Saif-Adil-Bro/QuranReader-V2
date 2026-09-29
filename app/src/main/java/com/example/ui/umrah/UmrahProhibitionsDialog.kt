@@ -18,12 +18,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.umrah.UmrahContentData
+import com.example.utils.DateUtil
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UmrahProhibitionsDialog(
+    isEnglish: Boolean = false,
     onDismiss: () -> Unit
 ) {
+    val prohibitions = UmrahContentData.getIhramProhibitions(isEnglish)
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color(0xFF131D26),
@@ -66,7 +70,7 @@ fun UmrahProhibitionsDialog(
                         )
                     }
                     Text(
-                        text = "ইহরাম অবস্থায় নিষিদ্ধ কার্যাবলী",
+                        text = if (isEnglish) "Prohibitions in Ihram" else "ইহরাম অবস্থায় নিষিদ্ধ কার্যাবলী",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -76,14 +80,17 @@ fun UmrahProhibitionsDialog(
                 IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "বন্ধ করুন",
+                        contentDescription = if (isEnglish) "Close" else "বন্ধ করুন",
                         tint = Color(0xFF94A3B8)
                     )
                 }
             }
 
             Text(
-                text = "ইহরাম বাঁধার পর নিম্নোক্ত কাজগুলো থেকে সম্পূর্ণ বিরত থাকা বাধ্যতামূলক:",
+                text = if (isEnglish)
+                    "After entering Ihram, strictly refraining from the following acts is obligatory:"
+                else
+                    "ইহরাম বাঁধার পর নিম্নোক্ত কাজগুলো থেকে সম্পূর্ণ বিরত থাকা বাধ্যতামূলক:",
                 fontSize = 13.sp,
                 color = Color(0xFF94A3B8),
                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp)
@@ -96,7 +103,7 @@ fun UmrahProhibitionsDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                itemsIndexed(UmrahContentData.IHRAM_PROHIBITIONS) { index, (title, desc) ->
+                itemsIndexed(prohibitions) { index, (title, desc) ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
@@ -117,7 +124,7 @@ fun UmrahProhibitionsDialog(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = com.example.utils.DateUtil.toBengaliNumerals(index + 1),
+                                    text = if (isEnglish) "${index + 1}" else DateUtil.toBengaliNumerals(index + 1),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFFEF4444)
@@ -156,7 +163,7 @@ fun UmrahProhibitionsDialog(
                 )
             ) {
                 Text(
-                    text = "ঠিক আছে, বুঝেছি",
+                    text = if (isEnglish) "Understood, Close" else "ঠিক আছে, বুঝেছি",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White

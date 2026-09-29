@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.umrah.UmrahChecklistEntity
+import com.example.data.umrah.UmrahContentData
 import com.example.data.umrah.UmrahRepository
 import com.example.data.umrah.UmrahRoundLogEntity
 import com.example.data.umrah.UmrahSessionEntity
@@ -37,6 +38,7 @@ import java.util.Locale
 @Composable
 fun UmrahSessionDetailScreen(
     sessionId: Long,
+    isEnglish: Boolean = false,
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -47,28 +49,41 @@ fun UmrahSessionDetailScreen(
     val roundLogs by repository.getRoundLogsForSession(sessionId).collectAsState(initial = emptyList())
 
     val amPmFormat = remember { SimpleDateFormat("hh:mm a", Locale.ENGLISH) }
-    val dateFormat = remember { SimpleDateFormat("dd MMMM, yyyy", Locale("bn", "BD")) }
+    val dateFormat = remember(isEnglish) {
+        if (isEnglish) SimpleDateFormat("dd MMMM, yyyy", Locale.ENGLISH)
+        else SimpleDateFormat("dd MMMM, yyyy", Locale("bn", "BD"))
+    }
 
     fun formatAmPmTime(timeMillis: Long?): String {
         if (timeMillis == null) return ""
-        return DateUtil.toBengaliNumerals(amPmFormat.format(Date(timeMillis)))
+        val formatted = amPmFormat.format(Date(timeMillis))
+        return if (isEnglish) formatted else DateUtil.toBengaliNumerals(formatted)
     }
 
     fun formatDuration(start: Long?, end: Long?): String {
-        if (start == null || end == null || end < start) return "০ মিনিট"
+        if (start == null || end == null || end < start) return if (isEnglish) "0 min" else "০ মিনিট"
         val totalSeconds = (end - start) / 1000
         val hours = totalSeconds / 3600
         val mins = (totalSeconds % 3600) / 60
-        return when {
-            hours > 0 && mins > 0 -> "${DateUtil.toBengaliNumerals(hours)} ঘণ্টা ${DateUtil.toBengaliNumerals(mins)} মিনিট"
-            hours > 0 -> "${DateUtil.toBengaliNumerals(hours)} ঘণ্টা"
-            mins > 0 -> "${DateUtil.toBengaliNumerals(mins)} মিনিট"
-            else -> "${DateUtil.toBengaliNumerals(totalSeconds)} সেকেন্ড"
+        return if (isEnglish) {
+            when {
+                hours > 0 && mins > 0 -> "${hours}h ${mins}m"
+                hours > 0 -> "${hours}h"
+                mins > 0 -> "${mins}m"
+                else -> "${totalSeconds}s"
+            }
+        } else {
+            when {
+                hours > 0 && mins > 0 -> "${DateUtil.toBengaliNumerals(hours)} ঘণ্টা ${DateUtil.toBengaliNumerals(mins)} মিনিট"
+                hours > 0 -> "${DateUtil.toBengaliNumerals(hours)} ঘণ্টা"
+                mins > 0 -> "${DateUtil.toBengaliNumerals(mins)} মিনিট"
+                else -> "${DateUtil.toBengaliNumerals(totalSeconds)} সেকেন্ড"
+            }
         }
     }
 
     fun formatAmPmRange(start: Long?, end: Long?): String {
-        if (start == null) return "০৩:১৮ PM - ০৩:১৯ PM"
+        if (start == null) return if (isEnglish) "03:18 PM - 03:19 PM" else "০৩:১৮ PM - ০৩:১৯ PM"
         val s = formatAmPmTime(start)
         val e = if (end != null) formatAmPmTime(end) else s
         return "$s - $e"
@@ -79,7 +94,7 @@ fun UmrahSessionDetailScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "সেশনের বিবরণ",
+                        text = if (isEnglish) "Session Details" else "সেশনের বিবরণ",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -89,7 +104,7 @@ fun UmrahSessionDetailScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "ফিরে যান",
+                            contentDescription = if (isEnglish) "Back" else "ফিরে যান",
                             tint = Color.White
                         )
                     }
@@ -107,7 +122,8 @@ fun UmrahSessionDetailScreen(
             }
         } else {
             val curr = session!!
-            val dateStr = DateUtil.toBengaliNumerals(dateFormat.format(Date(curr.startTime)))
+            val rawDate = dateFormat.format(Date(curr.startTime))
+            val dateStr = if (isEnglish) rawDate else DateUtil.toBengaliNumerals(rawDate)
 
             LazyColumn(
                 modifier = Modifier
@@ -117,7 +133,7 @@ fun UmrahSessionDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp)
             ) {
-                // Big Green Header Card (Screenshot 23)
+                // Header Card
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -137,7 +153,7 @@ fun UmrahSessionDetailScreen(
                                 color = Color(0xFF10B981).copy(alpha = 0.25f)
                             ) {
                                 Text(
-                                    text = "সম্পন্ন",
+                                    text = if (isEnglish) "Completed" else "সম্পন্ন",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Color(0xFF6EE7B7),
@@ -165,10 +181,10 @@ fun UmrahSessionDetailScreen(
                     }
                 }
 
-                // Section: সেশন টাইমলাইন (Timeline Card with vertical line)
+                // Section: Timeline
                 item {
                     Text(
-                        text = "সেশন টাইমলাইন",
+                        text = if (isEnglish) "Session Timeline" else "সেশন টাইমলাইন",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFFE2E8F0)
@@ -191,7 +207,7 @@ fun UmrahSessionDetailScreen(
                         ) {
                             TimelineStepRow(
                                 icon = Icons.Default.Person,
-                                title = "ইহরাম",
+                                title = if (isEnglish) "Ihram" else "ইহরাম",
                                 timeText = formatAmPmRange(curr.ihramStartTime ?: curr.startTime, curr.ihramEndTime ?: curr.startTime),
                                 durationText = formatDuration(curr.ihramStartTime ?: curr.startTime, curr.ihramEndTime ?: curr.startTime),
                                 isLast = false
@@ -199,7 +215,7 @@ fun UmrahSessionDetailScreen(
 
                             TimelineStepRow(
                                 icon = Icons.Default.Sync,
-                                title = "তাওয়াফ",
+                                title = if (isEnglish) "Tawaf" else "তাওয়াফ",
                                 timeText = formatAmPmRange(curr.tawafStartTime ?: curr.startTime, curr.tawafEndTime ?: curr.startTime),
                                 durationText = formatDuration(curr.tawafStartTime ?: curr.startTime, curr.tawafEndTime ?: curr.startTime),
                                 isLast = false
@@ -207,7 +223,7 @@ fun UmrahSessionDetailScreen(
 
                             TimelineStepRow(
                                 icon = Icons.Default.DirectionsWalk,
-                                title = "সাঈ",
+                                title = if (isEnglish) "Sa'i" else "সাঈ",
                                 timeText = formatAmPmRange(curr.saiStartTime ?: curr.startTime, curr.saiEndTime ?: curr.startTime),
                                 durationText = formatDuration(curr.saiStartTime ?: curr.startTime, curr.saiEndTime ?: curr.startTime),
                                 isLast = false
@@ -215,7 +231,7 @@ fun UmrahSessionDetailScreen(
 
                             TimelineStepRow(
                                 icon = Icons.Default.ContentCut,
-                                title = "হলক / কসর",
+                                title = if (isEnglish) "Halq / Qasr" else "হলক / কসর",
                                 timeText = formatAmPmRange(curr.halqStartTime ?: curr.startTime, curr.halqEndTime ?: curr.startTime),
                                 durationText = formatDuration(curr.halqStartTime ?: curr.startTime, curr.halqEndTime ?: curr.startTime),
                                 isLast = true
@@ -224,10 +240,10 @@ fun UmrahSessionDetailScreen(
                     }
                 }
 
-                // Section: রিচুয়াল লগ
+                // Section: Ritual Log
                 item {
                     Text(
-                        text = "রিচুয়াল লগ",
+                        text = if (isEnglish) "Ritual Log" else "রিচুয়াল লগ",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFFE2E8F0),
@@ -240,7 +256,7 @@ fun UmrahSessionDetailScreen(
                     val ihramItems = checklist.filter { it.stepKey == "IHRAM" }
                     RitualLogHeader(
                         icon = Icons.Default.Person,
-                        title = "ইহরাম",
+                        title = if (isEnglish) "Ihram Log" else "ইহরাম",
                         timeText = formatAmPmRange(curr.ihramStartTime ?: curr.startTime, curr.ihramEndTime ?: curr.startTime),
                         badgeText = "COMPLETED"
                     )
@@ -261,6 +277,7 @@ fun UmrahSessionDetailScreen(
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             ihramItems.forEach { item ->
+                                val text = UmrahContentData.getChecklistText(item.stepKey, item.itemIndex, isEnglish)
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
@@ -273,7 +290,7 @@ fun UmrahSessionDetailScreen(
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Text(
-                                        text = item.itemTextBn,
+                                        text = text,
                                         fontSize = 13.sp,
                                         color = Color(0xFFCBD5E1),
                                         lineHeight = 18.sp
@@ -289,9 +306,9 @@ fun UmrahSessionDetailScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     RitualLogHeader(
                         icon = Icons.Default.Sync,
-                        title = "তাওয়াফ লগ",
+                        title = if (isEnglish) "Tawaf Log" else "তাওয়াফ লগ",
                         timeText = formatAmPmRange(curr.tawafStartTime ?: curr.startTime, curr.tawafEndTime ?: curr.startTime),
-                        subtitle = "চক্কর সম্পন্ন ৭ / ৭"
+                        subtitle = if (isEnglish) "7 / 7 Laps Done" else "চক্কর সম্পন্ন ৭ / ৭"
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -306,18 +323,19 @@ fun UmrahSessionDetailScreen(
                         ) {
                             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(
-                                    text = "প্রস্তুতি",
+                                    text = if (isEnglish) "Preparation" else "প্রস্তুতি",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Color(0xFF10B981)
                                 )
                                 tawafPrep.forEach { item ->
+                                    val text = UmrahContentData.getChecklistText(item.stepKey, item.itemIndex, isEnglish)
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(15.dp))
-                                        Text(text = item.itemTextBn, fontSize = 12.sp, color = Color(0xFFCBD5E1))
+                                        Text(text = text, fontSize = 12.sp, color = Color(0xFFCBD5E1))
                                     }
                                 }
                             }
@@ -326,15 +344,17 @@ fun UmrahSessionDetailScreen(
                     }
                 }
 
-                // Tawaf 1 to 7 rounds logs (Screenshot 26 & 27)
+                // Tawaf 1 to 7 rounds logs
                 items((1..7).toList()) { roundNum ->
                     val tLogs = roundLogs.filter { it.ritualType == "TAWAF" && it.roundNumber == roundNum }
                     val logTime = if (tLogs.isNotEmpty()) formatAmPmTime(tLogs.first().completedAt) else formatAmPmTime(curr.tawafEndTime ?: curr.startTime)
+                    val label = if (isEnglish) "Lap $roundNum" else "${DateUtil.toBengaliNumerals(roundNum)} তম চক্কর"
 
                     RoundLogCard(
                         roundNumber = roundNum,
                         timeRange = "$logTime - $logTime",
-                        labelText = "${DateUtil.toBengaliNumerals(roundNum)} তম চক্কর"
+                        labelText = label,
+                        isEnglish = isEnglish
                     )
                 }
 
@@ -343,9 +363,9 @@ fun UmrahSessionDetailScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     RitualLogHeader(
                         icon = Icons.Default.DirectionsWalk,
-                        title = "সাঈ লগ",
+                        title = if (isEnglish) "Sa'i Log" else "সাঈ লগ",
                         timeText = formatAmPmRange(curr.saiStartTime ?: curr.startTime, curr.saiEndTime ?: curr.startTime),
-                        subtitle = "চক্কর সম্পন্ন ৭ / ৭"
+                        subtitle = if (isEnglish) "7 / 7 Laps Done" else "চক্কর সম্পন্ন ৭ / ৭"
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -359,18 +379,19 @@ fun UmrahSessionDetailScreen(
                         ) {
                             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(
-                                    text = "প্রস্তুতি",
+                                    text = if (isEnglish) "Preparation" else "প্রস্তুতি",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = Color(0xFF10B981)
                                 )
                                 saiPrep.forEach { item ->
+                                    val text = UmrahContentData.getChecklistText(item.stepKey, item.itemIndex, isEnglish)
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(15.dp))
-                                        Text(text = item.itemTextBn, fontSize = 12.sp, color = Color(0xFFCBD5E1))
+                                        Text(text = text, fontSize = 12.sp, color = Color(0xFFCBD5E1))
                                     }
                                 }
                             }
@@ -379,24 +400,26 @@ fun UmrahSessionDetailScreen(
                     }
                 }
 
-                // Sa'i 1 to 7 rounds logs (Screenshots 27 & 28)
+                // Sa'i 1 to 7 rounds logs
                 items((1..7).toList()) { roundNum ->
                     val sLogs = roundLogs.filter { it.ritualType == "SAI" && it.roundNumber == roundNum }
                     val logTime = if (sLogs.isNotEmpty()) formatAmPmTime(sLogs.first().completedAt) else formatAmPmTime(curr.saiEndTime ?: curr.startTime)
+                    val label = if (isEnglish) "Lap $roundNum" else "${DateUtil.toBengaliNumerals(roundNum)} তম চক্কর"
 
                     RoundLogCard(
                         roundNumber = roundNum,
                         timeRange = "$logTime - $logTime",
-                        labelText = "${DateUtil.toBengaliNumerals(roundNum)} তম চক্কর"
+                        labelText = label,
+                        isEnglish = isEnglish
                     )
                 }
 
-                // 4. HALQ / QASR LOG (Screenshot 28)
+                // 4. HALQ / QASR LOG
                 item {
                     Spacer(modifier = Modifier.height(12.dp))
                     RitualLogHeader(
                         icon = Icons.Default.ContentCut,
-                        title = "হলক / কসর",
+                        title = if (isEnglish) "Halq / Qasr Log" else "হলক / কসর",
                         timeText = formatAmPmRange(curr.halqStartTime ?: curr.startTime, curr.halqEndTime ?: curr.startTime),
                         badgeText = "COMPLETED"
                     )
@@ -422,7 +445,7 @@ fun UmrahSessionDetailScreen(
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                text = "হলক / কসর",
+                                text = if (isEnglish) "Halq / Qasr completed successfully" else "হলক / কসর সফলভাবে সম্পন্ন হয়েছে",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White
@@ -538,7 +561,8 @@ fun RitualLogHeader(
 fun RoundLogCard(
     roundNumber: Int,
     timeRange: String,
-    labelText: String
+    labelText: String,
+    isEnglish: Boolean = false
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -562,14 +586,14 @@ fun RoundLogCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = DateUtil.toBengaliNumerals(roundNumber),
+                            text = if (isEnglish) "$roundNumber" else DateUtil.toBengaliNumerals(roundNumber),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF34D399)
                         )
                     }
                     Text(
-                        text = "${DateUtil.toBengaliNumerals(roundNumber)} তম চক্কর",
+                        text = if (isEnglish) "Lap $roundNumber" else "${DateUtil.toBengaliNumerals(roundNumber)} তম চক্কর",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.White
@@ -581,7 +605,7 @@ fun RoundLogCard(
                     color = Color(0xFF064E3B)
                 ) {
                     Text(
-                        text = "সম্পন্ন",
+                        text = if (isEnglish) "Done" else "সম্পন্ন",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF34D399),

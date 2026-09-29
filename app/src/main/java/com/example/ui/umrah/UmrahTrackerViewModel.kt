@@ -26,6 +26,14 @@ data class UmrahUiState(
 
 class UmrahTrackerViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = UmrahRepository.getInstance(application)
+    private val settingsRepo = com.example.data.repository.SettingsRepository.getInstance(application)
+
+    val appLanguage: StateFlow<String> = settingsRepo.appLanguageFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = com.example.utils.LocaleHelper.getLanguage(application)
+        )
 
     private val _uiState = MutableStateFlow(UmrahUiState(isLoading = true))
     val uiState: StateFlow<UmrahUiState> = _uiState.asStateFlow()

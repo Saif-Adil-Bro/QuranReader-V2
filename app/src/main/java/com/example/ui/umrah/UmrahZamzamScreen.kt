@@ -18,18 +18,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.umrah.UmrahContentData
+import com.example.utils.DateUtil
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UmrahZamzamScreen(
+    isEnglish: Boolean = false,
     onNavigateBack: () -> Unit
 ) {
+    val etiquettes = UmrahContentData.getZamzamEtiquettes(isEnglish)
+    val recommendedDuaTranslation = if (isEnglish) UmrahContentData.ZAMZAM_RECOMMENDED_DUA_EN else UmrahContentData.ZAMZAM_RECOMMENDED_DUA_BN
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "জমজমের পানি",
+                        text = if (isEnglish) "Zamzam Water" else "জমজমের পানি",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -39,7 +44,7 @@ fun UmrahZamzamScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "ফিরে যান",
+                            contentDescription = if (isEnglish) "Back" else "ফিরে যান",
                             tint = Color.White
                         )
                     }
@@ -61,14 +66,14 @@ fun UmrahZamzamScreen(
         ) {
             item {
                 Text(
-                    text = "যমযম পানি পান করার আদব",
+                    text = if (isEnglish) "Etiquettes of Drinking Zamzam Water" else "যমযম পানি পান করার আদব",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFFE2E8F0)
                 )
             }
 
-            itemsIndexed(UmrahContentData.ZAMZAM_ETIQUETTES) { index, etiquette ->
+            itemsIndexed(etiquettes) { index, etiquette ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -81,7 +86,7 @@ fun UmrahZamzamScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = com.example.utils.DateUtil.toBengaliNumerals(index + 1),
+                            text = if (isEnglish) "${index + 1}" else DateUtil.toBengaliNumerals(index + 1),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -101,7 +106,7 @@ fun UmrahZamzamScreen(
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "পরামর্শিত দোয়া",
+                    text = if (isEnglish) "Recommended Supplication" else "পরামর্শিত দোয়া",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFFE2E8F0)
@@ -146,7 +151,7 @@ fun UmrahZamzamScreen(
                                     .background(Color(0xFF10B981), RoundedCornerShape(2.dp))
                             )
                             Text(
-                                text = UmrahContentData.ZAMZAM_RECOMMENDED_DUA_BN,
+                                text = recommendedDuaTranslation,
                                 fontSize = 14.sp,
                                 color = Color(0xFF94A3B8),
                                 lineHeight = 21.sp
