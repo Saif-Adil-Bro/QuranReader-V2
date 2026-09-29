@@ -895,24 +895,23 @@ private fun VisualSunPathSection(
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                val isDuhaOnNode = index == 1 && isCurrent && currentMinutes >= prayer.timeMinutes + 16
+                val sunriseMinutes = prayers.getOrNull(1)?.timeMinutes ?: (6 * 60)
+                val duhaStartMinutes = sunriseMinutes + 16
+                val dhuhrMinutes = prayers.getOrNull(2)?.timeMinutes ?: (12 * 60)
+                val duhaEndMinutes = (dhuhrMinutes - 4).coerceAtLeast(duhaStartMinutes)
+                val isDuhaOnNode = index == 1 && isCurrent && (currentMinutes in duhaStartMinutes until duhaEndMinutes)
                 val nodeTitle = if (isDuhaOnNode) {
-                    if (isEnglish) "Chasht / Duha" else "চাশত / দুহা"
+                    if (isEnglish) "Chasht & Duha" else "চাশত ও দুহা"
                 } else {
                     if (isEnglish) prayer.englishName else prayer.bengaliName
                 }
                 val nodeTimeString = if (isDuhaOnNode) {
-                    val ishraqFormatted = if (schedule.ishraqStartTimeFormatted.isNotBlank()) {
-                        if (isEnglish) DateUtil.toEnglishNumerals(schedule.ishraqStartTimeFormatted) else schedule.ishraqStartTimeFormatted
-                    } else {
-                        val duhaHour = ((prayer.timeMinutes + 16) / 60)
-                        val duhaMin = ((prayer.timeMinutes + 16) % 60)
-                        val duhaHour12 = if (duhaHour == 0) 12 else if (duhaHour > 12) duhaHour - 12 else duhaHour
-                        val duhaAmPm = if (duhaHour >= 12) "PM" else "AM"
-                        val timeDigits = String.format(java.util.Locale.US, "%02d:%02d", duhaHour12, duhaMin)
-                        if (isEnglish) "$timeDigits $duhaAmPm" else "${DateUtil.toBengaliNumerals(timeDigits)} $duhaAmPm"
-                    }
-                    ishraqFormatted
+                    val duhaHour = duhaStartMinutes / 60
+                    val duhaMin = duhaStartMinutes % 60
+                    val duhaHour12 = if (duhaHour == 0) 12 else if (duhaHour > 12) duhaHour - 12 else duhaHour
+                    val duhaAmPm = if (duhaHour >= 12) "PM" else "AM"
+                    val timeDigits = String.format(java.util.Locale.US, "%02d:%02d", duhaHour12, duhaMin)
+                    if (isEnglish) "$timeDigits $duhaAmPm" else "${DateUtil.toBengaliNumerals(timeDigits)} $duhaAmPm"
                 } else {
                     if (isEnglish) prayer.timeStringEn else prayer.timeString
                 }

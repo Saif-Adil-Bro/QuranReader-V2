@@ -168,9 +168,28 @@ fun PrayerTimesDetailSheet(
         }
     }
 
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = false
+    )
+
+    LaunchedEffect(Unit) {
+        sheetState.expand()
+    }
+
+    androidx.activity.compose.BackHandler(enabled = true) {
+        coroutineScope.launch {
+            if (sheetState.currentValue == SheetValue.Expanded) {
+                sheetState.partialExpand()
+            } else {
+                sheetState.hide()
+                onDismiss()
+            }
+        }
+    }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = sheetState,
         containerColor = DarkBackground,
         dragHandle = {
             Box(
@@ -200,12 +219,21 @@ fun PrayerTimesDetailSheet(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
-                        onClick = onDismiss,
+                        onClick = {
+                            coroutineScope.launch {
+                                if (sheetState.currentValue == SheetValue.Expanded) {
+                                    sheetState.partialExpand()
+                                } else {
+                                    sheetState.hide()
+                                    onDismiss()
+                                }
+                            }
+                        },
                         modifier = Modifier.size(38.dp)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = if (effectiveIsEnglish) "Close" else "বন্ধ করুন",
+                            contentDescription = if (effectiveIsEnglish) "Back" else "ফিরে যান",
                             tint = Color.White,
                             modifier = Modifier.size(22.dp)
                         )
@@ -294,6 +322,26 @@ fun PrayerTimesDetailSheet(
                                 modifier = Modifier.size(20.dp)
                             )
                         }
+                    }
+
+                    Spacer(modifier = Modifier.width(2.dp))
+
+                    // Close button
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                sheetState.hide()
+                                onDismiss()
+                            }
+                        },
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = if (effectiveIsEnglish) "Close" else "বন্ধ করুন",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }
