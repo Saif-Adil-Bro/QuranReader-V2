@@ -6,7 +6,9 @@ import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
 import android.media.MediaPlayer
+import android.media.Ringtone
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.CombinedVibration
 import android.os.VibrationEffect
@@ -29,19 +31,36 @@ object PrayerSoundManager {
 
     private var activeAudioTrack: AudioTrack? = null
     private var activeMediaPlayer: MediaPlayer? = null
+    private var activeRingtone: Ringtone? = null
     private var activeTts: TextToSpeech? = null
     private var playbackJob: Job? = null
+    private var autoStopJob: Job? = null
     private var vibrator: Vibrator? = null
 
     var currentlyPlayingType: PrayerAlarmSoundType? = null
         private set
 
-    fun isPlaying(): Boolean = playbackJob?.isActive == true || activeMediaPlayer?.isPlaying == true || activeAudioTrack?.playState == AudioTrack.PLAYSTATE_PLAYING
+    fun isPlaying(): Boolean =
+        playbackJob?.isActive == true ||
+        activeMediaPlayer?.isPlaying == true ||
+        activeAudioTrack?.playState == AudioTrack.PLAYSTATE_PLAYING ||
+        (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && activeRingtone?.isPlaying == true) ||
+        (activeRingtone != null && currentlyPlayingType != null)
 
     fun stopAll() {
         try {
+            autoStopJob?.cancel()
+            autoStopJob = null
+        } catch (_: Exception) {}
+
+        try {
             playbackJob?.cancel()
             playbackJob = null
+        } catch (_: Exception) {}
+
+        try {
+            activeRingtone?.stop()
+            activeRingtone = null
         } catch (_: Exception) {}
 
         try {
@@ -64,6 +83,7 @@ object PrayerSoundManager {
 
         try {
             vibrator?.cancel()
+            vibrator = null
         } catch (_: Exception) {}
 
         currentlyPlayingType = null
@@ -157,39 +177,96 @@ object PrayerSoundManager {
         context: Context,
         uriString: String?,
         isLooping: Boolean = false,
+        durationSeconds: Int = 180,
         onCompletion: () -> Unit = {}
     ): Boolean {
         return try {
-            val uri = if (!uriString.isNullOrBlank()) {
-                android.net.Uri.parse(uriString)
+            val uri: Uri = if (!uriString.isNullOrBlank()) {
+                Uri.parse(uriString)
             } else {
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                     ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
             } ?: return false
 
+            // Try RingtoneManager API first (Official Android Ringtone Player with full URI permission handling)
+            try {
+                val ringtone = RingtoneManager.getRingtone(context, uri)
+                if (ringtone != null) {
+                    val audioAttributes = AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build()
+                    ringtone.audioAttributes = audioAttributes
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        ringtone.isLooping = isLooping
+                    }
+                    ringtone.play()
+                    activeRingtone = ringtone
+
+                    // Track playback completion / timeout
+                    playbackJob?.cancel()
+                    playbackJob = CoroutineScope(Dispatchers.Main).launch {
+                        val maxWaitMillis = durationSeconds * 1000L
+                        var elapsed = 0L
+                        val checkInterval = 500L
+                        while (elapsed < maxWaitMillis) {
+                            delay(checkInterval)
+                            elapsed += checkInterval
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                if (!ringtone.isPlaying) {
+                                    break
+                                }
+                            }
+                        }
+                        if (activeRingtone == ringtone) {
+                            ringtone.stop()
+                            activeRingtone = null
+                            currentlyPlayingType = null
+                            onCompletion()
+                        }
+                    }
+                    return true
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+
+            // Fallback to MediaPlayer with openAssetFileDescriptor
             activeMediaPlayer?.stop()
             activeMediaPlayer?.release()
             activeMediaPlayer = null
 
-            activeMediaPlayer = MediaPlayer().apply {
-                setDataSource(context, uri)
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .build()
-                )
-                this.isLooping = isLooping
-                setOnCompletionListener {
-                    if (!isLooping) {
-                        currentlyPlayingType = null
-                        onCompletion()
-                    }
+            val mp = MediaPlayer()
+            try {
+                val pfd = context.contentResolver.openAssetFileDescriptor(uri, "r")
+                if (pfd != null) {
+                    mp.setDataSource(pfd.fileDescriptor, pfd.startOffset, pfd.length)
+                    pfd.close()
+                } else {
+                    mp.setDataSource(context, uri)
                 }
-                prepare()
-                start()
+            } catch (_: Exception) {
+                mp.setDataSource(context, uri)
             }
-            activeMediaPlayer != null
+
+            mp.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            mp.isLooping = isLooping
+            mp.setOnCompletionListener {
+                if (!isLooping) {
+                    currentlyPlayingType = null
+                    onCompletion()
+                }
+            }
+            mp.prepare()
+            mp.start()
+            activeMediaPlayer = mp
+            true
         } catch (e: Exception) {
             e.printStackTrace()
             false
@@ -210,13 +287,19 @@ object PrayerSoundManager {
         currentlyPlayingType = soundType
 
         if (soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE) {
-            val started = playCustomRingtone(context, customRingtoneUri, isLooping = false, onCompletion = onCompletion)
+            val started = playCustomRingtone(
+                context = context,
+                uriString = customRingtoneUri,
+                isLooping = false,
+                durationSeconds = 15,
+                onCompletion = onCompletion
+            )
             if (started) return
         }
 
         val rawResId = getRawResourceId(context, soundType, prayerName)
         if (rawResId != 0) {
-            val started = playRawSound(context, rawResId, isLooping = false, onCompletion = onCompletion)
+            val started = playRawSound(context, rawResId, isLooping = false, isAlarmUsage = true, onCompletion = onCompletion)
             if (started) return
         }
 
@@ -224,7 +307,6 @@ object PrayerSoundManager {
             try {
                 when (soundType) {
                     PrayerAlarmSoundType.SILENT -> {
-                        // Silent - no sound
                         delay(400)
                         currentlyPlayingType = null
                         onCompletion()
@@ -289,13 +371,15 @@ object PrayerSoundManager {
 
     /**
      * Play when an ALARM triggers in background / receiver
+     * Automatic timeout safety: stops automatically after max 180 seconds or when Azan finishes.
      */
     fun triggerAlarmSoundAndVibrate(
         context: Context,
         soundType: PrayerAlarmSoundType,
         prayerName: PrayerName,
         enableVibration: Boolean,
-        customRingtoneUri: String? = null
+        customRingtoneUri: String? = null,
+        onPlaybackFinished: () -> Unit = {}
     ) {
         stopAll()
 
@@ -307,8 +391,24 @@ object PrayerSoundManager {
             return
         }
 
+        // Automatic safety timer: Guarantee all sounds and vibration stop after 3 minutes (180s)
+        autoStopJob = CoroutineScope(Dispatchers.Main).launch {
+            delay(180_000L) // 3 minutes timeout
+            stopAll()
+            onPlaybackFinished()
+        }
+
         if (soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE) {
-            val started = playCustomRingtone(context, customRingtoneUri, isLooping = true)
+            val started = playCustomRingtone(
+                context = context,
+                uriString = customRingtoneUri,
+                isLooping = true,
+                durationSeconds = 180,
+                onCompletion = {
+                    stopAll()
+                    onPlaybackFinished()
+                }
+            )
             if (started) {
                 currentlyPlayingType = soundType
                 return
@@ -317,7 +417,17 @@ object PrayerSoundManager {
 
         val rawResId = getRawResourceId(context, soundType, prayerName)
         if (rawResId != 0) {
-            val played = playRawSound(context, rawResId, isLooping = true)
+            // Play complete Azan once (isLooping = false). When Azan completes, automatically stop.
+            val played = playRawSound(
+                context = context,
+                rawResId = rawResId,
+                isLooping = false,
+                isAlarmUsage = true,
+                onCompletion = {
+                    stopAll()
+                    onPlaybackFinished()
+                }
+            )
             if (played) {
                 currentlyPlayingType = soundType
                 return
@@ -346,12 +456,32 @@ object PrayerSoundManager {
                             delay(3000)
                         }
                     }
+                    PrayerAlarmSoundType.BEEP -> {
+                        repeat(15) {
+                            playSynthesizedBeep()
+                            delay(1500)
+                        }
+                    }
+                    PrayerAlarmSoundType.RING -> {
+                        repeat(10) {
+                            playSynthesizedMelody()
+                            delay(3000)
+                        }
+                    }
+                    PrayerAlarmSoundType.VOICE_NAME -> {
+                        val announcement = getVoiceAnnouncementText(context, prayerName)
+                        repeat(3) {
+                            speakText(context, announcement)
+                            delay(4000)
+                        }
+                    }
                     else -> {}
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
-                currentlyPlayingType = null
+                stopAll()
+                onPlaybackFinished()
             }
         }
     }

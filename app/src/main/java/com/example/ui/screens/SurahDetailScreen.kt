@@ -1311,6 +1311,7 @@ fun AyahCard(
                         ayahNumber = ayah.numberInSurah,
                         arabicFontSize = arabicFontSize,
                         arabicFont = arabicFont,
+                        arabicFontName = arabicFontName,
                         showTransliteration = showTransliteration,
                         onWordPlay = { onPlayWord(it) },
                         currentPlayingWordUrl = currentPlayingWordUrl,

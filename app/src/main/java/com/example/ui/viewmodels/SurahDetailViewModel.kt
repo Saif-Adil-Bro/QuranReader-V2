@@ -454,17 +454,25 @@ class SurahDetailViewModel(
         if (inMemory != null && inMemory.isNotEmpty()) {
             _uiState.value = UiState.Success(inMemory)
         } else {
-            val currentState = _uiState.value
-            val isCurrentSurah = (currentState as? UiState.Success)?.data?.firstOrNull()?.surahNumber == surahNumber
-            if (!isCurrentSurah) {
-                _uiState.value = UiState.Loading
+            // Immediate fast offline load to open page instantly
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val fastOffline = repository.getFastOfflineSurahAyahs(surahNumber)
+                    if (fastOffline.isNotEmpty() && currentLoadedSurahNumber == surahNumber) {
+                        _uiState.value = UiState.Success(fastOffline)
+                    }
+                } catch (e: Exception) {
+                    // Ignore and let full combined loader handle
+                }
             }
         }
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val combinedAyahs = repository.getSurahDetailsCombined(surahNumber, tanzilTextStyle.value)
-                _uiState.value = UiState.Success(combinedAyahs)
+                if (currentLoadedSurahNumber == surahNumber) {
+                    _uiState.value = UiState.Success(combinedAyahs)
+                }
             } catch (e: Exception) {
                 if (_uiState.value !is UiState.Success) {
                     _uiState.value = UiState.Error(e.message ?: "Failed to load Surah details")
@@ -545,13 +553,33 @@ class SurahDetailViewModel(
         currentLoadedJuzNumber = juzNumber
         currentLoadedSurahNumber = null
         lastVisibleAyahNumber = 1
-        viewModelScope.launch {
-            _uiState.value = UiState.Loading
+
+        val inMemory = repository.getCachedJuzDetails(juzNumber)
+        if (inMemory != null && inMemory.isNotEmpty()) {
+            _uiState.value = UiState.Success(inMemory)
+        } else {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val fastOffline = repository.getFastOfflineJuzAyahs(juzNumber)
+                    if (fastOffline.isNotEmpty() && currentLoadedJuzNumber == juzNumber) {
+                        _uiState.value = UiState.Success(fastOffline)
+                    }
+                } catch (e: Exception) {
+                    // Ignore and let full combined loader handle
+                }
+            }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val combinedAyahs = repository.getJuzCombined(juzNumber)
-                _uiState.value = UiState.Success(combinedAyahs)
+                if (currentLoadedJuzNumber == juzNumber) {
+                    _uiState.value = UiState.Success(combinedAyahs)
+                }
             } catch (e: Exception) {
-                _uiState.value = UiState.Error(e.message ?: "Failed to load Juz details")
+                if (_uiState.value !is UiState.Success) {
+                    _uiState.value = UiState.Error(e.message ?: "Failed to load Juz details")
+                }
             }
         }
     }

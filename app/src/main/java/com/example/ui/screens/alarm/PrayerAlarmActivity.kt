@@ -110,6 +110,9 @@ class PrayerAlarmActivity : ComponentActivity() {
                 },
                 onOpenApp = {
                     handleOpenApp(notifId)
+                },
+                onAutoDismiss = {
+                    handleAutoDismiss(prayerName, notifId, isEnglish)
                 }
             )
         }
@@ -163,6 +166,17 @@ class PrayerAlarmActivity : ComponentActivity() {
         finish()
     }
 
+    private fun handleAutoDismiss(prayerName: PrayerName, notifId: Int, isEnglish: Boolean = false) {
+        PrayerSoundManager.stopAll()
+        if (notifId != -1) {
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.cancel(notifId)
+        }
+        // Auto-snooze so the user does not miss the prayer completely if they were away
+        PrayerNotificationHelper.snoozePrayerAlarm(this, prayerName)
+        finish()
+    }
+
     private fun handleOpenApp(notifId: Int) {
         PrayerSoundManager.stopAll()
         if (notifId != -1) {
@@ -179,6 +193,7 @@ class PrayerAlarmActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        PrayerSoundManager.stopAll()
         super.onDestroy()
     }
 }
@@ -191,10 +206,13 @@ fun PrayerAlarmScreen(
     isEnglish: Boolean = false,
     onStop: () -> Unit,
     onSnooze: () -> Unit,
-    onOpenApp: () -> Unit
+    onOpenApp: () -> Unit,
+    onAutoDismiss: () -> Unit = {}
 ) {
     var currentTimeString by remember { mutableStateOf("") }
+    var remainingSeconds by remember { androidx.compose.runtime.mutableIntStateOf(180) }
 
+    // Live Clock
     LaunchedEffect(isEnglish) {
         while (true) {
             val now = LocalTime.now()
@@ -204,6 +222,20 @@ fun PrayerAlarmScreen(
             delay(1000L)
         }
     }
+
+    // Auto-dismiss countdown timer (3 minutes = 180 seconds)
+    LaunchedEffect(Unit) {
+        while (remainingSeconds > 0) {
+            delay(1000L)
+            remainingSeconds--
+        }
+        onAutoDismiss()
+    }
+
+    val countdownMinutes = remainingSeconds / 60
+    val countdownSecs = remainingSeconds % 60
+    val countdownText = String.format(Locale.US, "%02d:%02d", countdownMinutes, countdownSecs)
+    val displayCountdown = if (isEnglish) "Auto-closes in: $countdownText" else "স্বয়ংক্রিয়ভাবে বন্ধ হবে: ${DateUtil.toBengaliNumerals(countdownText)}"
 
     val arabicCalligraphy = when (prayerName) {
         PrayerName.FAJR -> "الصَّلَاةُ خَيْرٌ مِنَ النَّوْمِ"
@@ -269,7 +301,7 @@ fun PrayerAlarmScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "ওয়াক্তের অ্যালার্ম বাজছে",
+                            text = if (isEnglish) "Prayer Alarm Ringing" else "ওয়াক্তের অ্যালার্ম বাজছে",
                             color = Color.White,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium
@@ -285,6 +317,16 @@ fun PrayerAlarmScreen(
                     fontSize = 36.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Auto-close countdown badge
+                Text(
+                    text = displayCountdown,
+                    color = Color.White.copy(alpha = 0.65f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal
                 )
             }
 

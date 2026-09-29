@@ -250,6 +250,7 @@ fun PrayerSunPathCard(
                 prayers = prayers,
                 currentIndex = currentIndex,
                 currentMinutes = currentMinutes,
+                schedule = schedule,
                 isEnglish = isEnglish,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -702,6 +703,7 @@ private fun VisualSunPathSection(
     prayers: List<VisualPrayerPoint>,
     currentIndex: Int,
     currentMinutes: Int,
+    schedule: DailyPrayerSchedule,
     isEnglish: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -893,10 +895,26 @@ private fun VisualSunPathSection(
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                val nodeTitle = if (index == 1 && isCurrent && currentMinutes >= prayer.timeMinutes + 16) {
+                val isDuhaOnNode = index == 1 && isCurrent && currentMinutes >= prayer.timeMinutes + 16
+                val nodeTitle = if (isDuhaOnNode) {
                     if (isEnglish) "Chasht / Duha" else "চাশত / দুহা"
                 } else {
                     if (isEnglish) prayer.englishName else prayer.bengaliName
+                }
+                val nodeTimeString = if (isDuhaOnNode) {
+                    val ishraqFormatted = if (schedule.ishraqStartTimeFormatted.isNotBlank()) {
+                        if (isEnglish) DateUtil.toEnglishNumerals(schedule.ishraqStartTimeFormatted) else schedule.ishraqStartTimeFormatted
+                    } else {
+                        val duhaHour = ((prayer.timeMinutes + 16) / 60)
+                        val duhaMin = ((prayer.timeMinutes + 16) % 60)
+                        val duhaHour12 = if (duhaHour == 0) 12 else if (duhaHour > 12) duhaHour - 12 else duhaHour
+                        val duhaAmPm = if (duhaHour >= 12) "PM" else "AM"
+                        val timeDigits = String.format(java.util.Locale.US, "%02d:%02d", duhaHour12, duhaMin)
+                        if (isEnglish) "$timeDigits $duhaAmPm" else "${DateUtil.toBengaliNumerals(timeDigits)} $duhaAmPm"
+                    }
+                    ishraqFormatted
+                } else {
+                    if (isEnglish) prayer.timeStringEn else prayer.timeString
                 }
                 Text(
                     text = nodeTitle,
@@ -907,7 +925,7 @@ private fun VisualSunPathSection(
                     maxLines = 1
                 )
                 Text(
-                    text = (if (isEnglish) prayer.timeStringEn else prayer.timeString).replace(" ", "\n"),
+                    text = nodeTimeString.replace(" ", "\n"),
                     color = if (isCurrent) Color.White else SoftWhite.copy(alpha = 0.85f),
                     fontSize = if (isCurrent) 7.5.sp else 6.5.sp,
                     fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal,

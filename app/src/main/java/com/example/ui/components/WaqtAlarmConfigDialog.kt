@@ -147,6 +147,19 @@ fun WaqtAlarmConfigDialog(
                 customRingtoneTitle = title
                 selectedSoundType = PrayerAlarmSoundType.CUSTOM_RINGTONE
                 selectedCategory = AlertCategory.ALARM
+
+                // Play preview immediately so user hears the picked ringtone
+                PrayerSoundManager.stopAll()
+                previewPlayingSoundType = PrayerAlarmSoundType.CUSTOM_RINGTONE
+                PrayerSoundManager.playPreview(
+                    context = context,
+                    soundType = PrayerAlarmSoundType.CUSTOM_RINGTONE,
+                    prayerName = prayerName,
+                    customRingtoneUri = uri.toString()
+                ) {
+                    previewPlayingSoundType = null
+                }
+
                 val msg = if (isEn) "Ringtone selected: $title" else "রিংটোন নির্বাচিত: $title"
                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             }

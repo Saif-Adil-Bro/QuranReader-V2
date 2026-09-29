@@ -18,7 +18,7 @@ abstract class QuranWbwDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     QuranWbwDatabase::class.java,
-                    "quran_wbw_database_v1"
+                    "quran_wbw_database_v3"
                 )
                 .createFromAsset("databases/quran_wbw.db")
                 .fallbackToDestructiveMigration()

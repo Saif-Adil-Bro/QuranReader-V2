@@ -193,7 +193,56 @@ class QuranRepository(
         tafsirIdsStr: String,
         translationIdsStr: String
     ): List<CombinedAyah> {
-        return enrichAyahsWithLocalTranslationsAndTafsirs(list, tafsirIdsStr, translationIdsStr)
+        return enrichWithOfflineWbwWords(enrichAyahsWithLocalTranslationsAndTafsirs(list, tafsirIdsStr, translationIdsStr))
+    }
+
+    suspend fun enrichWithOfflineWbwWords(list: List<CombinedAyah>): List<CombinedAyah> {
+        if (list.isEmpty()) return list
+        val needsWords = list.any { it.words.isEmpty() }
+        if (!needsWords) return list
+
+        val surahsInList = list.map {
+            if (it.surahNumber > 0) it.surahNumber else com.example.data.QuranData.getSurahAndAyahFromGlobal(it.number).first
+        }.distinct()
+
+        val wordsBySurahAndAyah = mutableMapOf<Pair<Int, Int>, List<com.example.data.model.QuranComWord>>()
+        for (sNum in surahsInList) {
+            try {
+                val dbWords = quranWbwDao.getWordsBySurah(sNum)
+                if (dbWords.isNotEmpty()) {
+                    val grouped = dbWords.groupBy { it.ayahNumber }
+                    for ((ayahNum, entityList) in grouped) {
+                        wordsBySurahAndAyah[Pair(sNum, ayahNum)] = entityList.map { w ->
+                            com.example.data.model.QuranComWord(
+                                id = w.id,
+                                position = w.position,
+                                charTypeName = w.charTypeName ?: "word",
+                                textUthmani = w.textUthmani,
+                                translation = com.example.data.model.QuranComWordTranslation(text = w.translationBengali),
+                                transliteration = null,
+                                audioUrl = w.audioUrl
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        return list.map { ayah ->
+            if (ayah.words.isNotEmpty()) {
+                ayah
+            } else {
+                val sNum = if (ayah.surahNumber > 0) ayah.surahNumber else com.example.data.QuranData.getSurahAndAyahFromGlobal(ayah.number).first
+                val words = wordsBySurahAndAyah[Pair(sNum, ayah.numberInSurah)] ?: emptyList()
+                if (words.isNotEmpty()) {
+                    ayah.copy(words = words)
+                } else {
+                    ayah
+                }
+            }
+        }
     }
 
     suspend fun isTranslationDownloaded(translationId: String): Boolean {
@@ -545,6 +594,100 @@ class QuranRepository(
         return cachedSurahDetails.entries.find { it.key.startsWith(prefix) }?.value
     }
 
+    fun getCachedJuzDetails(juzNumber: Int): List<CombinedAyah>? {
+        val prefix = "${juzNumber}_"
+        return cachedJuzDetails.entries.find { it.key.startsWith(prefix) }?.value
+    }
+
+    suspend fun getFastOfflineSurahAyahs(surahNumber: Int): List<CombinedAyah> {
+        val offlineAyahs = offlineDao.getAyahsBySurah(surahNumber)
+        if (offlineAyahs.isEmpty()) return emptyList()
+
+        val wordsByAyah = try {
+            val allWords = quranWbwDao.getWordsBySurah(surahNumber)
+            allWords.groupBy { it.ayahNumber }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            emptyMap<Int, List<com.example.data.local.offline.QuranWordEntity>>()
+        }
+
+        val rawList = offlineAyahs.map { ayahEntity ->
+            val ayahWords = wordsByAyah[ayahEntity.numberInSurah]?.map { w ->
+                com.example.data.model.QuranComWord(
+                    id = w.id,
+                    position = w.position,
+                    charTypeName = w.charTypeName ?: "word",
+                    textUthmani = w.textUthmani,
+                    translation = com.example.data.model.QuranComWordTranslation(text = w.translationBengali),
+                    transliteration = null,
+                    audioUrl = w.audioUrl
+                )
+            } ?: emptyList()
+
+            CombinedAyah(
+                number = ayahEntity.globalNumber,
+                numberInSurah = ayahEntity.numberInSurah,
+                page = ayahEntity.page,
+                juz = ayahEntity.juz,
+                surahNumber = surahNumber,
+                arabicText = ayahEntity.arabicText,
+                bengaliText = ayahEntity.bengaliText,
+                tafsirText = null,
+                audioUrl = null,
+                words = ayahWords,
+                textUthmaniTajweed = null
+            )
+        }
+        return cleanCombinedAyahList(rawList)
+    }
+
+    suspend fun getFastOfflineJuzAyahs(juzNumber: Int): List<CombinedAyah> {
+        val offlineAyahs = offlineDao.getAyahsByJuz(juzNumber)
+        if (offlineAyahs.isEmpty()) return emptyList()
+
+        val surahsInJuz = offlineAyahs.map { it.surahNumber }.distinct()
+        val wordsBySurahAndAyah = mutableMapOf<Pair<Int, Int>, List<com.example.data.model.QuranComWord>>()
+        for (sNum in surahsInJuz) {
+            try {
+                val dbWords = quranWbwDao.getWordsBySurah(sNum)
+                val grouped = dbWords.groupBy { it.ayahNumber }
+                for ((ayahNum, entityList) in grouped) {
+                    wordsBySurahAndAyah[Pair(sNum, ayahNum)] = entityList.map { w ->
+                        com.example.data.model.QuranComWord(
+                            id = w.id,
+                            position = w.position,
+                            charTypeName = w.charTypeName ?: "word",
+                            textUthmani = w.textUthmani,
+                            translation = com.example.data.model.QuranComWordTranslation(text = w.translationBengali),
+                            transliteration = null,
+                            audioUrl = w.audioUrl
+                        )
+                    }
+                }
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            }
+        }
+
+        val rawList = offlineAyahs.map { ayahEntity ->
+            val words = wordsBySurahAndAyah[Pair(ayahEntity.surahNumber, ayahEntity.numberInSurah)] ?: emptyList()
+            CombinedAyah(
+                number = ayahEntity.globalNumber,
+                numberInSurah = ayahEntity.numberInSurah,
+                page = ayahEntity.page,
+                juz = ayahEntity.juz,
+                surahNumber = ayahEntity.surahNumber,
+                arabicText = ayahEntity.arabicText,
+                bengaliText = ayahEntity.bengaliText,
+                tafsirText = null,
+                audioUrl = null,
+                words = words,
+                textUthmaniTajweed = null
+            )
+        }
+        return cleanCombinedAyahList(rawList)
+    }
+
     fun preloadPopularSurahs() {
         repositoryScope.launch(Dispatchers.IO) {
             try {
@@ -853,9 +996,13 @@ class QuranRepository(
         val cacheKey = "${surahNumber}_${tafsirIdsStr}_${translationIdsStr}_${audioEdition}_${arabicEdition}"
         val inMemory = cachedSurahDetails[cacheKey]
         if (inMemory != null && inMemory.isNotEmpty()) {
-            val needsTafsirSync = tafsirIdsStr.isNotBlank() && inMemory.any { it.tafsirText == null }
+            val withWords = if (inMemory.any { it.words.isEmpty() }) enrichWithOfflineWbwWords(inMemory) else inMemory
+            if (withWords !== inMemory) {
+                cachedSurahDetails[cacheKey] = withWords
+            }
+            val needsTafsirSync = tafsirIdsStr.isNotBlank() && withWords.any { it.tafsirText == null }
             if (needsTafsirSync) {
-                val reEnriched = enrichAyahsWithLocalTranslationsAndTafsirs(inMemory, tafsirIdsStr, translationIdsStr)
+                val reEnriched = enrichWithOfflineWbwWords(enrichAyahsWithLocalTranslationsAndTafsirs(withWords, tafsirIdsStr, translationIdsStr))
                 if (reEnriched.any { it.tafsirText != null }) {
                     cachedSurahDetails[cacheKey] = reEnriched
                     return reEnriched
@@ -870,12 +1017,12 @@ class QuranRepository(
                             cacheFile = cacheFile,
                             tafsirIdsStr = tafsirIdsStr,
                             translationIdsStr = translationIdsStr,
-                            currentList = inMemory
+                            currentList = withWords
                         )
                     }
                 }
             }
-            return inMemory
+            return withWords
         }
         return withContext(Dispatchers.IO) {
             val cacheFile = getSurahDetailsCacheFile(surahNumber, tafsirIdsStr, translationIdsStr, arabicEdition, audioEdition)
@@ -941,8 +1088,9 @@ class QuranRepository(
 
             // 3. If offline data exists, enrich ONLY with local offline translations & tafsirs (NO blocking network)
             if (!rawList.isNullOrEmpty()) {
-                val cleaned = cleanCombinedAyahList(rawList)
-                val enriched = enrichAyahsWithLocalTranslationsAndTafsirs(cleaned, tafsirIdsStr, translationIdsStr)
+                val withWords = enrichWithOfflineWbwWords(rawList)
+                val cleaned = cleanCombinedAyahList(withWords)
+                val enriched = enrichWithOfflineWbwWords(enrichAyahsWithLocalTranslationsAndTafsirs(cleaned, tafsirIdsStr, translationIdsStr))
                 cachedSurahDetails[cacheKey] = enriched
 
                 // Fast non-blocking background disk cache write, sync, and neighbor prewarming
@@ -1060,7 +1208,7 @@ class QuranRepository(
                                 textUthmaniTajweed = null
                             )
                         }
-                        rangeAyahs = cleanCombinedAyahList(dbList)
+                        rangeAyahs = cleanCombinedAyahList(enrichWithOfflineWbwWords(dbList))
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -1098,7 +1246,7 @@ class QuranRepository(
                         textUthmaniTajweed = null
                     )
                 }
-                result.addAll(cleanCombinedAyahList(rawList))
+                result.addAll(cleanCombinedAyahList(enrichWithOfflineWbwWords(rawList)))
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -1163,9 +1311,10 @@ class QuranRepository(
 
             // Always return offline database or file cache data IMMEDIATELY
             if (!rawList.isNullOrEmpty()) {
-                val cleaned = cleanCombinedAyahList(rawList)
+                val withWords = enrichWithOfflineWbwWords(rawList)
+                val cleaned = cleanCombinedAyahList(withWords)
                 val enrichedWithTajweed = enrichAyahsWithTajweed(cleaned)
-                val fullyEnriched = enrichAyahsWithLocalTranslationsAndTafsirs(enrichedWithTajweed, tafsirIdsStr, translationIdsStr)
+                val fullyEnriched = enrichWithOfflineWbwWords(enrichAyahsWithLocalTranslationsAndTafsirs(enrichedWithTajweed, tafsirIdsStr, translationIdsStr))
                 cachedJuzDetails[cacheKey] = fullyEnriched
                 try {
                     cacheFile.parentFile?.mkdirs()
@@ -1714,7 +1863,7 @@ class QuranRepository(
                         textUthmaniTajweed = quranComVerse?.textUthmaniTajweed ?: fallbackList?.getOrNull(index)?.textUthmaniTajweed
                     )
                 }
-                val cleaned = cleanCombinedAyahList(combined)
+                val cleaned = cleanCombinedAyahList(enrichWithOfflineWbwWords(combined))
                 cachedSurahDetails[cacheKey] = cleaned
                 try {
                     cacheFile.parentFile?.mkdirs()
