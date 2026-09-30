@@ -104,6 +104,8 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             val isSoundEnabled = PrayerNotificationHelper.isSoundEnabled(context)
             val isAlarm = isSoundEnabled && config.soundType.isAlarm
 
+            val notifId = PrayerNotificationHelper.getRequestCodeForPrayer(prayerName)
+
             // Trigger alarm audio & vibration or gentle notification sound according to config
             if (isAlarm) {
                 PrayerSoundManager.triggerAlarmSoundAndVibrate(
@@ -111,7 +113,8 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                     soundType = config.soundType,
                     prayerName = prayerName,
                     enableVibration = config.isVibrationEnabled,
-                    customRingtoneUri = config.customRingtoneUri
+                    customRingtoneUri = config.customRingtoneUri,
+                    notifId = notifId
                 )
             } else {
                 val notifSoundToPlay = if (isSoundEnabled) config.soundType else PrayerAlarmSoundType.SILENT
@@ -144,19 +147,37 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             PrayerNotificationHelper.createNotificationChannel(context)
 
-            val openIntent = Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                putExtra("navigate_to", "prayer_times")
-                putExtra("target_screen", "prayer_times")
+            // When isAlarm is true: Tapping the notification body opens PrayerAlarmActivity directly so user can dismiss/snooze
+            // When isAlarm is false: Tapping opens MainActivity to prayer_times
+            val contentIntent = if (isAlarm) {
+                val alarmIntent = Intent(context, com.example.ui.screens.alarm.PrayerAlarmActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra("prayer_name", prayerName.name)
+                    putExtra("title", title)
+                    putExtra("message", message)
+                    putExtra("notif_id", notifId)
+                }
+                PendingIntent.getActivity(
+                    context,
+                    notifId,
+                    alarmIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            } else {
+                val openIntent = Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra("navigate_to", "prayer_times")
+                    putExtra("target_screen", "prayer_times")
+                }
+                PendingIntent.getActivity(
+                    context,
+                    notifId,
+                    openIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
             }
-
-            val notifId = PrayerNotificationHelper.getRequestCodeForPrayer(prayerName)
-            val pendingIntent = PendingIntent.getActivity(
-                context,
-                notifId,
-                openIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
 
             // Stop Action
             val stopIntent = Intent(context, PrayerNotificationReceiver::class.java).apply {
@@ -198,7 +219,7 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 .setContentText(message)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(message))
                 .setAutoCancel(true)
-                .setContentIntent(pendingIntent)
+                .setContentIntent(contentIntent)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
             if (isAlarm) {
@@ -245,7 +266,7 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 builder.addAction(
                     android.R.drawable.ic_menu_view,
                     com.example.utils.NotificationLocalization.getActionViewScheduleLabel(isEnglish),
-                    pendingIntent
+                    contentIntent
                 )
 
                 if (config.isVibrationEnabled) {

@@ -55,6 +55,32 @@ class MainActivity : ComponentActivity() {
       // Handle permission result if needed
   }
 
+  override fun onResume() {
+      super.onResume()
+      checkAndForwardActiveAlarm()
+  }
+
+  override fun onNewIntent(intent: android.content.Intent) {
+      super.onNewIntent(intent)
+      setIntent(intent)
+      currentIntentState.value = intent
+      checkAndForwardActiveAlarm()
+  }
+
+  private fun checkAndForwardActiveAlarm() {
+      if (com.example.utils.PrayerSoundManager.isPlaying() && com.example.utils.PrayerSoundManager.currentlyPlayingType?.isAlarm == true) {
+          val prayerName = com.example.utils.PrayerSoundManager.currentlyPlayingPrayerName ?: com.example.data.model.PrayerName.FAJR
+          val alarmIntent = android.content.Intent(this, com.example.ui.screens.alarm.PrayerAlarmActivity::class.java).apply {
+              flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+                      android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                      android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
+              putExtra("prayer_name", prayerName.name)
+              putExtra("notif_id", com.example.utils.PrayerSoundManager.currentlyPlayingNotifId)
+          }
+          startActivity(alarmIntent)
+      }
+  }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     installSplashScreen()
     super.onCreate(savedInstanceState)
@@ -235,12 +261,16 @@ class MainActivity : ComponentActivity() {
                       targetIntent.removeExtra("dua_id")
                       currentIntentState.value = null
                   } else if (navigateTo == "prayer_times" || navigateTo == "planner" || navigateTo == "manzil" || navigateTo == "subjectwise" || navigateTo == "calendar") {
-                      val sub = navigateTo
-                      if (currentRoute != "notifications") {
-                          navController.navigate("notifications") { launchSingleTop = true }
-                      }
-                      navController.navigate("settings?subScreen=$sub") {
-                          launchSingleTop = true
+                      if (navigateTo == "prayer_times" && com.example.utils.PrayerSoundManager.isPlaying() && com.example.utils.PrayerSoundManager.currentlyPlayingType?.isAlarm == true) {
+                          checkAndForwardActiveAlarm()
+                      } else {
+                          val sub = navigateTo
+                          if (currentRoute != "notifications") {
+                              navController.navigate("notifications") { launchSingleTop = true }
+                          }
+                          navController.navigate("settings?subScreen=$sub") {
+                              launchSingleTop = true
+                          }
                       }
                       targetIntent.removeExtra("target_screen")
                       targetIntent.removeExtra("navigate_to")
@@ -292,11 +322,5 @@ class MainActivity : ComponentActivity() {
         }
       }
     }
-  }
-
-  override fun onNewIntent(intent: android.content.Intent) {
-      super.onNewIntent(intent)
-      setIntent(intent)
-      currentIntentState.value = intent
   }
 }

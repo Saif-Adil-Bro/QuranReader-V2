@@ -40,6 +40,12 @@ object PrayerSoundManager {
     var currentlyPlayingType: PrayerAlarmSoundType? = null
         private set
 
+    var currentlyPlayingPrayerName: PrayerName? = null
+        private set
+
+    var currentlyPlayingNotifId: Int = -1
+        private set
+
     fun isPlaying(): Boolean =
         playbackJob?.isActive == true ||
         activeMediaPlayer?.isPlaying == true ||
@@ -87,6 +93,8 @@ object PrayerSoundManager {
         } catch (_: Exception) {}
 
         currentlyPlayingType = null
+        currentlyPlayingPrayerName = null
+        currentlyPlayingNotifId = -1
     }
 
     fun getRawResourceName(soundType: PrayerAlarmSoundType, prayerName: PrayerName? = null): String? {
@@ -379,9 +387,14 @@ object PrayerSoundManager {
         prayerName: PrayerName,
         enableVibration: Boolean,
         customRingtoneUri: String? = null,
+        notifId: Int = -1,
         onPlaybackFinished: () -> Unit = {}
     ) {
         stopAll()
+
+        currentlyPlayingType = soundType
+        currentlyPlayingPrayerName = prayerName
+        currentlyPlayingNotifId = notifId
 
         if (enableVibration) {
             triggerVibration(context, isRepeating = true)

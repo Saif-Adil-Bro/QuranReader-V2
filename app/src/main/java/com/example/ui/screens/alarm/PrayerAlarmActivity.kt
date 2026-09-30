@@ -118,6 +118,48 @@ class PrayerAlarmActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        turnScreenOnAndShowWhenLocked()
+
+        val prayerNameStr = intent.getStringExtra("prayer_name") ?: PrayerName.FAJR.name
+        val prayerName = try {
+            PrayerName.valueOf(prayerNameStr)
+        } catch (e: Exception) {
+            PrayerName.FAJR
+        }
+
+        val isEnglish = com.example.utils.NotificationLocalization.isEnglish(this)
+        val defaultTitle = com.example.utils.NotificationLocalization.getAlarmDefaultTitle(isEnglish)
+        val defaultMessage = com.example.utils.NotificationLocalization.getAlarmDefaultMessage(isEnglish)
+
+        val title = intent.getStringExtra("title") ?: defaultTitle
+        val message = intent.getStringExtra("message") ?: defaultMessage
+        val notifId = intent.getIntExtra("notif_id", -1)
+
+        setContent {
+            PrayerAlarmScreen(
+                prayerName = prayerName,
+                title = title,
+                message = message,
+                isEnglish = isEnglish,
+                onStop = {
+                    handleStopAlarm(notifId, isEnglish)
+                },
+                onSnooze = {
+                    handleSnoozeAlarm(prayerName, notifId, isEnglish)
+                },
+                onOpenApp = {
+                    handleOpenApp(notifId)
+                },
+                onAutoDismiss = {
+                    handleAutoDismiss(prayerName, notifId, isEnglish)
+                }
+            )
+        }
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         window.addFlags(
