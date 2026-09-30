@@ -86,8 +86,22 @@ object LocaleHelper {
             @Suppress("DEPRECATION")
             config.locale = locale
         }
-        return context.createConfigurationContext(config)
+        val configContext = context.createConfigurationContext(config)
+        val resolvedActivity = if (context is android.app.Activity) context else context.findActivity()
+        return LocalizedContextWrapper(configContext, resolvedActivity)
     }
+}
+
+/**
+ * Custom ContextWrapper that preserves reference to the underlying Activity.
+ * When CompositionLocalProvider wraps LocalContext with configuration context,
+ * standard ContextImpl breaks the ContextWrapper chain. This wrapper bridges it.
+ */
+class LocalizedContextWrapper(
+    base: Context,
+    val activity: android.app.Activity?
+) : android.content.ContextWrapper(base) {
+    override fun getBaseContext(): Context = super.getBaseContext()
 }
 
 /**
@@ -95,10 +109,15 @@ object LocaleHelper {
  * Needed when CompositionLocalProvider wraps the Context with localized ConfigurationContext.
  */
 fun Context.findActivity(): android.app.Activity? {
+    if (this is android.app.Activity) return this
+    if (this is LocalizedContextWrapper && this.activity != null) return this.activity
     var currentContext: Context? = this
     while (currentContext is android.content.ContextWrapper) {
         if (currentContext is android.app.Activity) {
             return currentContext
+        }
+        if (currentContext is LocalizedContextWrapper && currentContext.activity != null) {
+            return currentContext.activity
         }
         currentContext = currentContext.baseContext
     }

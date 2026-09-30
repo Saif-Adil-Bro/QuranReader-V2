@@ -190,9 +190,16 @@ fun HomeScreen(
         }
     }
 
+    val currentActivity = androidx.activity.compose.LocalActivity.current ?: context.findActivity()
+
     androidx.activity.compose.BackHandler {
         if (backPressedOnce) {
-            context.findActivity()?.finish()
+            val act = currentActivity ?: context.findActivity()
+            if (act != null) {
+                act.finish()
+            } else {
+                (context as? android.app.Activity)?.finish()
+            }
         } else {
             backPressedOnce = true
             android.widget.Toast.makeText(context, context.getString(R.string.exit_prompt), android.widget.Toast.LENGTH_SHORT).show()
