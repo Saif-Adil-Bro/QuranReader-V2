@@ -265,6 +265,11 @@ fun PrayerAlarmScreen(
         }
     }
 
+    // Handle back button press to stop alarm gracefully
+    androidx.activity.compose.BackHandler {
+        onStop()
+    }
+
     // Auto-dismiss countdown timer (3 minutes = 180 seconds)
     LaunchedEffect(Unit) {
         while (remainingSeconds > 0) {
@@ -393,7 +398,7 @@ fun PrayerAlarmScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
-                            painter = painterResource(id = R.mipmap.ic_launcher),
+                            painter = painterResource(id = R.drawable.ic_launcher),
                             contentDescription = "App Logo",
                             modifier = Modifier
                                 .size(72.dp)

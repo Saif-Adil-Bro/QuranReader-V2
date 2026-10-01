@@ -114,7 +114,13 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                     prayerName = prayerName,
                     enableVibration = config.isVibrationEnabled,
                     customRingtoneUri = config.customRingtoneUri,
-                    notifId = notifId
+                    notifId = notifId,
+                    onPlaybackFinished = {
+                        try {
+                            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                            nm.cancel(notifId)
+                        } catch (_: Exception) {}
+                    }
                 )
             } else {
                 val notifSoundToPlay = if (isSoundEnabled) config.soundType else PrayerAlarmSoundType.SILENT
@@ -218,11 +224,12 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 .setContentTitle(title)
                 .setContentText(message)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-                .setAutoCancel(true)
                 .setContentIntent(contentIntent)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
             if (isAlarm) {
+                builder.setOngoing(true)
+                builder.setAutoCancel(false)
                 // Full-Screen Alarm Intent for Locked / Unlocked screen
                 val fullScreenIntent = Intent(context, com.example.ui.screens.alarm.PrayerAlarmActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or
@@ -261,6 +268,8 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 }
             } else {
                 // Gentle standard notification
+                builder.setOngoing(false)
+                builder.setAutoCancel(true)
                 builder.setPriority(NotificationCompat.PRIORITY_HIGH)
                 builder.setCategory(NotificationCompat.CATEGORY_EVENT)
                 builder.addAction(
