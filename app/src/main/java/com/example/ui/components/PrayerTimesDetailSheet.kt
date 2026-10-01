@@ -47,9 +47,11 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.data.model.DailyPrayerSchedule
 import com.example.data.model.DistrictInfo
 import com.example.utils.DateUtil
+import com.example.utils.DeviceLocationProvider
 import com.example.utils.HijriCalendarUtil
 import com.example.utils.PrayerTimesCalculator
 import com.example.utils.PrayerTimesShareUtil
+import com.example.utils.findActivity
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -172,8 +174,24 @@ fun PrayerTimesDetailSheet(
         skipPartiallyExpanded = false
     )
 
+    var isInitialOpenSettled by remember { mutableStateOf(false) }
+
+    LaunchedEffect(sheetState.currentValue, sheetState.targetValue) {
+        if (!isInitialOpenSettled) {
+            if (sheetState.currentValue == SheetValue.Expanded) {
+                isInitialOpenSettled = true
+            } else if (sheetState.currentValue == SheetValue.PartiallyExpanded || sheetState.targetValue == SheetValue.PartiallyExpanded) {
+                try {
+                    sheetState.expand()
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
-        sheetState.expand()
+        try {
+            sheetState.expand()
+        } catch (_: Exception) {}
     }
 
     androidx.activity.compose.BackHandler(enabled = true) {
@@ -1746,54 +1764,36 @@ private fun DistrictSelectionModal(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val activity = context.findActivity() ?: (context as? android.app.Activity)
+    val coroutineScope = rememberCoroutineScope()
     var isDetectingLocation by remember { mutableStateOf(false) }
 
-    val detectLocation = {
+    val detectLocation: () -> Unit = {
         isDetectingLocation = true
-        try {
-            val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            val fineGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-            val coarseGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-
-            if (fineGranted || coarseGranted) {
-                val lastKnown = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                    ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-                    ?: locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER)
-
-                if (lastKnown != null) {
-                    val closest = PrayerTimesCalculator.findClosestDistrict(lastKnown.latitude, lastKnown.longitude)
-                    isDetectingLocation = false
-                    val locMsg = if (isEnglish) "📍 Your location: ${closest.nameEn} (${closest.countryEn})" else "📍 আপনার অবস্থান: ${closest.nameBn} (${closest.countryBn})"
-                    Toast.makeText(context, locMsg, Toast.LENGTH_SHORT).show()
-                    onSelect(closest)
-                } else {
-                    // Request single update
-                    val listener = object : LocationListener {
-                        override fun onLocationChanged(loc: Location) {
-                            val closest = PrayerTimesCalculator.findClosestDistrict(loc.latitude, loc.longitude)
-                            isDetectingLocation = false
-                            val locMsg = if (isEnglish) "📍 Your location: ${closest.nameEn} (${closest.countryEn})" else "📍 আপনার অবস্থান: ${closest.nameBn} (${closest.countryBn})"
-                            Toast.makeText(context, locMsg, Toast.LENGTH_SHORT).show()
-                            onSelect(closest)
-                            try { locationManager.removeUpdates(this) } catch (e: Exception) {}
-                        }
-                    }
-                    if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                        locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, listener, null)
-                    } else if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                        locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, listener, null)
-                    } else {
-                        isDetectingLocation = false
-                        Toast.makeText(context, if (isEnglish) "Please enable device location (GPS)" else "ডিভাইসের লোকেশন (GPS) চালু করুন", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } else {
+        coroutineScope.launch {
+            try {
+                val result = DeviceLocationProvider.resolveBestLocation(context)
+                val closest = PrayerTimesCalculator.findClosestDistrict(result.latitude, result.longitude)
                 isDetectingLocation = false
+                val locMsg = if (isEnglish) {
+                    "📍 Location detected: ${closest.nameEn} (${closest.countryEn})"
+                } else {
+                    "📍 বর্তমান অবস্থান শনাক্ত হয়েছে: ${closest.nameBn} (${closest.countryBn})"
+                }
+                Toast.makeText(context, locMsg, Toast.LENGTH_SHORT).show()
+                onSelect(closest)
+                onDismiss()
+            } catch (e: Exception) {
+                isDetectingLocation = false
+                Toast.makeText(context, if (isEnglish) "Failed to detect location" else "লোকেশন শনাক্ত করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
             }
-        } catch (e: Exception) {
-            isDetectingLocation = false
-            Toast.makeText(context, if (isEnglish) "Failed to detect location" else "লোকেশন নির্ণয় করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    val gpsSettingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) {
+        detectLocation()
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -1802,10 +1802,66 @@ private fun DistrictSelectionModal(
         val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                       permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (granted) {
-            detectLocation()
+            if (activity != null && !DeviceLocationProvider.isLocationEnabled(context)) {
+                isDetectingLocation = true
+                DeviceLocationProvider.checkAndPromptEnableGps(
+                    activity = activity,
+                    onResolutionRequired = { resolvable ->
+                        try {
+                            val intentSenderRequest = androidx.activity.result.IntentSenderRequest.Builder(resolvable.resolution).build()
+                            gpsSettingsLauncher.launch(intentSenderRequest)
+                        } catch (e: Exception) {
+                            detectLocation()
+                        }
+                    },
+                    onAlreadyEnabled = {
+                        detectLocation()
+                    },
+                    onError = {
+                        detectLocation()
+                    }
+                )
+            } else {
+                detectLocation()
+            }
         } else {
             isDetectingLocation = false
             Toast.makeText(context, if (isEnglish) "Location permission required" else "লোকেশন পারমিশন প্রয়োজন", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val startLocationDetection: () -> Unit = {
+        if (!DeviceLocationProvider.hasLocationPermission(context)) {
+            isDetectingLocation = true
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        } else {
+            if (activity != null && !DeviceLocationProvider.isLocationEnabled(context)) {
+                isDetectingLocation = true
+                DeviceLocationProvider.checkAndPromptEnableGps(
+                    activity = activity,
+                    onResolutionRequired = { resolvable ->
+                        try {
+                            val intentSenderRequest = androidx.activity.result.IntentSenderRequest.Builder(resolvable.resolution).build()
+                            gpsSettingsLauncher.launch(intentSenderRequest)
+                        } catch (e: Exception) {
+                            detectLocation()
+                        }
+                    },
+                    onAlreadyEnabled = {
+                        detectLocation()
+                    },
+                    onError = {
+                        detectLocation()
+                    }
+                )
+            } else {
+                detectLocation()
+            }
         }
     }
 
@@ -1845,19 +1901,7 @@ private fun DistrictSelectionModal(
                 // GPS Auto Location Button
                 Surface(
                     onClick = {
-                        val fineGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                        val coarseGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                        if (fineGranted || coarseGranted) {
-                            detectLocation()
-                        } else {
-                            isDetectingLocation = true
-                            permissionLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                                )
-                            )
-                        }
+                        startLocationDetection()
                     },
                     shape = RoundedCornerShape(12.dp),
                     color = EmeraldAccent.copy(alpha = 0.12f),
