@@ -518,33 +518,16 @@ fun WaqtAlarmConfigDialog(
                                         Spacer(modifier = Modifier.width(12.dp))
 
                                         Column(modifier = Modifier.weight(1f)) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Text(
-                                                    text = if (soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE && !customRingtoneTitle.isNullOrBlank()) {
-                                                        customRingtoneTitle!!
-                                                    } else {
-                                                        soundType.getTitle(isEn)
-                                                    },
-                                                    fontSize = 14.sp,
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.85f)
-                                                )
-                                                if (soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE) {
-                                                    Spacer(modifier = Modifier.width(6.dp))
-                                                    Surface(
-                                                        shape = RoundedCornerShape(6.dp),
-                                                        color = goldColor.copy(alpha = 0.15f),
-                                                        border = BorderStroke(0.5.dp, goldColor.copy(alpha = 0.4f))
-                                                    ) {
-                                                        Text(
-                                                            text = if (isEn) "Phone Ringtone" else "ফোন রিংটোন",
-                                                            fontSize = 10.sp,
-                                                            color = goldColor,
-                                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
-                                                        )
-                                                    }
-                                                }
-                                            }
+                                            Text(
+                                                text = if (soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE && !customRingtoneTitle.isNullOrBlank()) {
+                                                    customRingtoneTitle!!
+                                                } else {
+                                                    soundType.getTitle(isEn)
+                                                },
+                                                fontSize = 14.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isSelected) Color.White else Color.White.copy(alpha = 0.85f)
+                                            )
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = if (soundType == PrayerAlarmSoundType.CUSTOM_RINGTONE) {

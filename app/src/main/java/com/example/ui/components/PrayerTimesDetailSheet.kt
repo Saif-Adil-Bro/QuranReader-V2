@@ -170,200 +170,158 @@ fun PrayerTimesDetailSheet(
         }
     }
 
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false
-    )
-
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(120L)
-        try {
-            sheetState.expand()
-        } catch (_: Exception) {}
-    }
-
-    androidx.activity.compose.BackHandler(enabled = true) {
-        coroutineScope.launch {
-            if (sheetState.currentValue == SheetValue.Expanded) {
-                try {
-                    sheetState.partialExpand()
-                } catch (_: Exception) {
-                    try { sheetState.hide() } catch (_: Exception) {}
-                    onDismiss()
-                }
-            } else {
-                try {
-                    sheetState.hide()
-                } catch (_: Exception) {}
-                onDismiss()
-            }
-        }
-    }
-
-    ModalBottomSheet(
+    Dialog(
         onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = DarkBackground,
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 10.dp)
-                    .width(38.dp)
-                    .height(4.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF334155))
-            )
-        }
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 36.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            // 1. Top Navigation Bar (Back, Title, Share, District)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                if (sheetState.currentValue == SheetValue.Expanded) {
-                                    try {
-                                        sheetState.partialExpand()
-                                    } catch (_: Exception) {
-                                        try { sheetState.hide() } catch (_: Exception) {}
-                                        onDismiss()
-                                    }
-                                } else {
-                                    try {
-                                        sheetState.hide()
-                                    } catch (_: Exception) {}
-                                    onDismiss()
-                                }
-                            }
-                        },
-                        modifier = Modifier.size(38.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = if (effectiveIsEnglish) "Back" else "ফিরে যান",
-                            tint = Color.White,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = if (effectiveIsEnglish) "Calendar & Schedule" else "ক্যালেন্ডার ও সময়সূচি",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
+        androidx.activity.compose.BackHandler(enabled = true) {
+            onDismiss()
+        }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // District selector chip
-                    Surface(
-                        onClick = { showDistrictPicker = true },
-                        shape = RoundedCornerShape(100.dp),
-                        color = EmeraldAccent.copy(alpha = 0.14f),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldAccent.copy(alpha = 0.35f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = DarkBackground
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+            ) {
+                // 1. Top Navigation Bar (Back, Title, Share, District, Close)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = null,
-                                tint = EmeraldAccent,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            val locationLabel = if (effectiveIsEnglish) {
-                                if (schedule.district.countryEn == "Bangladesh") schedule.district.nameEn else "${schedule.district.nameEn}, ${schedule.district.countryEn}"
-                            } else {
-                                if (schedule.district.countryBn == "বাংলাদেশ") schedule.district.nameBn else "${schedule.district.nameBn}, ${schedule.district.countryBn}"
-                            }
-                            Text(
-                                text = locationLabel,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = EmeraldAccent,
-                                maxLines = 1
-                            )
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = null,
-                                tint = EmeraldAccent,
-                                modifier = Modifier.size(16.dp)
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = if (effectiveIsEnglish) "Back" else "ফিরে যান",
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (effectiveIsEnglish) "Calendar & Schedule" else "ক্যালেন্ডার ও সময়সূচি",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
                     }
 
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    // Share button
-                    IconButton(
-                        onClick = {
-                            if (!isSharingImage) {
-                                isSharingImage = true
-                                coroutineScope.launch {
-                                    PrayerTimesShareUtil.shareAsImage(
-                                        context = context,
-                                        schedule = activeSchedule,
-                                        date = selectedDate,
-                                        hijriOffset = hijriOffset,
-                                        isEnglish = effectiveIsEnglish
-                                    )
-                                    isSharingImage = false
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // District selector chip
+                        Surface(
+                            onClick = { showDistrictPicker = true },
+                            shape = RoundedCornerShape(100.dp),
+                            color = EmeraldAccent.copy(alpha = 0.14f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldAccent.copy(alpha = 0.35f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    tint = EmeraldAccent,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                val locationLabel = if (effectiveIsEnglish) {
+                                    if (schedule.district.countryEn == "Bangladesh") schedule.district.nameEn else "${schedule.district.nameEn}, ${schedule.district.countryEn}"
+                                } else {
+                                    if (schedule.district.countryBn == "বাংলাদেশ") schedule.district.nameBn else "${schedule.district.nameBn}, ${schedule.district.countryBn}"
                                 }
+                                Text(
+                                    text = locationLabel,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = EmeraldAccent,
+                                    maxLines = 1
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDropDown,
+                                    contentDescription = null,
+                                    tint = EmeraldAccent,
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
-                        },
-                        modifier = Modifier.size(38.dp)
-                    ) {
-                        if (isSharingImage) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                                color = EmeraldAccent
-                            )
-                        } else {
+                        }
+
+                        Spacer(modifier = Modifier.width(6.dp))
+
+                        // Share button
+                        IconButton(
+                            onClick = {
+                                if (!isSharingImage) {
+                                    isSharingImage = true
+                                    coroutineScope.launch {
+                                        PrayerTimesShareUtil.shareAsImage(
+                                            context = context,
+                                            schedule = activeSchedule,
+                                            date = selectedDate,
+                                            hijriOffset = hijriOffset,
+                                            isEnglish = effectiveIsEnglish
+                                        )
+                                        isSharingImage = false
+                                    }
+                                }
+                            },
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            if (isSharingImage) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                    color = EmeraldAccent
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Share,
+                                    contentDescription = if (effectiveIsEnglish) "Share" else "শেয়ার করুন",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(2.dp))
+
+                        // Close button
+                        IconButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.size(38.dp)
+                        ) {
                             Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = if (effectiveIsEnglish) "Share" else "শেয়ার করুন",
+                                imageVector = Icons.Default.Close,
+                                contentDescription = if (effectiveIsEnglish) "Close" else "বন্ধ করুন",
                                 tint = Color.White,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
                     }
-
-                    Spacer(modifier = Modifier.width(2.dp))
-
-                    // Close button
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                sheetState.hide()
-                                onDismiss()
-                            }
-                        },
-                        modifier = Modifier.size(38.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = if (effectiveIsEnglish) "Close" else "বন্ধ করুন",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
                 }
-            }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 24.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
@@ -1222,6 +1180,8 @@ fun PrayerTimesDetailSheet(
             }
         }
     }
+}
+}
 
     // Reference Hadith Dialog
     if (activeReferenceType != null) {

@@ -319,7 +319,7 @@ object DeviceLocationProvider {
                 connectTimeout = 4000
                 readTimeout = 4000
                 requestMethod = "GET"
-                setRequestProperty("User-Agent", "QawmiManager-Location-Service/1.0")
+                setRequestProperty("User-Agent", "QuranReader-Location-Service/1.0")
             }
             if (conn.responseCode == 200) {
                 val text = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
@@ -380,7 +380,7 @@ object DeviceLocationProvider {
                 requestMethod = "GET"
                 connectTimeout = 4000
                 readTimeout = 4000
-                setRequestProperty("User-Agent", "QawmiManager-LocationProvider/1.0")
+                setRequestProperty("User-Agent", "QuranReader-LocationProvider/1.0")
             }
             if (conn.responseCode == 200) {
                 val text = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }

@@ -128,7 +128,7 @@ class GeoapifyService(private val context: Context) {
                 requestMethod = "GET"
                 connectTimeout = 6000
                 readTimeout = 6000
-                setRequestProperty("User-Agent", "Mozilla/5.0 (Android; QawmiManager/1.0)")
+                setRequestProperty("User-Agent", "Mozilla/5.0 (Android; QuranReader/1.0)")
             }
 
             if (conn.responseCode == 200) {
@@ -224,7 +224,7 @@ class GeoapifyService(private val context: Context) {
                     requestMethod = "GET"
                     connectTimeout = 6000
                     readTimeout = 6000
-                    setRequestProperty("User-Agent", "Mozilla/5.0 (Android; QawmiManager/1.0)")
+                    setRequestProperty("User-Agent", "Mozilla/5.0 (Android; QuranReader/1.0)")
                 }
 
                 if (conn.responseCode == 200) {

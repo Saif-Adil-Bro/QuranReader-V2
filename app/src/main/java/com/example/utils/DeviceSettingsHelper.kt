@@ -101,13 +101,13 @@ object DeviceSettingsHelper {
         val manufacturer = Build.MANUFACTURER.lowercase()
         return when {
             manufacturer.contains("xiaomi") || manufacturer.contains("redmi") || manufacturer.contains("poco") -> {
-                "Xiaomi/Redmi/Poco: সেটিংস > Apps > Manage Apps > QawmiManager এ গিয়ে 'Autostart' চালু করুন এবং 'Other permissions' থেকে 'Show on Lock screen' ইনেবল করুন।"
+                "Xiaomi/Redmi/Poco: সেটিংস > Apps > Manage Apps > Quran Reader এ গিয়ে 'Autostart' চালু করুন এবং 'Other permissions' থেকে 'Show on Lock screen' ইনেবল করুন।"
             }
             manufacturer.contains("samsung") -> {
-                "Samsung: সেটিংস > Apps > QawmiManager > Battery অপশনে গিয়ে 'Unrestricted' সিলেক্ট করুন।"
+                "Samsung: সেটিংস > Apps > Quran Reader > Battery অপশনে গিয়ে 'Unrestricted' সিলেক্ট করুন।"
             }
             manufacturer.contains("vivo") || manufacturer.contains("iqoo") -> {
-                "Vivo/iQOO: Settings > Battery > High background power consumption এ QawmiManager চালু করুন।"
+                "Vivo/iQOO: Settings > Battery > High background power consumption এ Quran Reader চালু করুন।"
             }
             manufacturer.contains("oppo") || manufacturer.contains("realme") || manufacturer.contains("oneplus") -> {
                 "Oppo/Realme/OnePlus: App Info > Battery usage > 'Allow background activity' এবং 'Allow auto-launch' চালু করুন।"

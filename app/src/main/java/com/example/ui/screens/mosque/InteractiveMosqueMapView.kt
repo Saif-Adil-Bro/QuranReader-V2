@@ -118,7 +118,7 @@ fun InteractiveMosqueMapView(
                         loadWithOverviewMode = true
                         builtInZoomControls = false
                         displayZoomControls = false
-                        userAgentString = "Mozilla/5.0 (Linux; Android 14; Mobile; QawmiManager/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+                        userAgentString = "Mozilla/5.0 (Linux; Android 14; Mobile; QuranReader/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
                     }
                     webChromeClient = WebChromeClient()
                     webViewClient = object : WebViewClient() {

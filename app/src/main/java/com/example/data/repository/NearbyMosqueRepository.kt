@@ -231,7 +231,7 @@ class NearbyMosqueRepository(private val context: Context) {
                 requestMethod = "GET"
                 connectTimeout = 4000
                 readTimeout = 4000
-                setRequestProperty("User-Agent", "QawmiManager-Android-GlobalMosqueFinder/1.0")
+                setRequestProperty("User-Agent", "QuranReader-Android-GlobalMosqueFinder/1.0")
             }
             if (conn.responseCode == 200) {
                 val text = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
@@ -310,7 +310,7 @@ class NearbyMosqueRepository(private val context: Context) {
                         requestMethod = "GET"
                         connectTimeout = 4000
                         readTimeout = 4000
-                        setRequestProperty("User-Agent", "Mozilla/5.0 (Android; QawmiManager/1.0)")
+                        setRequestProperty("User-Agent", "Mozilla/5.0 (Android; QuranReader/1.0)")
                     }
 
                     if (conn.responseCode == 200) {
@@ -394,7 +394,7 @@ class NearbyMosqueRepository(private val context: Context) {
                         connectTimeout = 5000
                         readTimeout = 5000
                         setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
-                        setRequestProperty("User-Agent", "QawmiManager-Android/1.0")
+                        setRequestProperty("User-Agent", "QuranReader-Android/1.0")
                     }
 
                     val postData = "data=" + URLEncoder.encode(overpassQuery, "UTF-8")
