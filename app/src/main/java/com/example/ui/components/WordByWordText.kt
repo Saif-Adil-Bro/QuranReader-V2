@@ -134,8 +134,10 @@ fun WordByWordText(
                                 // Word Transliteration (Toggle-able)
                                 if (showTransliteration) {
                                     Spacer(modifier = Modifier.height(1.dp))
+                                    val pronunciation = word.transliteration?.text?.takeIf { it.isNotBlank() && it != "N/A" }
+                                        ?: com.example.utils.ArabicTransliterationUtil.transliterateToArabicBengali(word.textUthmani)
                                     Text(
-                                        text = word.transliteration?.text ?: "",
+                                        text = pronunciation,
                                         fontSize = 10.sp,
                                         color = PrimaryGreen.copy(alpha = 0.8f),
                                         textAlign = TextAlign.Center,
@@ -179,14 +181,18 @@ fun WordByWordText(
                                                 fontWeight = FontWeight.Bold,
                                                 textAlign = TextAlign.Center
                                             )
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            Text(
-                                                text = "উচ্চারণ: ${word.transliteration?.text ?: "N/A"}",
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                textAlign = TextAlign.Center,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
+                                            val pronunciation = word.transliteration?.text?.takeIf { it.isNotBlank() && it != "N/A" }
+                                                ?: com.example.utils.ArabicTransliterationUtil.transliterateToArabicBengali(word.textUthmani)
+                                            if (pronunciation.isNotBlank()) {
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                                Text(
+                                                    text = "উচ্চারণ: $pronunciation",
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    textAlign = TextAlign.Center,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Text(
                                                 text = "অর্থ: ${word.translation?.text ?: "N/A"}",

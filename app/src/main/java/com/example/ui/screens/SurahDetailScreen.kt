@@ -98,9 +98,45 @@ fun SurahDetailScreen(
     viewModel: SurahDetailViewModel,
     onNavigateBack: () -> Unit
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+    val sessionStartTime = remember { System.currentTimeMillis() }
+    val currentLocalContext = androidx.compose.ui.platform.LocalContext.current
+
+    // Periodically sync reading session time every 45s while reading
+    LaunchedEffect(Unit) {
+        var lastSyncTime = System.currentTimeMillis()
+        while (true) {
+            kotlinx.coroutines.delay(45_000L)
+            val now = System.currentTimeMillis()
+            val diffSecs = ((now - lastSyncTime) / 1000).toInt()
+            lastSyncTime = now
+            val currentAyahNum = (uiState as? UiState.Success)?.data?.firstOrNull()?.numberInSurah ?: 1
+            val currentSurahName = com.example.data.QuranData.surahNames.find { it.first == surahNumber }?.second?.first ?: "আল-ফাতিহা"
+            com.example.utils.UserProfileManager.recordReadingSession(
+                context = currentLocalContext,
+                secondsRead = diffSecs,
+                ayahsRead = 1,
+                surahNumber = surahNumber,
+                surahName = currentSurahName,
+                ayahNumber = currentAyahNum
+            )
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             viewModel.saveLastReadPosition()
+            val elapsedSecs = ((System.currentTimeMillis() - sessionStartTime) / 1000).toInt()
+            val currentAyahNum = (uiState as? UiState.Success)?.data?.firstOrNull()?.numberInSurah ?: 1
+            val currentSurahName = com.example.data.QuranData.surahNames.find { it.first == surahNumber }?.second?.first ?: "আল-ফাতিহা"
+            com.example.utils.UserProfileManager.recordReadingSession(
+                context = currentLocalContext,
+                secondsRead = (elapsedSecs % 45).coerceAtLeast(1),
+                ayahsRead = 1,
+                surahNumber = surahNumber,
+                surahName = currentSurahName,
+                ayahNumber = currentAyahNum
+            )
         }
     }
 
@@ -108,7 +144,7 @@ fun SurahDetailScreen(
         viewModel.saveLastReadPosition()
         onNavigateBack()
     }
-    val uiState by viewModel.uiState.collectAsState()
+
     val showTranslation by viewModel.showTranslation.collectAsState()
     val showTransliteration by viewModel.showTransliteration.collectAsState()
     val availableTranslations by viewModel.availableTranslations.collectAsState()

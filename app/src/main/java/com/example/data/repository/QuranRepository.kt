@@ -219,7 +219,7 @@ class QuranRepository(
                                 charTypeName = w.charTypeName ?: "word",
                                 textUthmani = w.textUthmani,
                                 translation = com.example.data.model.QuranComWordTranslation(text = w.translationBengali),
-                                transliteration = null,
+                                transliteration = com.example.data.model.QuranComWordTransliteration(text = com.example.utils.ArabicTransliterationUtil.transliterateToArabicBengali(w.textUthmani)),
                                 audioUrl = w.audioUrl
                             )
                         }
@@ -619,7 +619,7 @@ class QuranRepository(
                     charTypeName = w.charTypeName ?: "word",
                     textUthmani = w.textUthmani,
                     translation = com.example.data.model.QuranComWordTranslation(text = w.translationBengali),
-                    transliteration = null,
+                    transliteration = com.example.data.model.QuranComWordTransliteration(text = com.example.utils.ArabicTransliterationUtil.transliterateToArabicBengali(w.textUthmani)),
                     audioUrl = w.audioUrl
                 )
             } ?: emptyList()
@@ -659,7 +659,7 @@ class QuranRepository(
                             charTypeName = w.charTypeName ?: "word",
                             textUthmani = w.textUthmani,
                             translation = com.example.data.model.QuranComWordTranslation(text = w.translationBengali),
-                            transliteration = null,
+                            transliteration = com.example.data.model.QuranComWordTransliteration(text = com.example.utils.ArabicTransliterationUtil.transliterateToArabicBengali(w.textUthmani)),
                             audioUrl = w.audioUrl
                         )
                     }
@@ -850,7 +850,7 @@ class QuranRepository(
                         charTypeName = entity.charTypeName ?: "word",
                         textUthmani = entity.textUthmani,
                         translation = com.example.data.model.QuranComWordTranslation(text = entity.translationBengali),
-                        transliteration = null,
+                        transliteration = com.example.data.model.QuranComWordTransliteration(text = com.example.utils.ArabicTransliterationUtil.transliterateToArabicBengali(entity.textUthmani)),
                         audioUrl = entity.audioUrl
                     )
                 }
@@ -1048,7 +1048,7 @@ class QuranRepository(
                                 charTypeName = w.charTypeName ?: "word",
                                 textUthmani = w.textUthmani,
                                 translation = com.example.data.model.QuranComWordTranslation(text = w.translationBengali),
-                                transliteration = null,
+                                transliteration = com.example.data.model.QuranComWordTransliteration(text = com.example.utils.ArabicTransliterationUtil.transliterateToArabicBengali(w.textUthmani)),
                                 audioUrl = w.audioUrl
                             )
                         } ?: emptyList()

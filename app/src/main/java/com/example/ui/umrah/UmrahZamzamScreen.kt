@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.umrah.UmrahContentData
+import com.example.ui.theme.LocalArabicFont
 import com.example.utils.DateUtil
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -130,9 +131,10 @@ fun UmrahZamzamScreen(
                             text = UmrahContentData.ZAMZAM_RECOMMENDED_DUA_ARABIC,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Normal,
+                            fontFamily = LocalArabicFont.current,
                             color = Color.White,
                             textAlign = TextAlign.End,
-                            lineHeight = 38.sp,
+                            lineHeight = 40.sp,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 6.dp)

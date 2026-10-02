@@ -16,6 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.umrah.UmrahContentData
+import com.example.ui.theme.LocalArabicFont
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,9 +101,10 @@ fun UmrahPostDuasScreen(
                             text = duaItem.arabic,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Normal,
+                            fontFamily = LocalArabicFont.current,
                             color = Color.White,
                             textAlign = TextAlign.End,
-                            lineHeight = 38.sp,
+                            lineHeight = 40.sp,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)

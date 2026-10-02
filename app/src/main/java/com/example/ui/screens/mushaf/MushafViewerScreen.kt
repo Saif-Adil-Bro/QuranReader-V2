@@ -97,9 +97,33 @@ fun MushafViewerScreen(
     onBack: () -> Unit,
     viewModel: MushafViewerViewModel
 ) {
+    val sessionStartTime = remember { System.currentTimeMillis() }
+    val currentLocalContext = androidx.compose.ui.platform.LocalContext.current
+
+    LaunchedEffect(Unit) {
+        var lastSyncTime = System.currentTimeMillis()
+        while (true) {
+            kotlinx.coroutines.delay(45_000L)
+            val now = System.currentTimeMillis()
+            val diffSecs = ((now - lastSyncTime) / 1000).toInt()
+            lastSyncTime = now
+            com.example.utils.UserProfileManager.recordReadingSession(
+                context = currentLocalContext,
+                secondsRead = diffSecs,
+                pagesRead = 1
+            )
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             viewModel.saveLastReadPosition()
+            val elapsedSecs = ((System.currentTimeMillis() - sessionStartTime) / 1000).toInt()
+            com.example.utils.UserProfileManager.recordReadingSession(
+                context = currentLocalContext,
+                secondsRead = (elapsedSecs % 45).coerceAtLeast(1),
+                pagesRead = 1
+            )
         }
     }
 

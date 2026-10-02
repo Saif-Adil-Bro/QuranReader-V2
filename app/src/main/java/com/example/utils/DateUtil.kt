@@ -8,12 +8,14 @@ import java.text.SimpleDateFormat
 
 object DateUtil {
     private val bengaliMonths = listOf("বৈশাখ", "জ্যৈষ্ঠ", "আষাঢ়", "শ্রাবণ", "ভাদ্র", "আশ্বিন", "কার্তিক", "অগ্রহায়ণ", "পৌষ", "মাঘ", "ফাল্গুন", "চৈত্র")
+    private val bengaliMonthsEn = listOf("Boishakh", "Jaishtha", "Asharh", "Shrabon", "Bhadro", "Ashwin", "Kartik", "Agrahayan", "Poush", "Magh", "Falgun", "Choitro")
     private val hijriMonths = listOf("মহররম", "সফর", "রবিউল আউয়াল", "রবিউস সানি", "জমাদিউল আউয়াল", "জমাদিউস সানি", "রজব", "শাবান", "রমজান", "শাওয়াল", "জিলকদ", "জিলহজ")
     private val englishMonthsBengali = listOf("জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর")
     private val daysOfWeekBengali = listOf("রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার")
     private val englishMonths = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
     private val daysOfWeekEnglish = listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
     private val seasons = listOf("গ্রীষ্মকাল", "বর্ষাকাল", "শরৎকাল", "হেমন্তকাল", "শীতকাল", "বসন্তকাল")
+    private val seasonsEn = listOf("Summer", "Monsoon", "Autumn", "Late Autumn", "Winter", "Spring")
 
     fun toBengaliNumerals(number: Int): String {
         return number.toString().map { 
@@ -121,7 +123,7 @@ object DateUtil {
         }
     }
 
-    fun getBengaliDateStr(date: java.time.LocalDate = java.time.LocalDate.now()): Pair<String, String> {
+    fun getBengaliDateStr(date: java.time.LocalDate = java.time.LocalDate.now(), isEnglish: Boolean = false): Pair<String, String> {
         val day = date.dayOfMonth
         val month = date.monthValue
         val year = date.year
@@ -149,13 +151,23 @@ object DateUtil {
         if (bMonth == 0) bMonth = 1
         
         val seasonIndex = (bMonth - 1) / 2
-        val season = if (seasonIndex in seasons.indices) seasons[seasonIndex] else seasons[0]
 
-        return Pair("${toBengaliNumerals(bDay)} ${bengaliMonths[bMonth - 1]}, ${toBengaliNumerals(bYear)}", "(ঋতু: $season)")
+        return if (isEnglish) {
+            val seasonEn = if (seasonIndex in seasonsEn.indices) seasonsEn[seasonIndex] else seasonsEn[0]
+            Pair("$bDay ${bengaliMonthsEn[bMonth - 1]}, $bYear", "(Season: $seasonEn)")
+        } else {
+            val season = if (seasonIndex in seasons.indices) seasons[seasonIndex] else seasons[0]
+            Pair("${toBengaliNumerals(bDay)} ${bengaliMonths[bMonth - 1]}, ${toBengaliNumerals(bYear)}", "(ঋতু: $season)")
+        }
     }
 
-    fun getTodayBengaliDateStr(): Pair<String, String> {
-        return getBengaliDateStr(java.time.LocalDate.now())
+    fun getTodayBengaliDateStr(isEnglish: Boolean = false): Pair<String, String> {
+        return getBengaliDateStr(java.time.LocalDate.now(), isEnglish)
+    }
+
+    fun getTodayGregorianDateStr(isEnglish: Boolean = false): String {
+        val today = java.time.LocalDate.now()
+        return if (isEnglish) formatDateEnglish(today) else formatDateStr(today)
     }
 
     fun getShortDayName(date: java.time.LocalDate, isEnglish: Boolean = false): String {

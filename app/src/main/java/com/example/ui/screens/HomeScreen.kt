@@ -1135,8 +1135,8 @@ fun HeroSection(
     val totalSlides = 4
     val pagerState = rememberPagerState(pageCount = { totalSlides })
     
-    val bengaliDate = remember { com.example.utils.DateUtil.getTodayBengaliDateStr() }
-    val todayEnglishDate = remember { com.example.utils.DateUtil.getTodayEnglishDateStr() }
+    val bengaliDate = remember(isEnglish) { com.example.utils.DateUtil.getTodayBengaliDateStr(isEnglish) }
+    val todayGregorianDate = remember(isEnglish) { com.example.utils.DateUtil.getTodayGregorianDateStr(isEnglish) }
     val hijriDateStr = remember(hijriOffset, isEnglish) {
         if (isEnglish) {
             val hijriInfo = com.example.utils.HijriCalendarUtil.getHijriDate(java.time.LocalDate.now(), hijriOffset)
@@ -1248,7 +1248,7 @@ fun HeroSection(
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
-                                            text = todayEnglishDate,
+                                            text = todayGregorianDate,
                                             color = White,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold

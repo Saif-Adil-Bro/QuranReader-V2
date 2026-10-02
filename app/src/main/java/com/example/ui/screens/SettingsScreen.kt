@@ -130,6 +130,7 @@ fun SettingsScreen(
     val username by viewModel.username.collectAsState()
     val readingTime by viewModel.readingTimeMinutes.collectAsState()
     val bookmarkList by viewModel.bookmarks.collectAsState(initial = emptyList())
+    val userProfile by com.example.utils.UserProfileManager.profileFlow.collectAsState()
     
     var activeDialog by remember(initialSubScreen) { mutableStateOf<String?>(initialSubScreen) }
     val currentLanguage by viewModel.appLanguage.collectAsState()
@@ -233,15 +234,15 @@ fun SettingsScreen(
                 .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {
-            // 1. Profile Card
+            // 1. Dynamic Profile Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
-                    .border(1.dp, PrimaryGreen.copy(alpha = 0.15f), RoundedCornerShape(16.dp))
+                    .border(1.dp, PrimaryGreen.copy(alpha = 0.2f), RoundedCornerShape(18.dp))
                     .clickable { activeDialog = "profile" },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(18.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -249,33 +250,68 @@ fun SettingsScreen(
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Profile Icon
+                    // Profile Dynamic Avatar
                     Box(
                         modifier = Modifier
-                            .size(52.dp)
-                            .background(PrimaryGreen, CircleShape),
+                            .size(54.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(
+                                androidx.compose.ui.graphics.Brush.linearGradient(
+                                    colors = listOf(Color(0xFF047857), Color(0xFF10B981))
+                                )
+                            )
+                            .border(1.5.dp, PrimaryGreen.copy(alpha = 0.4f), androidx.compose.foundation.shape.CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile",
-                            tint = Color.White,
-                            modifier = Modifier.size(28.dp)
+                        com.example.ui.components.RenderAvatarIcon(
+                            avatarType = userProfile.avatarType,
+                            customUri = userProfile.customAvatarUri,
+                            size = 28.dp
                         )
                     }
                     
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
                     
                     // Profile Details
                     Column(
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(
-                            text = username,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = userProfile.username,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            // Streak Flame Badge
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFFEF4444).copy(alpha = 0.12f),
+                                border = BorderStroke(0.8.dp, Color(0xFFEF4444).copy(alpha = 0.4f))
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocalFireDepartment,
+                                        contentDescription = "Streak",
+                                        tint = Color(0xFFEF4444),
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(2.dp))
+                                    Text(
+                                        text = if (currentLanguage == "en") "${userProfile.streakDays}d" else "${com.example.utils.DateUtil.toBengaliNumerals(userProfile.streakDays)}দিন",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFEF4444)
+                                    )
+                                }
+                            }
+                        }
                         Spacer(modifier = Modifier.height(4.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -286,7 +322,7 @@ fun SettingsScreen(
                                     imageVector = Icons.Default.Bookmark,
                                     contentDescription = null,
                                     tint = Color(0xFFEF4444),
-                                    modifier = Modifier.size(14.dp)
+                                    modifier = Modifier.size(13.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 val bookmarkText = if (currentLanguage == "en") "${bookmarkList.size} Bookmarks" else "${bookmarkList.size} বুকমার্ক"
@@ -301,24 +337,25 @@ fun SettingsScreen(
                                     imageVector = Icons.Default.Schedule,
                                     contentDescription = null,
                                     tint = Color(0xFF3B82F6),
-                                    modifier = Modifier.size(14.dp)
+                                    modifier = Modifier.size(13.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
+                                val totalMins = userProfile.totalReadingMinutes
                                 val hoursText = if (currentLanguage == "en") {
-                                    if (readingTime >= 60) {
-                                        val hrs = readingTime / 60
-                                        val mins = readingTime % 60
+                                    if (totalMins >= 60) {
+                                        val hrs = totalMins / 60
+                                        val mins = totalMins % 60
                                         if (mins > 0) "$hrs hrs $mins mins read" else "$hrs hrs read"
                                     } else {
-                                        "$readingTime mins read"
+                                        "$totalMins mins read"
                                     }
                                 } else {
-                                    if (readingTime >= 60) {
-                                        val hrs = readingTime / 60
-                                        val mins = readingTime % 60
-                                        if (mins > 0) "$hrs ঘণ্টা $mins মি. পড়া" else "$hrs ঘণ্টা পড়া"
+                                    if (totalMins >= 60) {
+                                        val hrs = totalMins / 60
+                                        val mins = totalMins % 60
+                                        if (mins > 0) "${com.example.utils.DateUtil.toBengaliNumerals(hrs)} ঘণ্টা ${com.example.utils.DateUtil.toBengaliNumerals(mins)} মি." else "${com.example.utils.DateUtil.toBengaliNumerals(hrs)} ঘণ্টা"
                                     } else {
-                                        "$readingTime মিনিট পড়া"
+                                        "${com.example.utils.DateUtil.toBengaliNumerals(totalMins)} মিনিট"
                                     }
                                 }
                                 Text(
@@ -1240,6 +1277,8 @@ fun MenuDetailDialog(
                 color = if (type == "qibla") Color.Transparent else MaterialTheme.colorScheme.background
             ) {
             val currentLang by viewModel.appLanguage.collectAsState()
+            val userProfile by com.example.utils.UserProfileManager.profileFlow.collectAsState()
+            val bookmarkList by viewModel.bookmarks.collectAsState(initial = emptyList())
             Column(modifier = Modifier.fillMaxSize()) {
                 // Dialog Header
                 val title = when (type) {
@@ -1314,7 +1353,16 @@ fun MenuDetailDialog(
                                 viewModel.setHijriOffset(dialogHijriOffset + diff)
                             }
                         )
-                        "profile" -> ProfileDialogContent(viewModel)
+                        "profile" -> com.example.ui.components.DynamicProfileDialog(
+                            profile = userProfile,
+                            isEnglish = currentLang == "en",
+                            bookmarksCount = bookmarkList.size,
+                            onNavigateToLastRead = {
+                                onDismiss()
+                                onNavigateToSurah(userProfile.lastReadSurah)
+                            },
+                            onDismiss = onDismiss
+                        )
                         "bookmark" -> BookmarkDialogContent(
                             viewModel = viewModel,
                             onBookmarkClick = { bookmark ->

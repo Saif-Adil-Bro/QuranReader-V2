@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.umrah.UmrahContentData
 import com.example.data.umrah.UmrahSessionEntity
+import com.example.ui.theme.LocalArabicFont
 import com.example.utils.DateUtil
 
 enum class UmrahSubScreen {
@@ -854,8 +855,10 @@ fun IhramStepContent(
                         text = UmrahContentData.IHRAM_NIYYAH_ARABIC,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Normal,
+                        fontFamily = LocalArabicFont.current,
                         color = Color.White,
                         textAlign = TextAlign.End,
+                        lineHeight = 40.sp,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -887,9 +890,10 @@ fun IhramStepContent(
                         text = UmrahContentData.TALBIYAH_ARABIC,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Normal,
+                        fontFamily = LocalArabicFont.current,
                         color = Color.White,
                         textAlign = TextAlign.End,
-                        lineHeight = 36.sp,
+                        lineHeight = 38.sp,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -1166,9 +1170,10 @@ fun TawafStepContent(
                         text = UmrahContentData.TAWAF_RUKN_YAMANI_DUA_ARABIC,
                         fontSize = 23.sp,
                         fontWeight = FontWeight.Normal,
+                        fontFamily = LocalArabicFont.current,
                         color = Color.White,
                         textAlign = TextAlign.End,
-                        lineHeight = 36.sp,
+                        lineHeight = 40.sp,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -1530,9 +1535,10 @@ fun SaiStepContent(
                         text = UmrahContentData.SAI_SAFA_MARWAH_DUA_ARABIC,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Normal,
+                        fontFamily = LocalArabicFont.current,
                         color = Color.White,
                         textAlign = TextAlign.End,
-                        lineHeight = 36.sp,
+                        lineHeight = 38.sp,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -1861,9 +1867,10 @@ fun HalqStepContent(
                         text = UmrahContentData.HALQ_DUA_ARABIC,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Normal,
+                        fontFamily = LocalArabicFont.current,
                         color = Color.White,
                         textAlign = TextAlign.End,
-                        lineHeight = 36.sp,
+                        lineHeight = 40.sp,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(10.dp))
