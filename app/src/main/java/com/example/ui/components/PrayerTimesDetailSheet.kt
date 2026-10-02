@@ -174,21 +174,8 @@ fun PrayerTimesDetailSheet(
         skipPartiallyExpanded = false
     )
 
-    var isInitialOpenSettled by remember { mutableStateOf(false) }
-
-    LaunchedEffect(sheetState.currentValue, sheetState.targetValue) {
-        if (!isInitialOpenSettled) {
-            if (sheetState.currentValue == SheetValue.Expanded) {
-                isInitialOpenSettled = true
-            } else if (sheetState.currentValue == SheetValue.PartiallyExpanded || sheetState.targetValue == SheetValue.PartiallyExpanded) {
-                try {
-                    sheetState.expand()
-                } catch (_: Exception) {}
-            }
-        }
-    }
-
     LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(120L)
         try {
             sheetState.expand()
         } catch (_: Exception) {}
@@ -197,9 +184,16 @@ fun PrayerTimesDetailSheet(
     androidx.activity.compose.BackHandler(enabled = true) {
         coroutineScope.launch {
             if (sheetState.currentValue == SheetValue.Expanded) {
-                sheetState.partialExpand()
+                try {
+                    sheetState.partialExpand()
+                } catch (_: Exception) {
+                    try { sheetState.hide() } catch (_: Exception) {}
+                    onDismiss()
+                }
             } else {
-                sheetState.hide()
+                try {
+                    sheetState.hide()
+                } catch (_: Exception) {}
                 onDismiss()
             }
         }
@@ -240,9 +234,16 @@ fun PrayerTimesDetailSheet(
                         onClick = {
                             coroutineScope.launch {
                                 if (sheetState.currentValue == SheetValue.Expanded) {
-                                    sheetState.partialExpand()
+                                    try {
+                                        sheetState.partialExpand()
+                                    } catch (_: Exception) {
+                                        try { sheetState.hide() } catch (_: Exception) {}
+                                        onDismiss()
+                                    }
                                 } else {
-                                    sheetState.hide()
+                                    try {
+                                        sheetState.hide()
+                                    } catch (_: Exception) {}
                                     onDismiss()
                                 }
                             }
