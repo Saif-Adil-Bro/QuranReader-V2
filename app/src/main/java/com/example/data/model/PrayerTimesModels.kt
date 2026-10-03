@@ -185,5 +185,118 @@ data class DailyPrayerSchedule(
     val sunsetTimeDigits: String = "",
     val sahriTimeDigits: String = "",
     val iftarTimeDigits: String = "",
-    val isFriday: Boolean = false
+    val isFriday: Boolean = false,
+    val calculationMethod: PrayerCalculationMethod = PrayerCalculationMethod.KARACHI
 )
+
+enum class PrayerCalculationMethod(
+    val id: String,
+    val nameBn: String,
+    val nameEn: String,
+    val fajrAngle: Double,
+    val ishaAngle: Double,
+    val ishaFixedIntervalMinutes: Int? = null,
+    val descriptionBn: String = "",
+    val descriptionEn: String = ""
+) {
+    MWL(
+        id = "mwl",
+        nameBn = "মুসলিম ওয়ার্ল্ড লীগ",
+        nameEn = "Muslim World League (MWL)",
+        fajrAngle = 18.0,
+        ishaAngle = 17.0,
+        descriptionBn = "ইউরোপ ও সুদূর প্রাচ্যের দেশসমূহে ব্যবহৃত (ফজর ১৮°, ইশা ১৭°)",
+        descriptionEn = "Standard for Europe, Far East & parts of America (Fajr 18°, Isha 17°)"
+    ),
+    EGYPT(
+        id = "egypt",
+        nameBn = "ইজিপসিয়ান জেনারেল অথরিটি অফ সার্ভে",
+        nameEn = "Egyptian General Authority of Survey",
+        fajrAngle = 19.5,
+        ishaAngle = 17.5,
+        descriptionBn = "মিশর, আফ্রিকা ও মধ্যপ্রাচ্যের দেশসমূহ (ফজর ১৯.৫°, ইশা ১৭.৫°)",
+        descriptionEn = "Used in Egypt, Africa & parts of Middle East (Fajr 19.5°, Isha 17.5°)"
+    ),
+    KARACHI(
+        id = "karachi",
+        nameBn = "ইউনিভার্সিটি অফ ইসলামিক স্টাডিজ, করাচি",
+        nameEn = "University of Islamic Sciences, Karachi",
+        fajrAngle = 18.0,
+        ishaAngle = 18.0,
+        descriptionBn = "বাংলাদেশ, ভারত, পাকিস্তান ও এশিয়া অঞ্চলে সর্বাধিক গ্রহণযোগ্য (ফজর ১৮°, ইশা ১৮°)",
+        descriptionEn = "Standard for Bangladesh, Pakistan, India & South Asia (Fajr 18°, Isha 18°)"
+    ),
+    UMM_AL_QURA(
+        id = "umm_al_qura",
+        nameBn = "উম্মুল কুরা ইউনিভার্সিটি, মক্কা",
+        nameEn = "Umm al-Qura University, Makkah",
+        fajrAngle = 18.5,
+        ishaAngle = 18.0,
+        ishaFixedIntervalMinutes = 90,
+        descriptionBn = "সৌদি আরব ও আরব উপদ্বীপে ব্যবহৃত (ফজর ১৮.৫°, ইশা মাগরিবের ৯০ মিনিট পর)",
+        descriptionEn = "Used in Saudi Arabia & Gulf (Fajr 18.5°, Isha 90 min after Maghrib)"
+    ),
+    DUBAI(
+        id = "dubai",
+        nameBn = "দুবাই (UAE)",
+        nameEn = "Dubai (UAE)",
+        fajrAngle = 18.2,
+        ishaAngle = 18.2,
+        descriptionBn = "সংযুক্ত আরব আমিরাত (ফজর ১৮.২°, ইশা ১৮.২°)",
+        descriptionEn = "Used in United Arab Emirates (Fajr 18.2°, Isha 18.2°)"
+    ),
+    QATAR(
+        id = "qatar",
+        nameBn = "কাতার",
+        nameEn = "Qatar",
+        fajrAngle = 18.0,
+        ishaAngle = 18.0,
+        ishaFixedIntervalMinutes = 90,
+        descriptionBn = "কাতার ওয়াকফ মন্ত্রণালয় (ফজর ১৮°, ইশা মাগরিবের ৯০ মিনিট পর)",
+        descriptionEn = "Qatar Ministry of Awqaf (Fajr 18°, Isha 90 min after Maghrib)"
+    ),
+    KUWAIT(
+        id = "kuwait",
+        nameBn = "কুয়েত",
+        nameEn = "Kuwait",
+        fajrAngle = 18.0,
+        ishaAngle = 17.5,
+        descriptionBn = "কুয়েত ওয়াকফ মন্ত্রণালয় (ফজর ১৮°, ইশা ১৭.৫°)",
+        descriptionEn = "Used in Kuwait (Fajr 18°, Isha 17.5°)"
+    ),
+    MOONSIGHTING_COMMITTEE(
+        id = "moonsighting_committee",
+        nameBn = "Moonsighting Committee (MCW)",
+        nameEn = "Moonsighting Committee Worldwide",
+        fajrAngle = 18.0,
+        ishaAngle = 18.0,
+        descriptionBn = "আন্তর্জাতিক মুনসাইটিং কমিটি (ফজর ১৮°, ইশা ১৮°)",
+        descriptionEn = "Moonsighting Committee Worldwide (Fajr 18°, Isha 18°)"
+    ),
+    SINGAPORE(
+        id = "singapore",
+        nameBn = "সিঙ্গাপুর",
+        nameEn = "Singapore (MUIS)",
+        fajrAngle = 20.0,
+        ishaAngle = 18.0,
+        descriptionBn = "মজলিস উগামা ইসলাম সিঙ্গাপুর - MUIS (ফজর ২০°, ইশা ১৮°)",
+        descriptionEn = "Majlis Ugama Islam Singapura - MUIS (Fajr 20°, Isha 18°)"
+    ),
+    ISNA(
+        id = "isna",
+        nameBn = "ইসলামিক সোসাইটি অফ নর্থ আমেরিকা (ISNA)",
+        nameEn = "Islamic Society of North America (ISNA)",
+        fajrAngle = 15.0,
+        ishaAngle = 15.0,
+        descriptionBn = "যুক্তরাষ্ট্র ও কানাডা অঞ্চলে প্রচলিত (ফজর ১৫°, ইশা ১৫°)",
+        descriptionEn = "Used in USA & Canada (Fajr 15°, Isha 15°)"
+    );
+
+    fun getDisplayName(isEn: Boolean = false): String = if (isEn) nameEn else nameBn
+
+    companion object {
+        fun fromId(id: String?): PrayerCalculationMethod {
+            return entries.find { it.id.equals(id, ignoreCase = true) } ?: KARACHI
+        }
+    }
+}

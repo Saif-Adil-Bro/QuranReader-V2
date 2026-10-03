@@ -46,6 +46,12 @@ object PrayerSoundManager {
     var currentlyPlayingNotifId: Int = -1
         private set
 
+    var alarmStartTimestampMillis: Long = 0L
+        private set
+
+    var alarmTimeoutSeconds: Int = 180
+        private set
+
     fun isPlaying(): Boolean =
         playbackJob?.isActive == true ||
         activeMediaPlayer?.isPlaying == true ||
@@ -95,6 +101,7 @@ object PrayerSoundManager {
         currentlyPlayingType = null
         currentlyPlayingPrayerName = null
         currentlyPlayingNotifId = -1
+        alarmStartTimestampMillis = 0L
     }
 
     fun getRawResourceName(soundType: PrayerAlarmSoundType, prayerName: PrayerName? = null): String? {
@@ -395,6 +402,8 @@ object PrayerSoundManager {
         currentlyPlayingType = soundType
         currentlyPlayingPrayerName = prayerName
         currentlyPlayingNotifId = notifId
+        alarmStartTimestampMillis = System.currentTimeMillis()
+        alarmTimeoutSeconds = 180
 
         if (enableVibration) {
             triggerVibration(context, isRepeating = true)

@@ -76,6 +76,8 @@ class MainActivity : ComponentActivity() {
                       android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP
               putExtra("prayer_name", prayerName.name)
               putExtra("notif_id", com.example.utils.PrayerSoundManager.currentlyPlayingNotifId)
+              putExtra("alarm_start_time", com.example.utils.PrayerSoundManager.alarmStartTimestampMillis.takeIf { it > 0 } ?: System.currentTimeMillis())
+              putExtra("alarm_timeout_seconds", com.example.utils.PrayerSoundManager.alarmTimeoutSeconds)
           }
           startActivity(alarmIntent)
       }

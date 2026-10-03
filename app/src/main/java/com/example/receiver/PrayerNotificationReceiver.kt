@@ -153,6 +153,8 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             PrayerNotificationHelper.createNotificationChannel(context)
 
+            val triggerTimestampMillis = System.currentTimeMillis()
+
             // When isAlarm is true: Tapping the notification body opens PrayerAlarmActivity directly so user can dismiss/snooze
             // When isAlarm is false: Tapping opens MainActivity to prayer_times
             val contentIntent = if (isAlarm) {
@@ -164,6 +166,8 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                     putExtra("title", title)
                     putExtra("message", message)
                     putExtra("notif_id", notifId)
+                    putExtra("alarm_start_time", triggerTimestampMillis)
+                    putExtra("alarm_timeout_seconds", 180)
                 }
                 PendingIntent.getActivity(
                     context,
@@ -239,6 +243,8 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                     putExtra("title", title)
                     putExtra("message", message)
                     putExtra("notif_id", notifId)
+                    putExtra("alarm_start_time", triggerTimestampMillis)
+                    putExtra("alarm_timeout_seconds", 180)
                 }
                 val fullScreenPendingIntent = PendingIntent.getActivity(
                     context,
@@ -305,6 +311,8 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                         putExtra("title", title)
                         putExtra("message", message)
                         putExtra("notif_id", notifId)
+                        putExtra("alarm_start_time", triggerTimestampMillis)
+                        putExtra("alarm_timeout_seconds", 180)
                     }
                     context.startActivity(activityIntent)
                 } catch (e: Exception) {

@@ -113,6 +113,10 @@ fun PrayerTimesDetailSheet(
     val sahriOffset by settingsRepo.sahriOffsetFlow.collectAsState(initial = -3)
     val iftarOffset by settingsRepo.iftarOffsetFlow.collectAsState(initial = 0)
 
+    val prayerRepo = remember(context) { com.example.data.repository.PrayerTimesRepository.getInstance(context) }
+    val calculationMethod by prayerRepo.calculationMethod.collectAsState()
+    var showCalculationDialog by remember { mutableStateOf(false) }
+
     var showSawmAdjustDialog by remember { mutableStateOf(false) }
     var selectedWaqtForAlarmSettings by remember { mutableStateOf<com.example.data.model.PrayerName?>(null) }
     var showAlarmOverviewSheet by remember { mutableStateOf(false) }
@@ -135,13 +139,14 @@ fun PrayerTimesDetailSheet(
     val isToday = remember(selectedDate) { selectedDate == LocalDate.now() }
 
     // Calculate active schedule dynamically for selected date
-    val activeSchedule = remember(selectedDate, schedule.district, isHanafi, sahriOffset, iftarOffset) {
+    val activeSchedule = remember(selectedDate, schedule.district, isHanafi, sahriOffset, iftarOffset, calculationMethod) {
         PrayerTimesCalculator.calculatePrayerSchedule(
             date = selectedDate,
             district = schedule.district,
             isHanafi = isHanafi,
             sahriOffsetMinutes = sahriOffset,
-            iftarOffsetMinutes = iftarOffset
+            iftarOffsetMinutes = iftarOffset,
+            calculationMethod = calculationMethod
         )
     }
 
@@ -1097,7 +1102,65 @@ fun PrayerTimesDetailSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 8. Asr Calculation Method Switch (Hanafi / Standard)
+            // 8. Prayer Calculation Method Card
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = DarkCardSurface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26333D)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Calculate,
+                            contentDescription = null,
+                            tint = Color(0xFF22D3EE),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (effectiveIsEnglish) "Calculation Method" else "গণনা পদ্ধতি",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF22D3EE)
+                            )
+                            Text(
+                                text = calculationMethod.getDisplayName(effectiveIsEnglish),
+                                fontSize = 11.5.sp,
+                                color = MutedText,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+
+                    TextButton(
+                        onClick = { showCalculationDialog = true },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = if (effectiveIsEnglish) "Change" else "পরিবর্তন",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF22D3EE)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 8.1. Asr Calculation Method Switch (Hanafi / Standard)
             Surface(
                 shape = RoundedCornerShape(12.dp),
                 color = DarkCardSurface,
@@ -1255,6 +1318,24 @@ fun PrayerTimesDetailSheet(
                 com.example.utils.PrayerNotificationHelper.setPrayerEnabled(context, com.example.data.model.PrayerName.IFTAR, enabled)
             },
             onDismiss = { showSawmAdjustDialog = false }
+        )
+    }
+
+    // Prayer Calculation Method Dialog
+    if (showCalculationDialog) {
+        PrayerCalculationMethodDialog(
+            selectedMethod = calculationMethod,
+            isEnglish = effectiveIsEnglish,
+            onMethodSelected = { newMethod ->
+                prayerRepo.setCalculationMethod(newMethod)
+                com.example.utils.PrayerNotificationHelper.scheduleNextPrayerAlarms(context)
+                Toast.makeText(
+                    context,
+                    if (effectiveIsEnglish) "Calculation method set to: ${newMethod.nameEn}" else "গণনা পদ্ধতি পরিবর্তন করা হয়েছে: ${newMethod.nameBn}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onDismiss = { showCalculationDialog = false }
         )
     }
 

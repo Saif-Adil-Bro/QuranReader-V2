@@ -246,6 +246,7 @@ object PrayerNotificationHelper {
         val prayerRepo = PrayerTimesRepository.getInstance(context)
         val district = prayerRepo.selectedDistrict.value
         val isHanafi = prayerRepo.isHanafi.value
+        val calculationMethod = prayerRepo.calculationMethod.value
 
         val settingsRepo = com.example.data.repository.SettingsRepository.getInstance(context)
         val sahriOffset = try {
@@ -273,6 +274,7 @@ object PrayerNotificationHelper {
             date = today,
             district = district,
             isHanafi = isHanafi,
+            calculationMethod = calculationMethod,
             sahriOffsetMinutes = sahriOffset,
             iftarOffsetMinutes = iftarOffset
         )
@@ -280,6 +282,7 @@ object PrayerNotificationHelper {
             date = tomorrow,
             district = district,
             isHanafi = isHanafi,
+            calculationMethod = calculationMethod,
             sahriOffsetMinutes = sahriOffset,
             iftarOffsetMinutes = iftarOffset
         )
@@ -287,6 +290,7 @@ object PrayerNotificationHelper {
             date = dayAfterTomorrow,
             district = district,
             isHanafi = isHanafi,
+            calculationMethod = calculationMethod,
             sahriOffsetMinutes = sahriOffset,
             iftarOffsetMinutes = iftarOffset
         )

@@ -174,13 +174,18 @@ object PrayerTimesCalculator {
         date: LocalDate = LocalDate.now(),
         district: DistrictInfo = getDefaultDistrict(),
         isHanafi: Boolean = true,
-        fajrAngle: Double = district.fajrAngle,
-        ishaAngle: Double = district.ishaAngle,
+        calculationMethod: com.example.data.model.PrayerCalculationMethod = com.example.data.model.PrayerCalculationMethod.KARACHI,
+        fajrAngle: Double? = null,
+        ishaAngle: Double? = null,
         sahriOffsetMinutes: Int = -3,
         iftarOffsetMinutes: Int = 0
     ): DailyPrayerSchedule {
         val lat = district.latitude
         val lng = district.longitude
+
+        val effectiveFajrAngle = fajrAngle ?: calculationMethod.fajrAngle
+        val effectiveIshaAngle = ishaAngle ?: calculationMethod.ishaAngle
+        val effectiveIshaInterval = calculationMethod.ishaFixedIntervalMinutes ?: district.ishaFixedIntervalMinutes
 
         val zoneId = try {
             ZoneId.of(district.timeZoneId)
@@ -212,8 +217,8 @@ object PrayerTimesCalculator {
 
         // Sunrise & Sunset angle is typically -0.833° (atmospheric refraction + sun disk radius)
         val sunriseHourAngle = Math.toDegrees(getHourAngle(-0.833)) / 15.0
-        val fajrHourAngle = Math.toDegrees(getHourAngle(-fajrAngle)) / 15.0
-        val ishaHourAngle = Math.toDegrees(getHourAngle(-ishaAngle)) / 15.0
+        val fajrHourAngle = Math.toDegrees(getHourAngle(-effectiveFajrAngle)) / 15.0
+        val ishaHourAngle = Math.toDegrees(getHourAngle(-effectiveIshaAngle)) / 15.0
 
         // Asr Angle calculation (Hanafi shadow = 2, Shafi'i/Standard shadow = 1)
         val asrFactor = if (isHanafi) 2.0 else 1.0
@@ -226,8 +231,8 @@ object PrayerTimesCalculator {
         val dhuhrDecimal = solarNoon + (2.0 / 60.0) // 2 minutes added after zawal for safety
         val asrDecimal = solarNoon + asrHourAngle
         val maghribDecimal = solarNoon + sunriseHourAngle + (2.0 / 60.0) // 2 minutes safety margin for sunset
-        val ishaDecimal = if (district.ishaFixedIntervalMinutes != null) {
-            maghribDecimal + (district.ishaFixedIntervalMinutes.toDouble() / 60.0)
+        val ishaDecimal = if (effectiveIshaInterval != null) {
+            maghribDecimal + (effectiveIshaInterval.toDouble() / 60.0)
         } else {
             solarNoon + ishaHourAngle
         }
@@ -504,7 +509,8 @@ object PrayerTimesCalculator {
             sunsetTimeDigits = formatTimeDigits(maghribTime),
             sahriTimeDigits = formatTimeDigits(sahriEndTime),
             iftarTimeDigits = formatTimeDigits(iftarTime),
-            isFriday = isFriday
+            isFriday = isFriday,
+            calculationMethod = calculationMethod
         )
     }
 

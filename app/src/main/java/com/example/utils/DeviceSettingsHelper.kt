@@ -11,6 +11,51 @@ import android.widget.Toast
 
 object DeviceSettingsHelper {
 
+    private const val PREFS_NAME = "device_settings_helper_prefs"
+    private const val KEY_LOCK_SCREEN_DONE = "lock_screen_permission_done"
+    private const val KEY_GUIDE_DISMISSED = "required_settings_guide_dismissed"
+
+    /**
+     * Check if lock screen / OEM background permission is configured or acknowledged by user
+     */
+    fun isLockScreenConfigured(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_LOCK_SCREEN_DONE, false) || prefs.getBoolean(KEY_GUIDE_DISMISSED, false)
+    }
+
+    /**
+     * Mark lock screen permission as configured
+     */
+    fun setLockScreenConfigured(context: Context, configured: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_LOCK_SCREEN_DONE, configured).apply()
+    }
+
+    /**
+     * Check if user manually dismissed the guide
+     */
+    fun isGuideDismissed(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_GUIDE_DISMISSED, false)
+    }
+
+    /**
+     * Mark guide as dismissed
+     */
+    fun setGuideDismissed(context: Context, dismissed: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_GUIDE_DISMISSED, dismissed).apply()
+    }
+
+    /**
+     * Check if both battery optimization is ignored and lock screen permission is configured
+     */
+    fun isAllAlarmSettingsConfigured(context: Context): Boolean {
+        val isBatteryIgnored = isBatteryOptimizationIgnored(context)
+        val isLockScreenDone = isLockScreenConfigured(context)
+        return isBatteryIgnored && isLockScreenDone
+    }
+
     /**
      * Check if battery optimization is disabled (ignoring battery optimizations)
      */

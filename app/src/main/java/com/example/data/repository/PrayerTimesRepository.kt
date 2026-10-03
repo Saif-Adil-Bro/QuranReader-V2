@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.example.data.model.DailyPrayerSchedule
 import com.example.data.model.DistrictInfo
+import com.example.data.model.PrayerCalculationMethod
 import com.example.utils.PrayerTimesCalculator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,12 +20,20 @@ class PrayerTimesRepository(val context: Context) {
     private val _isHanafi = MutableStateFlow(prefs.getBoolean("is_hanafi", true))
     val isHanafi: StateFlow<Boolean> = _isHanafi.asStateFlow()
 
+    private val _calculationMethod = MutableStateFlow(loadCalculationMethod())
+    val calculationMethod: StateFlow<PrayerCalculationMethod> = _calculationMethod.asStateFlow()
+
     private val _todaySchedule = MutableStateFlow(calculateCurrentSchedule())
     val todaySchedule: StateFlow<DailyPrayerSchedule> = _todaySchedule.asStateFlow()
 
     private fun loadSelectedDistrict(): DistrictInfo {
         val districtId = prefs.getString("selected_district_id", "dhaka") ?: "dhaka"
         return PrayerTimesCalculator.findDistrictById(districtId)
+    }
+
+    private fun loadCalculationMethod(): PrayerCalculationMethod {
+        val methodId = prefs.getString("calculation_method_id", PrayerCalculationMethod.KARACHI.id)
+        return PrayerCalculationMethod.fromId(methodId)
     }
 
     fun setDistrict(district: DistrictInfo) {
@@ -49,11 +58,23 @@ class PrayerTimesRepository(val context: Context) {
         }
     }
 
+    fun setCalculationMethod(method: PrayerCalculationMethod) {
+        prefs.edit().putString("calculation_method_id", method.id).apply()
+        _calculationMethod.value = method
+        refreshSchedule()
+        try {
+            com.example.utils.PrayerNotificationHelper.scheduleNextPrayerAlarms(context)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun refreshSchedule(date: LocalDate = LocalDate.now()) {
         _todaySchedule.value = PrayerTimesCalculator.calculatePrayerSchedule(
             date = date,
             district = _selectedDistrict.value,
-            isHanafi = _isHanafi.value
+            isHanafi = _isHanafi.value,
+            calculationMethod = _calculationMethod.value
         )
     }
 
@@ -61,7 +82,8 @@ class PrayerTimesRepository(val context: Context) {
         return PrayerTimesCalculator.calculatePrayerSchedule(
             date = LocalDate.now(),
             district = loadSelectedDistrict(),
-            isHanafi = prefs.getBoolean("is_hanafi", true)
+            isHanafi = prefs.getBoolean("is_hanafi", true),
+            calculationMethod = loadCalculationMethod()
         )
     }
 

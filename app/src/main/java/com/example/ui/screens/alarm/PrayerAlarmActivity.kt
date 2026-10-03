@@ -96,12 +96,19 @@ class PrayerAlarmActivity : ComponentActivity() {
         val message = intent.getStringExtra("message") ?: defaultMessage
         val notifId = intent.getIntExtra("notif_id", -1)
 
+        val soundManagerStartTime = PrayerSoundManager.alarmStartTimestampMillis.takeIf { it > 0 }
+        val intentStartTime = intent.getLongExtra("alarm_start_time", 0L).takeIf { it > 0 }
+        val alarmStartTime = soundManagerStartTime ?: intentStartTime ?: System.currentTimeMillis()
+        val timeoutSeconds = intent.getIntExtra("alarm_timeout_seconds", PrayerSoundManager.alarmTimeoutSeconds)
+
         setContent {
             PrayerAlarmScreen(
                 prayerName = prayerName,
                 title = title,
                 message = message,
                 isEnglish = isEnglish,
+                alarmStartTimeMillis = alarmStartTime,
+                totalTimeoutSeconds = timeoutSeconds,
                 onStop = {
                     handleStopAlarm(notifId, isEnglish)
                 },
@@ -138,12 +145,19 @@ class PrayerAlarmActivity : ComponentActivity() {
         val message = intent.getStringExtra("message") ?: defaultMessage
         val notifId = intent.getIntExtra("notif_id", -1)
 
+        val soundManagerStartTime = PrayerSoundManager.alarmStartTimestampMillis.takeIf { it > 0 }
+        val intentStartTime = intent.getLongExtra("alarm_start_time", 0L).takeIf { it > 0 }
+        val alarmStartTime = soundManagerStartTime ?: intentStartTime ?: System.currentTimeMillis()
+        val timeoutSeconds = intent.getIntExtra("alarm_timeout_seconds", PrayerSoundManager.alarmTimeoutSeconds)
+
         setContent {
             PrayerAlarmScreen(
                 prayerName = prayerName,
                 title = title,
                 message = message,
                 isEnglish = isEnglish,
+                alarmStartTimeMillis = alarmStartTime,
+                totalTimeoutSeconds = timeoutSeconds,
                 onStop = {
                     handleStopAlarm(notifId, isEnglish)
                 },
@@ -246,13 +260,19 @@ fun PrayerAlarmScreen(
     title: String,
     message: String,
     isEnglish: Boolean = false,
+    alarmStartTimeMillis: Long = System.currentTimeMillis(),
+    totalTimeoutSeconds: Int = 180,
     onStop: () -> Unit,
     onSnooze: () -> Unit,
     onOpenApp: () -> Unit,
     onAutoDismiss: () -> Unit = {}
 ) {
     var currentTimeString by remember { mutableStateOf("") }
-    var remainingSeconds by remember { androidx.compose.runtime.mutableIntStateOf(180) }
+    var remainingSeconds by remember(alarmStartTimeMillis, totalTimeoutSeconds) {
+        val elapsedSecs = ((System.currentTimeMillis() - alarmStartTimeMillis) / 1000L).coerceAtLeast(0L)
+        val initialLeft = (totalTimeoutSeconds - elapsedSecs).coerceAtLeast(0L).toInt()
+        androidx.compose.runtime.mutableIntStateOf(initialLeft)
+    }
 
     // Live Clock
     LaunchedEffect(isEnglish) {
@@ -270,13 +290,19 @@ fun PrayerAlarmScreen(
         onStop()
     }
 
-    // Auto-dismiss countdown timer (3 minutes = 180 seconds)
-    LaunchedEffect(Unit) {
-        while (remainingSeconds > 0) {
-            delay(1000L)
-            remainingSeconds--
+    // Auto-dismiss countdown timer linked to actual alarm start timestamp
+    LaunchedEffect(alarmStartTimeMillis, totalTimeoutSeconds) {
+        while (true) {
+            val now = System.currentTimeMillis()
+            val elapsedSecs = ((now - alarmStartTimeMillis) / 1000L).coerceAtLeast(0L)
+            val left = (totalTimeoutSeconds - elapsedSecs).coerceAtLeast(0L).toInt()
+            remainingSeconds = left
+            if (left <= 0) {
+                onAutoDismiss()
+                break
+            }
+            delay(500L)
         }
-        onAutoDismiss()
     }
 
     val countdownMinutes = remainingSeconds / 60

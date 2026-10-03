@@ -29,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Tune
@@ -47,6 +48,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -88,6 +90,26 @@ fun WaqtAlarmOverviewSheet(
     val emeraldGreen = Color(0xFF0D9488)
     val cardBackground = Color(0xFF1E293B)
     val subtleBorder = Color(0xFF334155)
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    var isBatteryIgnored by remember { mutableStateOf(com.example.utils.DeviceSettingsHelper.isBatteryOptimizationIgnored(context)) }
+    var isLockScreenDone by remember { mutableStateOf(com.example.utils.DeviceSettingsHelper.isLockScreenConfigured(context)) }
+    var showGuideManually by remember { mutableStateOf(false) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                isBatteryIgnored = com.example.utils.DeviceSettingsHelper.isBatteryOptimizationIgnored(context)
+                isLockScreenDone = com.example.utils.DeviceSettingsHelper.isLockScreenConfigured(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    val isSettingsGuideVisible = showGuideManually || (!isBatteryIgnored || !isLockScreenDone)
 
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -189,15 +211,30 @@ fun WaqtAlarmOverviewSheet(
                     }
                 }
 
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = if (isEn) "Close" else "বন্ধ করুন",
-                        tint = Color.White.copy(alpha = 0.8f)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (!isSettingsGuideVisible) {
+                        IconButton(
+                            onClick = { showGuideManually = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Info,
+                                contentDescription = if (isEn) "Device Settings Tips" else "সেটিংস নির্দেশিকা",
+                                tint = Color(0xFF38BDF8)
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = if (isEn) "Close" else "বন্ধ করুন",
+                            tint = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
                 }
             }
 
@@ -276,95 +313,124 @@ fun WaqtAlarmOverviewSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Battery & Lock-Screen Permission Helper Card
-            val isBatteryIgnored = remember(isMasterEnabled) { com.example.utils.DeviceSettingsHelper.isBatteryOptimizationIgnored(context) }
-            val canScheduleExact = remember(isMasterEnabled) { com.example.utils.DeviceSettingsHelper.canScheduleExactAlarms(context) }
-
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = Color(0xFF0F2B48),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E4976)),
-                modifier = Modifier.fillMaxWidth()
+            // Battery & Lock-Screen Permission Helper Card (Only shown if settings are not yet enabled or opened manually)
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isSettingsGuideVisible,
+                enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
+                exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
             ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                Column {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = Color(0xFF0F2B48),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E4976)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Filled.Tune,
-                                contentDescription = null,
-                                tint = Color(0xFF38BDF8),
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = if (isEn) "Required Settings for Timely Alarms" else "সঠিক সময়ে বাজার প্রয়োজনীয় সেটিংস",
-                                fontSize = 13.5.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFE2E8F0)
-                            )
-                        }
-                    }
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Tune,
+                                        contentDescription = null,
+                                        tint = Color(0xFF38BDF8),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = if (isEn) "Required Settings for Timely Alarms" else "সঠিক সময়ে বাজার প্রয়োজনীয় সেটিংস",
+                                        fontSize = 13.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFE2E8F0)
+                                    )
+                                }
 
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = com.example.utils.DeviceSettingsHelper.getDeviceBrandTip(),
-                        fontSize = 11.5.sp,
-                        lineHeight = 16.sp,
-                        color = Color(0xFF94A3B8)
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Button(
-                            onClick = {
-                                com.example.utils.DeviceSettingsHelper.openBatteryOptimizationSettings(context)
-                            },
-                            modifier = Modifier.weight(1f).height(34.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isBatteryIgnored) Color(0xFF1E3A5F) else Color(0xFF0284C7),
-                                contentColor = Color.White
-                            ),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-                        ) {
-                            val batteryBtnText = if (isEn) {
-                                if (isBatteryIgnored) "✓ Battery Unrestricted" else "⚡ Turn Off Saver"
-                            } else {
-                                if (isBatteryIgnored) "✓ ব্যাটারি আনরেস্ট্রিক্টেড" else "⚡ ব্যাটারি সেভার অফ করুন"
+                                IconButton(
+                                    onClick = {
+                                        com.example.utils.DeviceSettingsHelper.setLockScreenConfigured(context, true)
+                                        com.example.utils.DeviceSettingsHelper.setGuideDismissed(context, true)
+                                        isLockScreenDone = true
+                                        showGuideManually = false
+                                    },
+                                    modifier = Modifier.size(26.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = if (isEn) "Dismiss" else "বন্ধ করুন",
+                                        tint = Color(0xFF94A3B8),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
                             }
-                            Text(
-                                text = batteryBtnText,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
 
-                        Button(
-                            onClick = {
-                                com.example.utils.DeviceSettingsHelper.openAppDetailsSettings(context)
-                            },
-                            modifier = Modifier.weight(1f).height(34.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF0D9488),
-                                contentColor = Color.White
-                            ),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-                        ) {
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = if (isEn) "🔒 Lock Screen Permission" else "🔒 লক স্ক্রিন পারমিশন",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
+                                text = com.example.utils.DeviceSettingsHelper.getDeviceBrandTip(),
+                                fontSize = 11.5.sp,
+                                lineHeight = 16.sp,
+                                color = Color(0xFF94A3B8)
                             )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        com.example.utils.DeviceSettingsHelper.openBatteryOptimizationSettings(context)
+                                    },
+                                    modifier = Modifier.weight(1f).height(34.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isBatteryIgnored) Color(0xFF1E3A5F) else Color(0xFF0284C7),
+                                        contentColor = Color.White
+                                    ),
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                                ) {
+                                    val batteryBtnText = if (isEn) {
+                                        if (isBatteryIgnored) "✓ Battery Unrestricted" else "⚡ Turn Off Saver"
+                                    } else {
+                                        if (isBatteryIgnored) "✓ ব্যাটারি আনরেস্ট্রিক্টেড" else "⚡ ব্যাটারি সেভার অফ করুন"
+                                    }
+                                    Text(
+                                        text = batteryBtnText,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+
+                                Button(
+                                    onClick = {
+                                        com.example.utils.DeviceSettingsHelper.openAppDetailsSettings(context)
+                                        com.example.utils.DeviceSettingsHelper.setLockScreenConfigured(context, true)
+                                        isLockScreenDone = true
+                                    },
+                                    modifier = Modifier.weight(1f).height(34.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isLockScreenDone) Color(0xFF134E48) else Color(0xFF0D9488),
+                                        contentColor = Color.White
+                                    ),
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                                ) {
+                                    val lockBtnText = if (isEn) {
+                                        if (isLockScreenDone) "✓ Lock Screen Set" else "🔒 Lock Screen Permission"
+                                    } else {
+                                        if (isLockScreenDone) "✓ লক স্ক্রিন চালু আছে" else "🔒 লক স্ক্রিন পারমিশন"
+                                    }
+                                    Text(
+                                        text = lockBtnText,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
                         }
                     }
                 }
