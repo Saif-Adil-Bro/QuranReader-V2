@@ -1123,7 +1123,7 @@ fun PrayerTimesDetailSheet(
                         Icon(
                             imageVector = Icons.Default.Calculate,
                             contentDescription = null,
-                            tint = Color(0xFF22D3EE),
+                            tint = EmeraldAccent,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -1132,7 +1132,7 @@ fun PrayerTimesDetailSheet(
                                 text = if (effectiveIsEnglish) "Calculation Method" else "গণনা পদ্ধতি",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF22D3EE)
+                                color = EmeraldAccent
                             )
                             Text(
                                 text = calculationMethod.getDisplayName(effectiveIsEnglish),
@@ -1152,7 +1152,7 @@ fun PrayerTimesDetailSheet(
                             text = if (effectiveIsEnglish) "Change" else "পরিবর্তন",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF22D3EE)
+                            color = EmeraldAccent
                         )
                     }
                 }

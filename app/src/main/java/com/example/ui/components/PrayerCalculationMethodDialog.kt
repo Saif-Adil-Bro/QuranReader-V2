@@ -43,10 +43,12 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.data.model.PrayerCalculationMethod
 
-private val CyanHeaderBg = Color(0xFF22D3EE)
+private val EmeraldPrimary = Color(0xFF00C288)
+private val EmeraldDarkGreen = Color(0xFF059669)
 private val DarkDialogBg = Color(0xFF131D24)
-private val DarkCardSurface = Color(0xFF18242C)
+private val DarkCardSurface = Color(0xFF182228)
 private val ItemDividerColor = Color(0xFF1E2F38)
+private val DarkGreenText = Color(0xFF022C22)
 
 @Composable
 fun PrayerCalculationMethodDialog(
@@ -55,7 +57,7 @@ fun PrayerCalculationMethodDialog(
     onMethodSelected: (PrayerCalculationMethod) -> Unit,
     onDismiss: () -> Unit
 ) {
-    // Exact list matching the requested UI screenshot
+    // Exact list matching the calculation methods
     val methodsList = listOf(
         PrayerCalculationMethod.MWL,
         PrayerCalculationMethod.EGYPT,
@@ -76,17 +78,21 @@ fun PrayerCalculationMethodDialog(
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = DarkDialogBg,
-            border = BorderStroke(1.dp, Color(0xFF243B48)),
+            border = BorderStroke(1.dp, Color(0xFF1E3A2F)),
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .padding(vertical = 20.dp)
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                // 1. Cyan Top Header
+                // 1. Emerald Green Top Header matching the App's Islamic Green Theme
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(CyanHeaderBg)
+                        .background(
+                            androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                colors = listOf(Color(0xFF059669), Color(0xFF00C288))
+                            )
+                        )
                         .padding(vertical = 14.dp, horizontal = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -94,7 +100,7 @@ fun PrayerCalculationMethodDialog(
                         text = if (isEnglish) "Calculation Method" else "গণনা পদ্ধতি",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A),
+                        color = Color(0xFF022C22),
                         textAlign = TextAlign.Center
                     )
                 }
@@ -128,7 +134,7 @@ fun PrayerCalculationMethodDialog(
                                         text = method.getDisplayName(isEnglish),
                                         fontSize = 14.5.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (isSelected) CyanHeaderBg else Color.White
+                                        color = if (isSelected) EmeraldPrimary else Color.White
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     val desc = if (isEnglish) method.descriptionEn else method.descriptionBn
@@ -151,7 +157,7 @@ fun PrayerCalculationMethodDialog(
                                         onDismiss()
                                     },
                                     colors = RadioButtonDefaults.colors(
-                                        selectedColor = CyanHeaderBg,
+                                        selectedColor = EmeraldPrimary,
                                         unselectedColor = Color(0xFF64748B)
                                     )
                                 )
@@ -166,7 +172,7 @@ fun PrayerCalculationMethodDialog(
                     }
                 }
 
-                // 3. Bottom Cancel / Action Pill Button matching the screenshot
+                // 3. Bottom Cancel / Action Pill Button in Emerald Green
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -177,8 +183,8 @@ fun PrayerCalculationMethodDialog(
                         onClick = onDismiss,
                         shape = RoundedCornerShape(100.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = CyanHeaderBg,
-                            contentColor = Color(0xFF0F172A)
+                            containerColor = EmeraldPrimary,
+                            contentColor = DarkGreenText
                         ),
                         modifier = Modifier.height(40.dp)
                     ) {
