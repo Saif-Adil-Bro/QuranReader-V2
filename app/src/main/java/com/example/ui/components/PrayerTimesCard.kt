@@ -349,7 +349,7 @@ fun PrayerTimesBannerSlide(
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            text = if (effectiveIsEnglish) "Islamic Foundation" else "ইসলামিক ফাউন্ডেশন (বাংলাদেশ)",
+                            text = schedule.calculationMethod.getDisplayName(effectiveIsEnglish),
                             color = TextSecondary.copy(alpha = 0.85f),
                             fontSize = 9.sp,
                             maxLines = 1

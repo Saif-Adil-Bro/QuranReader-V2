@@ -92,7 +92,7 @@ object PrayerTimesShareUtil {
                 append("${idx + 1}. ${forbidden.titleBn}: ${forbidden.timeRangeBn}\n")
             }
             append("─────────────────\n")
-            append("📌 সূত্র: ইসলামিক ফাউন্ডেশন (বাংলাদেশ)\n")
+            append("📌 সূত্র: ${schedule.calculationMethod.getDisplayName(isEnglish)}\n")
             append("📘 Facebook: fb.com/MuslimsLibrary\n")
             append("✈️ Telegram: t.me/MuslimsLibraryApp\n")
             append("📱 Quran Reader App")

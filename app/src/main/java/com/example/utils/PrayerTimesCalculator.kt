@@ -195,14 +195,62 @@ object PrayerTimesCalculator {
         val zonedDateTime = java.time.ZonedDateTime.of(date, LocalTime.NOON, zoneId)
         val timeZone = zonedDateTime.offset.totalSeconds / 3600.0
 
-        val dayOfYear = date.dayOfYear
+        // High-Precision Solar Ephemeris (NOAA / Jean Meeus Astronomical Engine)
+        val year = date.year
+        var m = date.monthValue
+        var y = year
+        if (m <= 2) {
+            y -= 1
+            m += 12
+        }
+        val aVal = y / 100
+        val bVal = 2 - aVal + aVal / 4
+        val dayFrac = 0.5 // noon
+        val jd = (365.25 * (y + 4716)).toLong() + (30.6001 * (m + 1)).toInt() + date.dayOfMonth + dayFrac + bVal - 1524.5
+        val t = (jd - 2451545.0) / 36525.0
 
-        // Solar Declination & Equation of Time
-        val b = 2.0 * Math.PI * (dayOfYear - 81) / 365.0
-        val eot = 9.87 * sin(2 * b) - 7.53 * cos(b) - 1.5 * sin(b) // minutes
-        val declination = 23.45 * sin(Math.toRadians(360.0 / 365.0 * (dayOfYear - 81))) // degrees
+        // Geometric mean longitude of the Sun (degrees)
+        var l0 = (280.46646 + 36000.76983 * t + 0.0003032 * t * t) % 360.0
+        if (l0 < 0) l0 += 360.0
 
-        // Solar Noon (Dhuhr) in local time hours
+        // Geometric mean anomaly of the Sun (degrees)
+        var mSun = (357.52911 + 35999.05029 * t - 0.0001537 * t * t) % 360.0
+        if (mSun < 0) mSun += 360.0
+        val mSunRad = Math.toRadians(mSun)
+
+        // Sun's equation of center
+        val cVal = (1.914602 - 0.004817 * t - 0.000014 * t * t) * sin(mSunRad) +
+                (0.019993 - 0.000101 * t) * sin(2.0 * mSunRad) +
+                0.000289 * sin(3.0 * mSunRad)
+
+        // Sun's true and apparent longitude
+        val sunTrueLong = l0 + cVal
+        val omega = 125.04 - 1934.136 * t
+        val sunApparentLong = sunTrueLong - 0.00569 - 0.00478 * sin(Math.toRadians(omega))
+
+        // Mean and corrected obliquity of the ecliptic
+        val eps0 = 23.0 + 26.0 / 60.0 + 21.448 / 3600.0 - (46.8150 * t + 0.00059 * t * t - 0.001813 * t * t * t) / 3600.0
+        val eps = eps0 + 0.00256 * cos(Math.toRadians(omega))
+
+        val epsRad = Math.toRadians(eps)
+        val appLongRad = Math.toRadians(sunApparentLong)
+
+        // Sun's declination (degrees)
+        val declination = Math.toDegrees(asin(sin(epsRad) * sin(appLongRad)))
+
+        // Equation of Time (minutes)
+        val yVar = tan(epsRad / 2.0).pow(2.0)
+        val l0Rad = Math.toRadians(l0)
+        val eSun = 0.016708634 - 0.000042037 * t - 0.0000001267 * t * t
+        val eot = 4.0 * Math.toDegrees(
+            yVar * sin(2.0 * l0Rad) -
+            2.0 * eSun * sin(mSunRad) +
+            4.0 * eSun * yVar * sin(mSunRad) * cos(2.0 * l0Rad) -
+            0.5 * yVar * yVar * sin(4.0 * l0Rad) -
+            1.25 * eSun * eSun * sin(2.0 * mSunRad)
+        )
+
+        // Solar Noon (Dhuhr astronomical base) in local standard time
         val solarNoon = 12.0 + (timeZone * 15.0 - lng) / 15.0 - (eot / 60.0)
 
         // Helper to calculate Hour Angle
@@ -228,9 +276,9 @@ object PrayerTimesCalculator {
 
         val fajrDecimal = solarNoon - fajrHourAngle
         val sunriseDecimal = solarNoon - sunriseHourAngle
-        val dhuhrDecimal = solarNoon + (2.0 / 60.0) // 2 minutes added after zawal for safety
+        val dhuhrDecimal = solarNoon + (1.0 / 60.0) // 1 minute safety margin after zawal
         val asrDecimal = solarNoon + asrHourAngle
-        val maghribDecimal = solarNoon + sunriseHourAngle + (2.0 / 60.0) // 2 minutes safety margin for sunset
+        val maghribDecimal = solarNoon + sunriseHourAngle + (1.0 / 60.0) // 1 minute safety margin for sunset
         val ishaDecimal = if (effectiveIshaInterval != null) {
             maghribDecimal + (effectiveIshaInterval.toDouble() / 60.0)
         } else {

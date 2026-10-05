@@ -687,8 +687,9 @@ fun PrayerSunPathCard(
                     modifier = Modifier.size(12.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
+                val methodDisplayName = schedule.calculationMethod.getDisplayName(isEnglish)
                 Text(
-                    text = if (isEnglish) "Timetable: Based on Islamic Foundation (Bangladesh)" else "সময়সূচী: ইসলামিক ফাউন্ডেশন (বাংলাদেশ) অনুযায়ী",
+                    text = if (isEnglish) "Timetable: Based on $methodDisplayName" else "সময়সূচী: $methodDisplayName অনুযায়ী",
                     color = SoftWhite.copy(alpha = 0.75f),
                     fontSize = 10.sp,
                     maxLines = 1,
