@@ -817,38 +817,34 @@ fun HomeScreen(
                             }
                         }
                         
-                        HeroSection(
-                            lastReadTitle = actionTextForHero,
-                            lastReadSubtitle = subTextForHero,
-                            hijriOffset = combinedHijriOffset,
-                            prayerSchedule = prayerSchedule,
-                            isEnglish = isEnglish,
-                            onResumeClick = {
-                                when (lastReadMode) {
-                                    "HAFEZI" -> onNavigateToHafeziMode(lastReadPage)
-                                    "TAJWEED" -> onNavigateToTajweedMode(lastReadPage)
-                                    "READING" -> onNavigateToReadingMode(lastReadSurah)
-                                    "MUSHAF" -> onNavigateToMushafPage(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId, lastReadMushafPage, false)
-                                    "DETAIL" -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
-                                    else -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
-                                }
-                            },
-                            onHijriDateClick = { onNavigateToCalendar() },
-                            onDuaClick = { selectedDuaForDetail = it },
-                            onPrayerTimesClick = { showPrayerTimesDetailSheet = true }
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomCenter)
-                                .offset(y = 24.dp)
-                        ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            HeroSection(
+                                lastReadTitle = actionTextForHero,
+                                lastReadSubtitle = subTextForHero,
+                                hijriOffset = combinedHijriOffset,
+                                prayerSchedule = prayerSchedule,
+                                isEnglish = isEnglish,
+                                onResumeClick = {
+                                    when (lastReadMode) {
+                                        "HAFEZI" -> onNavigateToHafeziMode(lastReadPage)
+                                        "TAJWEED" -> onNavigateToTajweedMode(lastReadPage)
+                                        "READING" -> onNavigateToReadingMode(lastReadSurah)
+                                        "MUSHAF" -> onNavigateToMushafPage(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId, lastReadMushafPage, false)
+                                        "DETAIL" -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
+                                        else -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
+                                    }
+                                },
+                                onHijriDateClick = { onNavigateToCalendar() },
+                                onDuaClick = { selectedDuaForDetail = it },
+                                onPrayerTimesClick = { showPrayerTimesDetailSheet = true }
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
                             SearchSection(isEnglish = isEnglish, onClick = onNavigateToSearch)
                         }
                     }
                 }
                 item(key = "quick_pills", contentType = "pills") {
-                    Spacer(modifier = Modifier.height(36.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     QuickSurahPills(
                         isEnglish = isEnglish,
                         onNavigateToSurahWithAyah = onNavigateToSurahWithAyah
@@ -1132,315 +1128,16 @@ fun HeroSection(
     onDuaClick: (com.example.data.DuaItem) -> Unit = {},
     onPrayerTimesClick: () -> Unit = {}
 ) {
-    val totalSlides = 4
-    val pagerState = rememberPagerState(pageCount = { totalSlides })
-    
-    val bengaliDate = remember(isEnglish) { com.example.utils.DateUtil.getTodayBengaliDateStr(isEnglish) }
-    val todayGregorianDate = remember(isEnglish) { com.example.utils.DateUtil.getTodayGregorianDateStr(isEnglish) }
-    val hijriDateStr = remember(hijriOffset, isEnglish) {
-        if (isEnglish) {
-            val hijriInfo = com.example.utils.HijriCalendarUtil.getHijriDate(java.time.LocalDate.now(), hijriOffset)
-            "${hijriInfo.hijriDay} ${hijriInfo.hijriMonthNameEn} ${hijriInfo.hijriYear} AH"
-        } else {
-            com.example.utils.DateUtil.getTodayHijriDateStr(hijriOffset)
-        }
-    }
-    val hijriNoteStr = remember(hijriOffset, isEnglish) {
-        if (isEnglish) "Lunar Calendar" else com.example.utils.DateUtil.getHijriNoteStr(hijriOffset)
-    }
-    val duaItem = remember { com.example.data.DuaData.getDuaItemOfTheDay() }
-    val ayahOfTheDay = remember { com.example.data.AyahData.getAyahOfTheDay() }
-
-    // Auto-scroll loop: whenever user changes the page manually (or page scrolls), 
-    // the coroutine restarts, resetting the 9-second countdown for the active slide.
-    LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
-        if (!pagerState.isScrollInProgress) {
-            delay(9000)
-            try {
-                val nextPage = (pagerState.currentPage + 1) % totalSlides
-                pagerState.animateScrollToPage(nextPage)
-            } catch (e: Exception) {
-                // Ignore layout/detachment crashes when navigating away
-            }
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF0E382A), // Deep Islamic Pine/Forest Green
-                        Color(0xFF1B5B45), // Rich Emerald Green
-                        Color(0xFF124333)  // Deep Emerald Base
-                    )
-                )
-            )
-            .padding(top = 16.dp, bottom = 44.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 20.dp)
-        ) { page ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp)
-                    .height(160.dp),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    Color(0xFF185340), // Perfectly aligned Dark Emerald
-                                    Color(0xFF247358)  // Vibrant Islamic Emerald
-                                ),
-                                start = Offset(0f, 0f),
-                                end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-                            )
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = Color.White.copy(alpha = 0.22f),
-                            shape = RoundedCornerShape(24.dp)
-                        )
-                ) {
-                        when (page) {
-                            0 -> {
-                                // Slide 1: Prayer Times Dynamic Card
-                                com.example.ui.components.PrayerTimesBannerSlide(
-                                    schedule = prayerSchedule,
-                                    isEnglish = isEnglish,
-                                    onClick = onPrayerTimesClick,
-                                    onLocationClick = onPrayerTimesClick
-                                )
-                            }
-                            1 -> {
-                                // Slide 2: Quick Info (Today's Date & Calendars)
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clickable { onHijriDateClick() }
-                                        .padding(horizontal = 14.dp, vertical = 12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .background(Color.White.copy(alpha = 0.16f), RoundedCornerShape(100.dp))
-                                            .padding(horizontal = 14.dp, vertical = 5.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.CalendarMonth,
-                                            contentDescription = null,
-                                            tint = Color(0xFFFFD54F),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = todayGregorianDate,
-                                            color = White,
-                                            fontSize = 14.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    HorizontalDivider(color = Color.White.copy(alpha = 0.22f), thickness = 1.dp)
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Text(
-                                                text = if (isEnglish) "🌾 Bangla Calendar" else "🌾 বাংলা ক্যালেন্ডার",
-                                                color = White.copy(alpha = 0.82f),
-                                                fontSize = 11.sp,
-                                                lineHeight = 13.sp
-                                            )
-                                            Spacer(modifier = Modifier.height(2.dp))
-                                            Text(
-                                                text = bengaliDate.first,
-                                                color = White,
-                                                fontSize = 13.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                lineHeight = 17.sp
-                                            )
-                                            Text(
-                                                text = bengaliDate.second,
-                                                color = White.copy(alpha = 0.82f),
-                                                fontSize = 10.5.sp,
-                                                lineHeight = 13.sp
-                                            )
-                                        }
-                                        Box(
-                                            modifier = Modifier
-                                                .width(1.dp)
-                                                .height(34.dp)
-                                                .background(Color.White.copy(alpha = 0.22f))
-                                        )
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Text(
-                                                text = if (isEnglish) "🌙 Hijri Calendar" else "🌙 হিজরি ক্যালেন্ডার",
-                                                color = White.copy(alpha = 0.82f),
-                                                fontSize = 11.sp,
-                                                lineHeight = 13.sp
-                                            )
-                                            Spacer(modifier = Modifier.height(2.dp))
-                                            Text(
-                                                text = hijriDateStr,
-                                                color = White,
-                                                fontSize = 13.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                lineHeight = 17.sp
-                                            )
-                                            Text(
-                                                text = hijriNoteStr,
-                                                color = White.copy(alpha = 0.82f),
-                                                fontSize = 10.5.sp,
-                                                lineHeight = 13.sp
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            2 -> {
-                                // Slide 3: Dua of the day
-                                val duaNumStr = if (isEnglish) duaItem.id.toString() else com.example.utils.DateUtil.toBengaliNumerals(duaItem.id)
-                                val duaTitle = duaItem.title
-
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(vertical = 14.dp, horizontal = 16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(100.dp))
-                                            .padding(horizontal = 12.dp, vertical = 4.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = if (isEnglish) "Dua of the Day" else "আজকের দোয়া",
-                                            color = White,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    
-                                    Text(
-                                        text = "[$duaNumStr] $duaTitle",
-                                        color = White,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        textAlign = TextAlign.Center,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
-                                    )
-                                    
-                                    Row(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .clickable { onDuaClick(duaItem) }
-                                            .padding(horizontal = 12.dp, vertical = 4.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        Text(
-                                            text = if (isEnglish) "Read Details" else "বিস্তারিত পড়ুন",
-                                            color = White.copy(alpha = 0.9f),
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 12.sp
-                                        )
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Icon(
-                                            imageVector = Icons.Default.ArrowForward,
-                                            contentDescription = null,
-                                            tint = White.copy(alpha = 0.9f),
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                    }
-                                }
-                            }
-                            3 -> {
-                                // Slide 4: Ayah of the day
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(100.dp))
-                                            .padding(horizontal = 12.dp, vertical = 4.dp)
-                                    ) {
-                                        Text(
-                                            text = if (isEnglish) "Ayah of the Day" else "আজকের আয়াত",
-                                            color = White,
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Text(
-                                        text = ayahOfTheDay,
-                                        color = White,
-                                        fontSize = 14.5.sp,
-                                        textAlign = TextAlign.Center,
-                                        fontWeight = FontWeight.Medium,
-                                        lineHeight = 21.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            repeat(totalSlides) { iteration ->
-                val isCurrent = pagerState.currentPage == iteration
-                val color = if (isCurrent) Color.White else Color.White.copy(alpha = 0.38f)
-                val width = if (isCurrent) 16.dp else 5.dp
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 2.5.dp)
-                        .clip(if (isCurrent) RoundedCornerShape(100.dp) else CircleShape)
-                        .background(color)
-                        .size(width = width, height = 5.dp)
-                )
-            }
-        }
-    }
+    com.example.ui.components.FullWidthPrayerHeroSection(
+        prayerSchedule = prayerSchedule,
+        hijriOffset = hijriOffset,
+        isEnglish = isEnglish,
+        onPrayerTimesClick = onPrayerTimesClick,
+        onLocationClick = onPrayerTimesClick,
+        onCalendarClick = onHijriDateClick
+    )
 }
+
 
 @Composable
 fun SearchSection(isEnglish: Boolean = false, onClick: () -> Unit) {

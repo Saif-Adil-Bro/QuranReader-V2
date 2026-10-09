@@ -811,9 +811,80 @@ fun WaqtAlarmConfigDialog(
                         enabled = isAlarmEnabled,
                         colors = SliderDefaults.colors(
                             thumbColor = emeraldGreen,
-                            activeTrackColor = emeraldGreen,
-                            inactiveTrackColor = Color(0xFF334155)
+                            activeTrackColor = Color.Transparent,
+                            inactiveTrackColor = Color.Transparent
                         ),
+                        thumb = {
+                            SliderDefaults.Thumb(
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                colors = SliderDefaults.colors(thumbColor = emeraldGreen),
+                                enabled = isAlarmEnabled
+                            )
+                        },
+                        track = { sliderState ->
+                            val trackHeight = 8.dp
+                            androidx.compose.foundation.Canvas(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(trackHeight)
+                            ) {
+                                val width = size.width
+                                val height = size.height
+                                val cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f)
+
+                                // 1. Inactive background track across the full line
+                                val trackBg = if (isAlarmEnabled) Color(0xFF334155) else Color(0xFF1E293B)
+                                drawRoundRect(
+                                    color = trackBg,
+                                    size = androidx.compose.ui.geometry.Size(width, height),
+                                    cornerRadius = cornerRadius
+                                )
+
+                                // 2. Compute center (0 minutes) and current thumb position
+                                val minVal = sliderState.valueRange.start
+                                val maxVal = sliderState.valueRange.endInclusive
+                                val span = maxVal - minVal
+                                val fraction = if (span > 0f) ((sliderState.value - minVal) / span).coerceIn(0f, 1f) else 0.5f
+
+                                val centerX = width * 0.5f
+                                val currentX = width * fraction
+
+                                // 3. Active track starts strictly from the center (0) to the current thumb position
+                                if (kotlin.math.abs(currentX - centerX) > 1.5f) {
+                                    val startX = minOf(centerX, currentX)
+                                    val endX = maxOf(centerX, currentX)
+                                    // Use cyan-blue when negative (before waqt) and emerald green when positive (after waqt)
+                                    val activeColor = if (!isAlarmEnabled) {
+                                        Color.Gray.copy(alpha = 0.4f)
+                                    } else if (sliderState.value < 0) {
+                                        Color(0xFF38BDF8)
+                                    } else {
+                                        emeraldGreen
+                                    }
+
+                                    drawRoundRect(
+                                        color = activeColor,
+                                        topLeft = androidx.compose.ui.geometry.Offset(startX, 0f),
+                                        size = androidx.compose.ui.geometry.Size(endX - startX, height),
+                                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f)
+                                    )
+                                }
+
+                                // 4. Center origin (0 mark) indicator dot
+                                val centerDotColor = if (!isAlarmEnabled) {
+                                    Color.Gray.copy(alpha = 0.3f)
+                                } else if (kotlin.math.abs(sliderState.value) < 0.5f) {
+                                    Color.White
+                                } else {
+                                    Color.White.copy(alpha = 0.6f)
+                                }
+                                drawCircle(
+                                    color = centerDotColor,
+                                    radius = (height / 2f) + 1.dp.toPx(),
+                                    center = androidx.compose.ui.geometry.Offset(centerX, height / 2f)
+                                )
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -834,7 +905,13 @@ fun WaqtAlarmConfigDialog(
                             },
                             fontSize = 12.5.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (offsetMinutes == 0) emeraldGreen else Color(0xFF38BDF8)
+                            color = if (offsetMinutes == 0) emeraldGreen else Color(0xFF38BDF8),
+                            modifier = if (offsetMinutes != 0 && isAlarmEnabled) {
+                                Modifier.clickable {
+                                    sliderPosition = 0f
+                                    offsetMinutes = 0
+                                }
+                            } else Modifier
                         )
                         Text(
                             text = if (isEn) "+30m" else "+৩০ মি.",

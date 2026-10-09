@@ -69,19 +69,24 @@ class PrayerTimesRepository(val context: Context) {
         }
     }
 
-    fun refreshSchedule(date: LocalDate = LocalDate.now()) {
+    fun refreshSchedule(date: LocalDate? = null) {
+        val district = _selectedDistrict.value
+        val zoneId = try { java.time.ZoneId.of(district.timeZoneId) } catch (e: Exception) { java.time.ZoneId.of("Asia/Dhaka") }
+        val targetDate = date ?: LocalDate.now(zoneId)
         _todaySchedule.value = PrayerTimesCalculator.calculatePrayerSchedule(
-            date = date,
-            district = _selectedDistrict.value,
+            date = targetDate,
+            district = district,
             isHanafi = _isHanafi.value,
             calculationMethod = _calculationMethod.value
         )
     }
 
     private fun calculateCurrentSchedule(): DailyPrayerSchedule {
+        val district = loadSelectedDistrict()
+        val zoneId = try { java.time.ZoneId.of(district.timeZoneId) } catch (e: Exception) { java.time.ZoneId.of("Asia/Dhaka") }
         return PrayerTimesCalculator.calculatePrayerSchedule(
-            date = LocalDate.now(),
-            district = loadSelectedDistrict(),
+            date = LocalDate.now(zoneId),
+            district = district,
             isHanafi = prefs.getBoolean("is_hanafi", true),
             calculationMethod = loadCalculationMethod()
         )
