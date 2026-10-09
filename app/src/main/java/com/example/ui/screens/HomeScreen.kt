@@ -2244,7 +2244,7 @@ fun ModesGridSection(
             ModeItemCard(
                 title = if (isEnglish) "Hafezi Quran" else "হাফেজী কুরআন",
                 subtitle = if (isEnglish) "15 Lines Image View" else "১৫ লাইন ইমেজ ভিউ",
-                icon = Icons.Default.MenuBook,
+                iconRes = R.drawable.ic_hafezi_quran_custom,
                 containerColor = if (isDark) Color(0xFF064E3B).copy(alpha = 0.5f) else Color(0xFFECFDF5),
                 iconColor = Color(0xFF10B981),
                 onClick = onHafeziPdfClick,
@@ -4073,7 +4073,8 @@ fun SubtleCardDecorativeWave(
 fun ModeItemCard(
     title: String,
     subtitle: String,
-    icon: ImageVector,
+    icon: ImageVector = Icons.Default.MenuBook,
+    iconRes: Int? = null,
     containerColor: Color,
     iconColor: Color,
     onClick: () -> Unit,
@@ -4127,6 +4128,13 @@ fun ModeItemCard(
                                 fontWeight = FontWeight.Black
                             )
                         }
+                    } else if (iconRes != null) {
+                        Icon(
+                            painter = painterResource(id = iconRes),
+                            contentDescription = null,
+                            tint = iconColor,
+                            modifier = Modifier.size(24.dp)
+                        )
                     } else {
                         Icon(
                             imageVector = icon,
