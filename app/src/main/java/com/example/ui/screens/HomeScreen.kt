@@ -307,6 +307,29 @@ fun HomeScreen(
     val prayerSchedule by prayerRepo.todaySchedule.collectAsState()
     val isHanafiAsr by prayerRepo.isHanafi.collectAsState()
     var showPrayerTimesDetailSheet by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var showDistrictSelectionDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var districtSearchQuery by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    var selectedDistrictTab by androidx.compose.runtime.remember(prayerSchedule.district) {
+        androidx.compose.runtime.mutableIntStateOf(if (prayerSchedule.district.countryBn == "বাংলাদেশ") 0 else 1)
+    }
+
+    val filteredDistricts = remember(districtSearchQuery, selectedDistrictTab) {
+        if (districtSearchQuery.isBlank()) {
+            if (selectedDistrictTab == 0) {
+                com.example.utils.PrayerTimesCalculator.BANGLADESH_DISTRICTS
+            } else {
+                com.example.utils.PrayerTimesCalculator.INTERNATIONAL_CITIES
+            }
+        } else {
+            com.example.utils.PrayerTimesCalculator.ALL_LOCATIONS.filter {
+                it.nameBn.contains(districtSearchQuery, ignoreCase = true) ||
+                it.nameEn.contains(districtSearchQuery, ignoreCase = true) ||
+                it.countryBn.contains(districtSearchQuery, ignoreCase = true) ||
+                it.countryEn.contains(districtSearchQuery, ignoreCase = true) ||
+                it.divisionBn.contains(districtSearchQuery, ignoreCase = true)
+            }
+        }
+    }
 
     // Auto-refresh prayer timer every 30 seconds
     LaunchedEffect(Unit) {
@@ -314,6 +337,27 @@ fun HomeScreen(
             prayerRepo.refreshSchedule()
             delay(30000)
         }
+    }
+
+    if (showDistrictSelectionDialog) {
+        com.example.ui.components.DistrictSelectionModal(
+            searchQuery = districtSearchQuery,
+            onSearchQueryChange = { districtSearchQuery = it },
+            selectedTab = selectedDistrictTab,
+            onTabSelected = { selectedDistrictTab = it },
+            filteredLocations = filteredDistricts,
+            selectedDistrict = prayerSchedule.district,
+            isEnglish = isEnglish,
+            onSelect = {
+                prayerRepo.setDistrict(it)
+                showDistrictSelectionDialog = false
+                districtSearchQuery = ""
+            },
+            onDismiss = {
+                showDistrictSelectionDialog = false
+                districtSearchQuery = ""
+            }
+        )
     }
 
     if (showPrayerTimesDetailSheet) {
@@ -817,29 +861,43 @@ fun HomeScreen(
                             }
                         }
                         
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            HeroSection(
-                                lastReadTitle = actionTextForHero,
-                                lastReadSubtitle = subTextForHero,
-                                hijriOffset = combinedHijriOffset,
-                                prayerSchedule = prayerSchedule,
-                                isEnglish = isEnglish,
-                                onResumeClick = {
-                                    when (lastReadMode) {
-                                        "HAFEZI" -> onNavigateToHafeziMode(lastReadPage)
-                                        "TAJWEED" -> onNavigateToTajweedMode(lastReadPage)
-                                        "READING" -> onNavigateToReadingMode(lastReadSurah)
-                                        "MUSHAF" -> onNavigateToMushafPage(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId, lastReadMushafPage, false)
-                                        "DETAIL" -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
-                                        else -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
-                                    }
-                                },
-                                onHijriDateClick = { onNavigateToCalendar() },
-                                onDuaClick = { selectedDuaForDetail = it },
-                                onPrayerTimesClick = { showPrayerTimesDetailSheet = true }
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            SearchSection(isEnglish = isEnglish, onClick = onNavigateToSearch)
+                        // Overlapping Hero Section & Search Pill
+                        // Green background extends downwards to halfway through the search box
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                HeroSection(
+                                    lastReadTitle = actionTextForHero,
+                                    lastReadSubtitle = subTextForHero,
+                                    hijriOffset = combinedHijriOffset,
+                                    prayerSchedule = prayerSchedule,
+                                    isEnglish = isEnglish,
+                                    extraBottomPadding = 28.dp,
+                                    onResumeClick = {
+                                        when (lastReadMode) {
+                                            "HAFEZI" -> onNavigateToHafeziMode(lastReadPage)
+                                            "TAJWEED" -> onNavigateToTajweedMode(lastReadPage)
+                                            "READING" -> onNavigateToReadingMode(lastReadSurah)
+                                            "MUSHAF" -> onNavigateToMushafPage(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId, lastReadMushafPage, false)
+                                            "DETAIL" -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
+                                            else -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
+                                        }
+                                    },
+                                    onHijriDateClick = { onNavigateToCalendar() },
+                                    onDuaClick = { selectedDuaForDetail = it },
+                                    onPrayerTimesClick = { showPrayerTimesDetailSheet = true },
+                                    onLocationClick = { showDistrictSelectionDialog = true }
+                                )
+                                // Bottom half of search pill extends out onto the screen background
+                                Spacer(modifier = Modifier.height(26.dp))
+                            }
+                            // Search pill overlapping the bottom edge of the hero section
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.BottomCenter)
+                            ) {
+                                SearchSection(isEnglish = isEnglish, onClick = onNavigateToSearch)
+                            }
                         }
                     }
                 }
@@ -1123,32 +1181,39 @@ fun HeroSection(
     hijriOffset: Int,
     prayerSchedule: com.example.data.model.DailyPrayerSchedule,
     isEnglish: Boolean = false,
+    extraBottomPadding: androidx.compose.ui.unit.Dp = 28.dp,
     onResumeClick: () -> Unit = {},
     onHijriDateClick: () -> Unit = {},
     onDuaClick: (com.example.data.DuaItem) -> Unit = {},
-    onPrayerTimesClick: () -> Unit = {}
+    onPrayerTimesClick: () -> Unit = {},
+    onLocationClick: () -> Unit = {}
 ) {
     com.example.ui.components.FullWidthPrayerHeroSection(
         prayerSchedule = prayerSchedule,
         hijriOffset = hijriOffset,
         isEnglish = isEnglish,
+        extraBottomPadding = extraBottomPadding,
         onPrayerTimesClick = onPrayerTimesClick,
-        onLocationClick = onPrayerTimesClick,
+        onLocationClick = onLocationClick,
         onCalendarClick = onHijriDateClick
     )
 }
 
 
 @Composable
-fun SearchSection(isEnglish: Boolean = false, onClick: () -> Unit) {
+fun SearchSection(
+    modifier: Modifier = Modifier,
+    isEnglish: Boolean = false,
+    onClick: () -> Unit
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .shadow(6.dp, androidx.compose.foundation.shape.CircleShape)
             .background(MaterialTheme.colorScheme.surface, androidx.compose.foundation.shape.CircleShape)
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .padding(horizontal = 18.dp, vertical = 14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Search, contentDescription = "Search", tint = GrayText)

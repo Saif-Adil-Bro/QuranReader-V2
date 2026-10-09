@@ -1794,7 +1794,7 @@ private fun PrayerReferenceDialog(
 }
 
 @Composable
-private fun DistrictSelectionModal(
+internal fun DistrictSelectionModal(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     selectedTab: Int,

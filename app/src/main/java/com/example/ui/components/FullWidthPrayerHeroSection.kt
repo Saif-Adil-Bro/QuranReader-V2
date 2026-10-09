@@ -36,11 +36,14 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.model.DailyPrayerSchedule
 import com.example.data.model.PrayerName
 import com.example.data.model.SinglePrayerTime
@@ -58,12 +61,14 @@ import java.time.LocalDate
  * 3. Bottom Dark Emerald-Green Prayer Status Panel
  *    - Single-row layout: Left (Mosque icon + Current Prayer Name), Right (Two capsules: Started Ago + Next Prayer Countdown & Arrow)
  *    - Islamic mosque silhouettes subtly embedded in background
+ * 4. Sehri & Iftar Card matching exact height of running prayer waqt panel
  */
 @Composable
 fun FullWidthPrayerHeroSection(
     prayerSchedule: DailyPrayerSchedule,
     hijriOffset: Int,
     isEnglish: Boolean = false,
+    extraBottomPadding: Dp = 28.dp,
     onPrayerTimesClick: () -> Unit,
     onLocationClick: () -> Unit,
     onCalendarClick: () -> Unit = {}
@@ -80,46 +85,40 @@ fun FullWidthPrayerHeroSection(
     // -------------------------------------------------------------------------
     // Dates calculation
     // -------------------------------------------------------------------------
-    val today = remember(prayerSchedule) {
+    val zoneId = remember(prayerSchedule) {
         try {
-            val zoneId = java.time.ZoneId.of(prayerSchedule.district.timeZoneId)
-            LocalDate.now(zoneId)
+            java.time.ZoneId.of(prayerSchedule.district.timeZoneId)
         } catch (e: Exception) {
-            LocalDate.now()
+            java.time.ZoneId.systemDefault()
         }
     }
 
-    val hijriDateStr = remember(hijriOffset, isEnglish) {
+    val today = remember(prayerSchedule, zoneId) {
+        LocalDate.now(zoneId)
+    }
+
+    val dateLine1 = remember(today, hijriOffset, isEnglish) {
+        val shortDay = DateUtil.getShortDayName(today, isEnglish)
+        val hijriInfo = HijriCalendarUtil.getHijriDate(today, hijriOffset)
         if (isEnglish) {
-            val hijriInfo = HijriCalendarUtil.getHijriDate(today, hijriOffset)
-            "${hijriInfo.hijriDay} ${hijriInfo.hijriMonthNameEn} ${hijriInfo.hijriYear} AH"
+            "$shortDay, ${hijriInfo.hijriDay} ${hijriInfo.hijriMonthNameEn}"
         } else {
-            val hijriInfo = HijriCalendarUtil.getHijriDate(today, hijriOffset)
-            "${DateUtil.toBengaliNumerals(hijriInfo.hijriDay)} ${hijriInfo.hijriMonthNameBn} ${DateUtil.toBengaliNumerals(hijriInfo.hijriYear)}"
+            val hDayBn = DateUtil.toBengaliNumerals(hijriInfo.hijriDay)
+            "$shortDay, $hDayBn ${hijriInfo.hijriMonthNameBn}"
         }
     }
 
-    val gregorianWithWeekday = remember(isEnglish) {
-        val dayOfWeekIndex = when (today.dayOfWeek) {
-            java.time.DayOfWeek.SUNDAY -> 0
-            java.time.DayOfWeek.MONDAY -> 1
-            java.time.DayOfWeek.TUESDAY -> 2
-            java.time.DayOfWeek.WEDNESDAY -> 3
-            java.time.DayOfWeek.THURSDAY -> 4
-            java.time.DayOfWeek.FRIDAY -> 5
-            java.time.DayOfWeek.SATURDAY -> 6
-        }
+    val dateLine2 = remember(today, isEnglish) {
         val day = today.dayOfMonth
-        val month = today.monthValue - 1
-        val year = today.year
+        val monthIdx = today.monthValue - 1
+        val banglaDayMonth = DateUtil.getBengaliDayAndMonthStr(today, isEnglish)
         if (isEnglish) {
-            val months = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
-            val days = listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
-            "$day ${months[month]} $year, ${days[dayOfWeekIndex]}"
+            val monthsEn = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+            "$day ${monthsEn[monthIdx]}, $banglaDayMonth"
         } else {
             val monthsBn = listOf("জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর")
-            val daysBn = listOf("রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার")
-            "${DateUtil.toBengaliNumerals(day)} ${monthsBn[month]} ${DateUtil.toBengaliNumerals(year)}, ${daysBn[dayOfWeekIndex]}"
+            val dayBn = DateUtil.toBengaliNumerals(day)
+            "$dayBn ${monthsBn[monthIdx]}, $banglaDayMonth"
         }
     }
 
@@ -349,14 +348,12 @@ fun FullWidthPrayerHeroSection(
 
     val isDark = isSystemInDarkTheme() || MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
-    // Outer Main Card — Islamic Emerald Theme with sleek profile
+    // Outer Main Card — Islamic Emerald Theme with 100% full-width profile
     // Light mode features rich emerald Islamic green background with soft border,
     // and dark mode maintains serene deep dark emerald surface.
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 2.dp),
-        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent
         ),
@@ -386,20 +383,20 @@ fun FullWidthPrayerHeroSection(
                 .border(
                     width = 1.dp,
                     color = if (isDark) Color(0xFF16442E).copy(alpha = 0.6f) else Color(0xFF1B7351).copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
                 )
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(6.dp)
+                    .padding(start = 8.dp, end = 8.dp, top = 6.dp, bottom = 6.dp + extraBottomPadding)
             ) {
                 // =================================================================
                 // SECTION 1: TOP INFORMATION HEADER (Date | Location | Sunrise/Sunset)
                 // =================================================================
                 TopInformationHeader(
-                    hijriDateStr = hijriDateStr,
-                    gregorianWithWeekday = gregorianWithWeekday,
+                    dateLine1 = dateLine1,
+                    dateLine2 = dateLine2,
                     districtName = if (isEnglish) prayerSchedule.district.nameEn else prayerSchedule.district.nameBn,
                     sunTitle = sunTitle,
                     sunDigits = sunDigits,
@@ -437,7 +434,25 @@ fun FullWidthPrayerHeroSection(
                     nextPrayerLabel = nextPrayerLabel,
                     countdownFormatted = countdownFormatted,
                     isEnglish = isEnglish,
-                    onClick = onPrayerTimesClick
+                    onClick = onPrayerTimesClick,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // =================================================================
+                // SECTION 4: SEHRI & IFTAR STATUS CARD (Matching reference image)
+                // =================================================================
+                RamadanSehriIftarCard(
+                    sahriDigits = prayerSchedule.sahriTimeDigits,
+                    iftarDigits = prayerSchedule.iftarTimeDigits,
+                    today = today,
+                    maghribStart = maghribStart,
+                    zoneId = zoneId,
+                    currentTimeMillis = currentTimeMillis,
+                    isEnglish = isEnglish,
+                    onClick = onPrayerTimesClick,
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }
         }
@@ -453,8 +468,8 @@ fun FullWidthPrayerHeroSection(
  */
 @Composable
 private fun TopInformationHeader(
-    hijriDateStr: String,
-    gregorianWithWeekday: String,
+    dateLine1: String,
+    dateLine2: String,
     districtName: String,
     sunTitle: String,
     sunDigits: String,
@@ -486,7 +501,7 @@ private fun TopInformationHeader(
                 .padding(horizontal = 6.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Group 1: Left — Date (Calendar icon + Hijri + Gregorian/Weekday)
+            // Group 1: Left — Date: Line 1 (শুক্র, ২৬ রবিউস সানী) & Line 2 (১০ অক্টোবর, ২৪ আশ্বিন)
             Row(
                 modifier = Modifier
                     .weight(1.35f)
@@ -512,7 +527,7 @@ private fun TopInformationHeader(
                 Spacer(modifier = Modifier.width(5.dp))
                 Column {
                     Text(
-                        text = hijriDateStr,
+                        text = dateLine1,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         lineHeight = 13.sp,
@@ -521,9 +536,10 @@ private fun TopInformationHeader(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = gregorianWithWeekday,
+                        text = dateLine2,
                         fontSize = 9.5.sp,
                         lineHeight = 11.sp,
+                        fontWeight = FontWeight.Medium,
                         color = textSoftWhite,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -866,7 +882,8 @@ private fun DarkEmeraldPrayerStatusPanel(
     nextPrayerLabel: String,
     countdownFormatted: String,
     isEnglish: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val activePrayer = currentPrayerItem ?: nextPrayerItem
     val activePrayerName = activePrayer.getDisplayName(isEnglish)
@@ -880,8 +897,9 @@ private fun DarkEmeraldPrayerStatusPanel(
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            .height(48.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(
                 Brush.horizontalGradient(
@@ -898,7 +916,8 @@ private fun DarkEmeraldPrayerStatusPanel(
                 shape = RoundedCornerShape(12.dp)
             )
             .clickable { onClick() }
-            .padding(horizontal = 8.dp, vertical = 5.dp)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center
     ) {
         // Mosque silhouette in background
         Canvas(
@@ -942,8 +961,8 @@ private fun DarkEmeraldPrayerStatusPanel(
                 modifier = Modifier.padding(end = 4.dp)
             ) {
                 MosqueOutlineBadge(
-                    modifier = Modifier.size(24.dp),
-                    tint = Color(0xFFFFD54F)
+                    modifier = Modifier.size(28.dp),
+                    tint = Color(0xFF86EFAC)
                 )
                 Spacer(modifier = Modifier.width(5.dp))
                 Column {
@@ -1133,42 +1152,20 @@ private fun DarkCapsuleButton(
 }
 
 /**
- * Mosque Outline Badge matching the screenshot's green mosque drawing
+ * Phosphor Mosque Bold Icon
+ * https://composables.com/icons/icon-libraries/phosphor/mosque?v=bold
  */
 @Composable
 private fun MosqueOutlineBadge(
     modifier: Modifier = Modifier,
-    tint: Color = Color(0xFFA5D6A7)
+    tint: Color = Color(0xFFFFD54F)
 ) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val stroke = 1.3.dp.toPx()
-
-        // Base arch
-        val domePath = Path().apply {
-            moveTo(w * 0.15f, h * 0.95f)
-            lineTo(w * 0.15f, h * 0.55f)
-            cubicTo(w * 0.15f, h * 0.28f, w * 0.38f, h * 0.12f, w * 0.5f, h * 0.05f)
-            cubicTo(w * 0.62f, h * 0.12f, w * 0.85f, h * 0.28f, w * 0.85f, h * 0.55f)
-            lineTo(w * 0.85f, h * 0.95f)
-            close()
-        }
-        drawPath(domePath, tint, style = Stroke(width = stroke, cap = StrokeCap.Round))
-
-        // Inner arch door
-        val doorPath = Path().apply {
-            moveTo(w * 0.35f, h * 0.95f)
-            lineTo(w * 0.35f, h * 0.68f)
-            cubicTo(w * 0.35f, h * 0.54f, w * 0.65f, h * 0.54f, w * 0.65f, h * 0.68f)
-            lineTo(w * 0.65f, h * 0.95f)
-        }
-        drawPath(doorPath, tint, style = Stroke(width = stroke, cap = StrokeCap.Round))
-
-        // Small top finial / crescent
-        drawLine(tint, Offset(w * 0.5f, h * 0.05f), Offset(w * 0.5f, 0f), stroke, StrokeCap.Round)
-        drawCircle(tint, radius = 1.2.dp.toPx(), center = Offset(w * 0.5f, 0f), style = Fill)
-    }
+    Icon(
+        painter = painterResource(id = R.drawable.ic_phosphor_mosque_bold),
+        contentDescription = "Mosque",
+        tint = tint,
+        modifier = modifier
+    )
 }
 
 /**
@@ -1285,4 +1282,213 @@ private fun MinimalVectorPrayerIcon(
             }
         }
     }
+}
+
+/**
+ * SECTION 4: Sehri & Iftar Card matching reference screenshot:
+ * Three equal columns:
+ * 1. Sahri time (e.g. "০৪:৩৬") + "পরবর্তী সাহরি"
+ * 2. Iftar time (e.g. "০৫:৩৭") + "পরবর্তী ইফতার"
+ * 3. Live countdown (e.g. "০১:১৮:২৩") + "ইফতারের বাকি" / "সাহরির বাকি"
+ */
+@Composable
+private fun RamadanSehriIftarCard(
+    sahriDigits: String,
+    iftarDigits: String,
+    today: LocalDate,
+    maghribStart: Long,
+    zoneId: java.time.ZoneId,
+    currentTimeMillis: Long,
+    isEnglish: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val displaySahri = if (isEnglish) toEnglishDigits(sahriDigits) else sahriDigits
+    val displayIftar = if (isEnglish) toEnglishDigits(iftarDigits) else iftarDigits
+
+    // Calculate timestamps for today and tomorrow
+    val todaySahriMillis = remember(today, sahriDigits, zoneId) {
+        parseTimeToMillis(today, sahriDigits, isPm = false, zoneId = zoneId)
+    }
+    val todayIftarMillis = remember(today, iftarDigits, maghribStart, zoneId) {
+        if (maghribStart > 0L) maghribStart
+        else parseTimeToMillis(today, iftarDigits, isPm = true, zoneId = zoneId)
+    }
+    val tomorrowSahriMillis = remember(today, sahriDigits, zoneId) {
+        parseTimeToMillis(today.plusDays(1), sahriDigits, isPm = false, zoneId = zoneId)
+    }
+
+    val (isIftarNext, targetMillis) = remember(currentTimeMillis, todaySahriMillis, todayIftarMillis, tomorrowSahriMillis) {
+        if (currentTimeMillis < todaySahriMillis) {
+            // Before today's Sahri: next event is today's Sahri
+            Pair(false, todaySahriMillis)
+        } else if (currentTimeMillis < todayIftarMillis) {
+            // Daytime fast: next event is today's Iftar
+            Pair(true, todayIftarMillis)
+        } else {
+            // After Iftar: next event is tomorrow's Sahri
+            Pair(false, tomorrowSahriMillis)
+        }
+    }
+
+    val countdownSecs = ((targetMillis - currentTimeMillis).coerceAtLeast(0L)) / 1000
+    val cdHours = countdownSecs / 3600
+    val cdMins = (countdownSecs % 3600) / 60
+    val cdSecs = countdownSecs % 60
+
+    val countdownStr = remember(cdHours, cdMins, cdSecs, isEnglish) {
+        val hStr = String.format(java.util.Locale.US, "%02d", cdHours)
+        val mStr = String.format(java.util.Locale.US, "%02d", cdMins)
+        val sStr = String.format(java.util.Locale.US, "%02d", cdSecs)
+        val raw = "$hStr:$mStr:$sStr"
+        if (isEnglish) raw else DateUtil.toBengaliNumerals(raw)
+    }
+
+    val countdownSubtitle = remember(isIftarNext, isEnglish) {
+        if (isIftarNext) {
+            if (isEnglish) "Time to Iftar" else "ইফতারের বাকি"
+        } else {
+            if (isEnglish) "Time to Sahri" else "সাহরির বাকি"
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                Brush.horizontalGradient(
+                    colors = listOf(
+                        Color(0xFF063321), // Rich Dark Islamic Green
+                        Color(0xFF0A442D), // Deep Emerald
+                        Color(0xFF0F5438)  // Subtle Emerald highlight
+                    )
+                )
+            )
+            .border(
+                width = 0.8.dp,
+                color = Color(0xFF2E7D5B).copy(alpha = 0.4f),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 4.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Column 1: Sahri
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = displaySahri,
+                    fontSize = 14.sp,
+                    lineHeight = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(1.dp))
+                Text(
+                    text = if (isEnglish) "Next Sahri" else "পরবর্তী সাহরি",
+                    fontSize = 9.sp,
+                    lineHeight = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White.copy(alpha = 0.85f),
+                    maxLines = 1
+                )
+            }
+
+            VerticalDivider(
+                modifier = Modifier
+                    .height(24.dp)
+                    .padding(horizontal = 2.dp),
+                thickness = 0.8.dp,
+                color = Color(0xFF2E7D5B).copy(alpha = 0.5f)
+            )
+
+            // Column 2: Iftar
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = displayIftar,
+                    fontSize = 14.sp,
+                    lineHeight = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(1.dp))
+                Text(
+                    text = if (isEnglish) "Next Iftar" else "পরবর্তী ইফতার",
+                    fontSize = 9.sp,
+                    lineHeight = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White.copy(alpha = 0.85f),
+                    maxLines = 1
+                )
+            }
+
+            VerticalDivider(
+                modifier = Modifier
+                    .height(24.dp)
+                    .padding(horizontal = 2.dp),
+                thickness = 0.8.dp,
+                color = Color(0xFF2E7D5B).copy(alpha = 0.5f)
+            )
+
+            // Column 3: Live Countdown
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = countdownStr,
+                    fontSize = 13.5.sp,
+                    lineHeight = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF86EFAC),
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(1.dp))
+                Text(
+                    text = countdownSubtitle,
+                    fontSize = 9.sp,
+                    lineHeight = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White.copy(alpha = 0.85f),
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Helper to parse time string like "০৪:৩৬" or "04:36" into timestamp millis for a given date
+ */
+private fun parseTimeToMillis(date: LocalDate, digits: String, isPm: Boolean, zoneId: java.time.ZoneId): Long {
+    try {
+        val enDigits = DateUtil.toEnglishNumerals(digits)
+        val parts = enDigits.split(":")
+        if (parts.size >= 2) {
+            var h = parts[0].trim().toIntOrNull() ?: return 0L
+            val m = parts[1].trim().toIntOrNull() ?: return 0L
+            if (isPm && h < 12) h += 12
+            else if (!isPm && h == 12) h = 0
+            return date.atTime(h, m).atZone(zoneId).toInstant().toEpochMilli()
+        }
+    } catch (e: Exception) {
+        // fallback
+    }
+    return 0L
 }

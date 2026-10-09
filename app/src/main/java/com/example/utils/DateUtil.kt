@@ -9,7 +9,7 @@ import java.text.SimpleDateFormat
 object DateUtil {
     private val bengaliMonths = listOf("বৈশাখ", "জ্যৈষ্ঠ", "আষাঢ়", "শ্রাবণ", "ভাদ্র", "আশ্বিন", "কার্তিক", "অগ্রহায়ণ", "পৌষ", "মাঘ", "ফাল্গুন", "চৈত্র")
     private val bengaliMonthsEn = listOf("Boishakh", "Jaishtha", "Asharh", "Shrabon", "Bhadro", "Ashwin", "Kartik", "Agrahayan", "Poush", "Magh", "Falgun", "Choitro")
-    private val hijriMonths = listOf("মহররম", "সফর", "রবিউল আউয়াল", "রবিউস সানি", "জমাদিউল আউয়াল", "জমাদিউস সানি", "রজব", "শাবান", "রমজান", "শাওয়াল", "জিলকদ", "জিলহজ")
+    private val hijriMonths = listOf("মহররম", "সফর", "রবিউল আউয়াল", "রবিউস সানী", "জমাদিউল আউয়াল", "জমাদিউস সানী", "রজব", "শাবান", "রমজান", "শাওয়াল", "জিলকদ", "জিলহজ")
     private val englishMonthsBengali = listOf("জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর")
     private val daysOfWeekBengali = listOf("রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার")
     private val englishMonths = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
@@ -139,9 +139,9 @@ object DateUtil {
         else if (dateValue >= 515 && dateValue <= 614) { bMonth = 2; bDay = if (dateValue <= 531) day - 14 else day + 17; if(bDay > 31) bDay -= 31 }
         else if (dateValue >= 615 && dateValue <= 715) { bMonth = 3; bDay = if (dateValue <= 630) day - 14 else day + 16; if(bDay > 31) bDay -= 31 }
         else if (dateValue >= 716 && dateValue <= 815) { bMonth = 4; bDay = if (dateValue <= 731) day - 15 else day + 16; if(bDay > 31) bDay -= 31 }
-        else if (dateValue >= 816 && dateValue <= 915) { bMonth = 5; bDay = if (dateValue <= 831) day - 15 else day + 16; if(bDay > 31) bDay -= 31 }
-        else if (dateValue >= 916 && dateValue <= 1015) { bMonth = 6; bDay = if (dateValue <= 930) day - 15 else day + 15; if(bDay > 31) bDay -= 31 }
-        else if (dateValue >= 1016 && dateValue <= 1114) { bMonth = 7; bDay = if (dateValue <= 1031) day - 15 else day + 16; if(bDay > 30) bDay -= 30 }
+        else if (dateValue >= 816 && dateValue <= 916) { bMonth = 5; bDay = if (dateValue <= 831) day - 15 else day + 16; if(bDay > 31) bDay -= 31 }
+        else if (dateValue >= 917 && dateValue <= 1016) { bMonth = 6; bDay = if (dateValue <= 930) day - 16 else day + 14; if(bDay > 31) bDay -= 31 }
+        else if (dateValue >= 1017 && dateValue <= 1114) { bMonth = 7; bDay = if (dateValue <= 1031) day - 16 else day + 15; if(bDay > 30) bDay -= 30 }
         else if (dateValue >= 1115 && dateValue <= 1214) { bMonth = 8; bDay = if (dateValue <= 1130) day - 14 else day + 16; if(bDay > 30) bDay -= 30 }
         else if (dateValue >= 1215 || dateValue <= 113) { bMonth = 9; bDay = if (dateValue >= 1215) day - 14 else day + 17; if(dateValue <= 113) bYear -= 1; if(bDay > 30) bDay -= 30 }
         else if (dateValue >= 114 && dateValue <= 213) { bMonth = 10; bDay = if (dateValue <= 131) day - 13 else day + 18; bYear -= 1; if(bDay > 30) bDay -= 30 }
@@ -158,6 +158,38 @@ object DateUtil {
         } else {
             val season = if (seasonIndex in seasons.indices) seasons[seasonIndex] else seasons[0]
             Pair("${toBengaliNumerals(bDay)} ${bengaliMonths[bMonth - 1]}, ${toBengaliNumerals(bYear)}", "(ঋতু: $season)")
+        }
+    }
+
+    fun getBengaliDayAndMonthStr(date: java.time.LocalDate = java.time.LocalDate.now(), isEnglish: Boolean = false): String {
+        val day = date.dayOfMonth
+        val month = date.monthValue
+
+        var bDay = 0
+        var bMonth = 0
+
+        val dateValue = month * 100 + day
+        
+        if (dateValue >= 414 && dateValue <= 514) { bMonth = 1; bDay = if (dateValue <= 430) day - 13 else day + 17; if(bDay > 31) bDay -= 31 }
+        else if (dateValue >= 515 && dateValue <= 614) { bMonth = 2; bDay = if (dateValue <= 531) day - 14 else day + 17; if(bDay > 31) bDay -= 31 }
+        else if (dateValue >= 615 && dateValue <= 715) { bMonth = 3; bDay = if (dateValue <= 630) day - 14 else day + 16; if(bDay > 31) bDay -= 31 }
+        else if (dateValue >= 716 && dateValue <= 815) { bMonth = 4; bDay = if (dateValue <= 731) day - 15 else day + 16; if(bDay > 31) bDay -= 31 }
+        else if (dateValue >= 816 && dateValue <= 916) { bMonth = 5; bDay = if (dateValue <= 831) day - 15 else day + 16; if(bDay > 31) bDay -= 31 }
+        else if (dateValue >= 917 && dateValue <= 1016) { bMonth = 6; bDay = if (dateValue <= 930) day - 16 else day + 14; if(bDay > 31) bDay -= 31 }
+        else if (dateValue >= 1017 && dateValue <= 1114) { bMonth = 7; bDay = if (dateValue <= 1031) day - 16 else day + 15; if(bDay > 30) bDay -= 30 }
+        else if (dateValue >= 1115 && dateValue <= 1214) { bMonth = 8; bDay = if (dateValue <= 1130) day - 14 else day + 16; if(bDay > 30) bDay -= 30 }
+        else if (dateValue >= 1215 || dateValue <= 113) { bMonth = 9; bDay = if (dateValue >= 1215) day - 14 else day + 17; if(bDay > 30) bDay -= 30 }
+        else if (dateValue >= 114 && dateValue <= 213) { bMonth = 10; bDay = if (dateValue <= 131) day - 13 else day + 18; if(bDay > 30) bDay -= 30 }
+        else if (dateValue >= 214 && dateValue <= 314) { bMonth = 11; bDay = if (dateValue <= 229) day - 13 else day + 15; if(bDay > 30) bDay -= 30 }
+        else if (dateValue >= 315 && dateValue <= 413) { bMonth = 12; bDay = if (dateValue <= 331) day - 14 else day + 17; if(bDay > 30) bDay -= 30 }
+
+        if (bMonth == 0) bMonth = 1
+
+        val monthName = if (isEnglish) bengaliMonthsEn[bMonth - 1] else bengaliMonths[bMonth - 1]
+        return if (isEnglish) {
+            "$bDay $monthName"
+        } else {
+            "${toBengaliNumerals(bDay)} $monthName"
         }
     }
 
