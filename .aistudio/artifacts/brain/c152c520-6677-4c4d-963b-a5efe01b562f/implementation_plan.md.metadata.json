@@ -1,6 +1,6 @@
 {
-  "summary":  "Plan to fix the crescent moon graphic with a clean vector path & soft glow, and lock all stars/nodes (including Tahajjud) precisely onto the Sun Arc path curve.",
-  "updatedAt":  "2026-10-10T16:08:55.104321764Z",
+  "summary":  "Implementation plan to convert the date selector strip into a horizontally scrollable LazyRow with full month range, centering today (or active selected date) in the exact horizontal middle of the viewport with smooth bidirectional scrolling.",
+  "updatedAt":  "2026-10-10T23:45:38.329377339Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

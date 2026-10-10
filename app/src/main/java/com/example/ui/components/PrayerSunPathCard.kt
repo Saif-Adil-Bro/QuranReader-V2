@@ -250,7 +250,7 @@ fun PrayerSunPathCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // 2. Visual Sun/Moon Path
             VisualSunPathSection(
@@ -261,10 +261,10 @@ fun PrayerSunPathCard(
                 isEnglish = isEnglish,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(96.dp)
+                    .height(86.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // 3. Current Waqt Center Display
             if (currentIndex in 0 until prayers.size) {
@@ -1050,60 +1050,84 @@ private fun DynamicSkyBackground(
         
         if (isNight) {
             val moonCenter = Offset(w * 0.84f, h * 0.24f)
-            val moonRadius = 16.dp.toPx()
+            val moonRadius = 17.dp.toPx()
 
-            // 1. Soft glowing aura around moon
+            // 1. Multi-layered radial outer glow gradients for serene, realistic moonlight
+            // Outer wide ambient glow
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        Color(0xFFFFDF78).copy(alpha = 0.35f),
-                        Color(0xFFE2E8F0).copy(alpha = 0.15f),
+                        Color(0xFFFFDF78).copy(alpha = 0.22f),
+                        Color(0xFFE2E8F0).copy(alpha = 0.12f),
                         Color.Transparent
                     ),
                     center = moonCenter,
-                    radius = moonRadius * 2.8f
+                    radius = moonRadius * 3.4f
                 ),
-                radius = moonRadius * 2.8f,
+                radius = moonRadius * 3.4f,
                 center = moonCenter
             )
 
-            // 2. Pure Vector Crescent Moon Path (no dark circle overlay needed)
-            val crescentPath = Path().apply {
-                addArc(
-                    oval = androidx.compose.ui.geometry.Rect(
-                        left = moonCenter.x - moonRadius,
-                        top = moonCenter.y - moonRadius,
-                        right = moonCenter.x + moonRadius,
-                        bottom = moonCenter.y + moonRadius
+            // Mid-range soft golden/white halo
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFFFFFBEB).copy(alpha = 0.40f),
+                        Color(0xFFE2E8F0).copy(alpha = 0.20f),
+                        Color.Transparent
                     ),
-                    startAngleDegrees = 115f,
-                    sweepAngleDegrees = 220f
-                )
-                arcTo(
-                    rect = androidx.compose.ui.geometry.Rect(
-                        left = moonCenter.x - moonRadius * 0.45f,
-                        top = moonCenter.y - moonRadius * 0.92f,
-                        right = moonCenter.x + moonRadius * 1.05f,
-                        bottom = moonCenter.y + moonRadius * 0.92f
-                    ),
-                    startAngleDegrees = 335f,
-                    sweepAngleDegrees = -220f,
-                    forceMoveTo = false
-                )
-                close()
-            }
+                    center = moonCenter,
+                    radius = moonRadius * 2.1f
+                ),
+                radius = moonRadius * 2.1f,
+                center = moonCenter
+            )
 
-            drawPath(
-                path = crescentPath,
-                brush = Brush.linearGradient(
+            // Close corona ring
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.65f),
+                        Color(0xFFFFF7D6).copy(alpha = 0.35f),
+                        Color.Transparent
+                    ),
+                    center = moonCenter,
+                    radius = moonRadius * 1.35f
+                ),
+                radius = moonRadius * 1.35f,
+                center = moonCenter
+            )
+
+            // 2. Solid luminous white core (পূর্ণিমার চাঁদ - Full Moon)
+            drawCircle(
+                brush = Brush.radialGradient(
                     colors = listOf(
                         Color(0xFFFFFFFF),
-                        Color(0xFFFFDF78),
+                        Color(0xFFF8FAFC),
                         Color(0xFFE2E8F0)
                     ),
-                    start = Offset(moonCenter.x - moonRadius, moonCenter.y - moonRadius),
-                    end = Offset(moonCenter.x + moonRadius, moonCenter.y + moonRadius)
-                )
+                    center = Offset(moonCenter.x - moonRadius * 0.15f, moonCenter.y - moonRadius * 0.15f),
+                    radius = moonRadius * 1.05f
+                ),
+                radius = moonRadius,
+                center = moonCenter
+            )
+
+            // 3. Subtle soft lunar crater details for realism
+            drawCircle(
+                color = Color(0xFFCBD5E1).copy(alpha = 0.16f),
+                radius = moonRadius * 0.32f,
+                center = Offset(moonCenter.x - moonRadius * 0.28f, moonCenter.y - moonRadius * 0.12f)
+            )
+            drawCircle(
+                color = Color(0xFFCBD5E1).copy(alpha = 0.13f),
+                radius = moonRadius * 0.26f,
+                center = Offset(moonCenter.x + moonRadius * 0.24f, moonCenter.y + moonRadius * 0.22f)
+            )
+            drawCircle(
+                color = Color(0xFFCBD5E1).copy(alpha = 0.11f),
+                radius = moonRadius * 0.20f,
+                center = Offset(moonCenter.x + moonRadius * 0.12f, moonCenter.y - moonRadius * 0.32f)
             )
         } else {
             val sunCenter = Offset(w * 0.85f, h * 0.25f)

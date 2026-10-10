@@ -18,8 +18,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,6 +50,7 @@ import com.example.data.model.DistrictInfo
 import com.example.utils.DateUtil
 import com.example.utils.DeviceLocationProvider
 import com.example.utils.HijriCalendarUtil
+import com.example.utils.IslamicEventGuidanceHelper
 import com.example.utils.PrayerTimesCalculator
 import com.example.utils.PrayerTimesShareUtil
 import com.example.utils.findActivity
@@ -333,22 +335,34 @@ fun PrayerTimesDetailSheet(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    // Header Date Row: e.g. ১৫ আগস্ট, ২০২৬ • ৩১ শ্রাবণ, ১৪৩৩
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = if (effectiveIsEnglish) DateUtil.formatDateEnglish(selectedDate) else DateUtil.getFullHeaderDateStr(selectedDate),
-                            fontSize = 14.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                    // Header Date Row: Centered bar and date
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.Center)
+                                .padding(horizontal = 40.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            val dateDisplayStr = if (effectiveIsEnglish) {
+                                "${selectedDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH)}, ${DateUtil.formatDateEnglish(selectedDate)}"
+                            } else {
+                                "${HijriCalendarUtil.getBengaliWeekdayName(selectedDate)}, ${DateUtil.getFullHeaderDateStr(selectedDate)}"
+                            }
+                            Text(
+                                text = dateDisplayStr,
+                                fontSize = 14.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                textAlign = TextAlign.Center
+                            )
+                        }
 
                         IconButton(
                             onClick = { showCalendarDialog = true },
-                            modifier = Modifier.size(34.dp)
+                            modifier = Modifier
+                                .size(34.dp)
+                                .align(Alignment.CenterEnd)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.CalendarMonth,
@@ -361,52 +375,94 @@ fun PrayerTimesDetailSheet(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Horizontal 7-Day Strip
-                    val daysRange = remember(selectedDate) {
-                        (-3..3).map { selectedDate.plusDays(it.toLong()) }
+                    // Horizontally scrollable Full-Month Date Selector Strip with Centered Active Date
+                    val today = remember { LocalDate.now() }
+                    val daysInMonth = remember(selectedDate.year, selectedDate.monthValue) {
+                        val yearMonth = YearMonth.of(selectedDate.year, selectedDate.monthValue)
+                        (1..yearMonth.lengthOfMonth()).map { day ->
+                            selectedDate.withDayOfMonth(day)
+                        }
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        daysRange.forEach { dayDate ->
-                            val isSelected = (dayDate == selectedDate)
-                            val shortName = if (effectiveIsEnglish) {
-                                dayDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)
-                            } else {
-                                DateUtil.getShortDayNameBn(dayDate)
-                            }
-                            val dayNumberStr = if (effectiveIsEnglish) dayDate.dayOfMonth.toString() else DateUtil.toBengaliNumerals(dayDate.dayOfMonth)
+                    val dateListState = rememberLazyListState()
+                    val itemWidth = 46.dp
+                    val itemSpacing = 8.dp
 
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .clickable { selectedDate = dayDate }
-                                    .padding(vertical = 4.dp, horizontal = 4.dp)
-                            ) {
-                                Text(
-                                    text = shortName,
-                                    fontSize = 11.5.sp,
-                                    color = if (isSelected) EmeraldAccent else MutedText,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Box(
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        val containerWidth = maxWidth
+                        // Center padding so any item scrolled to index can be placed precisely at the horizontal center
+                        val horizontalCenterPadding = ((containerWidth - itemWidth) / 2).coerceAtLeast(0.dp)
+
+                        // Center the active date initially and on selection
+                        LaunchedEffect(selectedDate.year, selectedDate.monthValue, selectedDate.dayOfMonth, containerWidth) {
+                            val targetIndex = (selectedDate.dayOfMonth - 1).coerceIn(0, daysInMonth.size - 1)
+                            dateListState.animateScrollToItem(targetIndex)
+                        }
+
+                        LazyRow(
+                            state = dateListState,
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(itemSpacing),
+                            contentPadding = PaddingValues(horizontal = horizontalCenterPadding),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            itemsIndexed(
+                                items = daysInMonth,
+                                key = { _, date -> "${date.year}-${date.monthValue}-${date.dayOfMonth}" }
+                            ) { index, dayDate ->
+                                val isSelected = (dayDate == selectedDate)
+                                val isTodayDate = (dayDate == today)
+                                val shortName = if (effectiveIsEnglish) {
+                                    dayDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)
+                                } else {
+                                    DateUtil.getShortDayNameBn(dayDate)
+                                }
+                                val dayNumberStr = if (effectiveIsEnglish) dayDate.dayOfMonth.toString() else DateUtil.toBengaliNumerals(dayDate.dayOfMonth)
+
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
                                     modifier = Modifier
-                                        .size(34.dp)
-                                        .clip(CircleShape)
-                                        .background(if (isSelected) EmeraldAccent else Color.Transparent),
-                                    contentAlignment = Alignment.Center
+                                        .width(itemWidth)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable {
+                                            selectedDate = dayDate
+                                            coroutineScope.launch {
+                                                dateListState.animateScrollToItem(index)
+                                            }
+                                        }
+                                        .background(
+                                            if (isSelected) EmeraldAccent.copy(alpha = 0.15f) else Color.Transparent
+                                        )
+                                        .padding(vertical = 4.dp)
                                 ) {
                                     Text(
-                                        text = dayNumberStr,
-                                        fontSize = 13.5.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (isSelected) Color.Black else Color.White
+                                        text = shortName,
+                                        fontSize = 11.5.sp,
+                                        color = if (isSelected) EmeraldAccent else if (isTodayDate) Color(0xFF6EE7B7) else MutedText,
+                                        fontWeight = if (isSelected || isTodayDate) FontWeight.Bold else FontWeight.Normal
                                     )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .clip(CircleShape)
+                                            .background(if (isSelected) EmeraldAccent else if (isTodayDate) Color.White.copy(alpha = 0.12f) else Color.Transparent)
+                                            .then(
+                                                if (!isSelected && isTodayDate) {
+                                                    Modifier.border(1.dp, EmeraldAccent.copy(alpha = 0.6f), CircleShape)
+                                                } else {
+                                                    Modifier
+                                                }
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = dayNumberStr,
+                                            fontSize = 13.5.sp,
+                                            fontWeight = if (isSelected || isTodayDate) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) Color.Black else Color.White
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -471,6 +527,133 @@ fun PrayerTimesDetailSheet(
             }
 
             Spacer(modifier = Modifier.height(14.dp))
+
+            // Event Card synced with existing calendar data
+            val todayIslamicEvents = remember(selectedDate, hijriInfo) {
+                val list = mutableListOf<Triple<String, String, String>>() // title, category/badge, description
+                
+                // 1. Friday (জুমু'আহ)
+                if (selectedDate.dayOfWeek == java.time.DayOfWeek.FRIDAY) {
+                    list.add(
+                        Triple(
+                            if (effectiveIsEnglish) "Blessed Jumu'ah Day" else "পবিত্র জুমু'আহ দিবস",
+                            if (effectiveIsEnglish) "Weekly Sunnah" else "সাপ্তাহিক সুন্নাত",
+                            if (effectiveIsEnglish) "Recite Surah Al-Kahf, send abundant Salawat on the Prophet (ﷺ), and attend Jumu'ah prayer." else "সূরা আল-কাহাফ তিলাওয়াত, অধিক দরূদ পাঠ এবং জুমার সালাতের প্রস্তুতি গ্রহণ করুন।"
+                        )
+                    )
+                }
+
+                // 2. Sunnah Fasting (Ayyam al-Beed, Monday/Thursday)
+                if (hijriInfo.isSunnahFast && !hijriInfo.sunnahFastReason.isNullOrBlank()) {
+                    val badge = if (hijriInfo.hijriDay in 13..15) {
+                        if (effectiveIsEnglish) "Ayyam al-Beed Fast" else "আইয়ামে বীজের সিয়াম"
+                    } else {
+                        if (effectiveIsEnglish) "Sunnah Fasting" else "সুন্নাত রোজা"
+                    }
+                    val desc = if (effectiveIsEnglish) {
+                        "Observing Sunnah fast brings great reward and follows the Prophet's (ﷺ) beloved practice."
+                    } else {
+                        "আজকের সিয়াম পালন করা মহান সুন্নাত ও অশেষ ফজিলতপূর্ণ আমল।"
+                    }
+                    list.add(Triple(hijriInfo.sunnahFastReason!!, badge, desc))
+                }
+
+                // 3. Special Islamic / Hijri Events
+                hijriInfo.specialEvents.forEach { eventName ->
+                    val guidance = IslamicEventGuidanceHelper.getGuidanceForDateAndTitle(selectedDate, eventName, hijriInfo).second
+                    val cleanGuidance = guidance.lines().filter { it.isNotBlank() && !it.startsWith("✨") }.take(2).joinToString(" ").take(120)
+                    list.add(
+                        Triple(
+                            eventName,
+                            if (effectiveIsEnglish) "Islamic Occasion" else "ইসলামিক বিশেষ দিবস",
+                            cleanGuidance.ifBlank { "আজকের বিশেষ দিবস ও নেক আমল।" }
+                        )
+                    )
+                }
+
+                list
+            }
+
+            if (todayIslamicEvents.isNotEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(0.dp),
+                    color = DarkCardSurface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26333D)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp)
+                    ) {
+                        todayIslamicEvents.forEachIndexed { idx, (eventTitle, eventBadge, eventDesc) ->
+                            if (idx > 0) {
+                                HorizontalDivider(
+                                    color = Color.White.copy(alpha = 0.08f),
+                                    thickness = 1.dp,
+                                    modifier = Modifier.padding(vertical = 10.dp)
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(EmeraldAccent.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Event,
+                                        contentDescription = null,
+                                        tint = EmeraldAccent,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = eventTitle,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(100.dp))
+                                                .background(EmeraldAccent.copy(alpha = 0.2f))
+                                                .padding(horizontal = 7.dp, vertical = 2.dp)
+                                        ) {
+                                            Text(
+                                                text = eventBadge,
+                                                fontSize = 9.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = EmeraldAccent
+                                            )
+                                        }
+                                    }
+                                    if (eventDesc.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(3.dp))
+                                        Text(
+                                            text = eventDesc,
+                                            fontSize = 11.5.sp,
+                                            color = Color(0xFF94A3B8),
+                                            lineHeight = 16.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(14.dp))
+            }
 
             // Timetable active waqt calculations for today
             val zoneId = remember(activeSchedule.district) {

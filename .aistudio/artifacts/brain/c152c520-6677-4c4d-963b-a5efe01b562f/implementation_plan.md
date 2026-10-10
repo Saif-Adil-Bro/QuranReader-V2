@@ -1,26 +1,33 @@
-# Implementation Plan: Vector Crescent Moon & Exact Star Node Path Alignment
+# Implementation Plan: Full-Month Horizontally Scrollable Date Strip with Centered Active Date
 
-## Problems Identified
-1. **চাঁদের উপর কালো বৃত্ত সমস্যা (Ugly Dark Circle on Moon):** 
-   নাইট স্কাই ব্যাকগ্রাউন্ডে চাঁদ আঁকার জন্য সাদা বৃত্তের উপর নির্দিষ্ট গাঢ় রঙের একটি বৃত্ত ওভারল্যাপ করা হচ্ছিল। ডায়নামিক গ্র্যাডিয়েন্ট ও লোকেশন ব্যাজের সাথে ওই রঙের অমিলের কারণে একটি বিশ্রী কালচে বৃত্ত দেখা যাচ্ছিল।
-2. **স্টার/নোড পাথের সাথে অসঙ্গতি (Star/Node Path Misalignment):** 
-   সান আর্কের বক্রতা `-0.65f`-এ পরিবর্তন করা হলেও তাহাজ্জুদ স্টার নোডের পজিশনিং সমীকরণটি `-0.30f`-এ রয়ে গিয়েছিল। ফলে স্টার আইকনটি আর্কের রেখার সাথে না মিশে নিচে শূন্যে ভাসছিল।
+## Problem Analysis
+The previous change used a static `Row` with 7 fixed days to keep today in the middle position. Because it was a fixed `Row`, users could not scroll left or right to view other days of the month.
+
+## Proposed Solution
+Convert the date selector strip into a horizontally scrollable `LazyRow` encompassing all days of the selected month (1st to last day of the month), while ensuring that today (or the active selected date) is centered in the exact horizontal middle of the viewport on initial load and when clicked.
 
 ---
 
-## Proposed Changes
+## Detailed Changes
 
-### `PrayerSunPathCard.kt`
-1. **ভেক্টর ক্রেসেন্ট মুন (Vector Crescent Moon with Soft Glow):**
-   - `DynamicSkyBackground`-এ জোড়াতালি দেওয়া জোড়া বৃত্তের পরিবর্তে সুনির্দিষ্ট `Path()` দিয়ে একটি মসৃণ ভেক্টর চাঁদ (Crescent Moon Path) আঁকা হবে।
-   - পেছনে সফট গোল্ডেন/হোয়াইট আভা (Outer Glow Radial Gradient) যোগ করা হবে যাতে কোনো কালো সার্কেল বা ওভারল্যাপ ছাড়া চাঁদের অবয়বটি ১০০% রিয়েলিস্টিক দেখায়।
-
-2. **পাথের সাথে সমস্ত স্টার ও নোডের নিখুঁত ম্যাপিং (Exact Node Locking on Arc Path):**
-   - `VisualSunPathSection`-এ তাহাজ্জুদ স্টার এবং অন্যান্য নোডের $Y$-স্থানাঙ্ক সমীকরণ `-0.65f`-এ আপডেট করা হবে।
-   - সকল স্টার ও ওয়াক্তের নোড আইকন গাণিতিকভাবে সঠিক স্থানে সান আর্কের কার্ভ রেখার উপর লক হয়ে থাকবে।
+### `PrayerTimesDetailSheet.kt`
+1. **Full-Month Date Generation**:
+   - Generate all dates in the active month (`1..yearMonth.lengthOfMonth()`).
+2. **Centered Viewport with `BoxWithConstraints`**:
+   - Wrap the `LazyRow` in `BoxWithConstraints` to determine `maxWidth`.
+   - Set symmetric content padding: `PaddingValues(horizontal = (maxWidth / 2 - 24.dp).coerceAtLeast(0.dp))` so that any date item (width `48.dp`) scrolled into view rests precisely at the horizontal center of the card.
+3. **Smooth Centered Auto-Scroll**:
+   - Use `LaunchedEffect(selectedDate.year, selectedDate.monthValue)` or when opening the sheet to automatically scroll today's index (`today.dayOfMonth - 1`) directly into the center.
+   - When a user taps any date in the row, update `selectedDate` and animate scroll that tapped date into the center.
+4. **Preserve Centered Header**:
+   - Retain the centered weekday and date header in the middle of the card header.
+5. **Bidirectional Free Scrolling**:
+   - Allow free manual left-and-right swiping/scrolling across all days of the month.
 
 ---
 
 ## Verification
-- `compile_applet` দিয়ে কোড বিল্ড ও সিনট্যাক্স যাচাই করা।
-- নাইট ভিউতে চাঁদটি মসৃণ ও সুন্দর দেখায় কিনা এবং তাহাজ্জুদ স্টার ও সকল নোড আইকন সান আর্কের রেখার সাথে মিশে আছে কিনা নিশ্চিত করা।
+- Run `compile_applet` to confirm successful build.
+- Verify that on initial load, today's date sits right in the middle with preceding days on the left and future days on the right.
+- Verify smooth left and right horizontal scrolling across all days of the month.
+- Verify that clicking any date animates it to the center and updates prayer times.
