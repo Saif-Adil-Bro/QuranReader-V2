@@ -73,6 +73,7 @@ fun FullWidthPrayerHeroSection(
     prayerSchedule: DailyPrayerSchedule,
     hijriOffset: Int,
     isEnglish: Boolean = false,
+    isDark: Boolean = false,
     extraBottomPadding: Dp = 10.dp,
     onPrayerTimesClick: () -> Unit,
     onLocationClick: () -> Unit,
@@ -512,8 +513,6 @@ fun FullWidthPrayerHeroSection(
         }
     }
 
-    val isDark = isSystemInDarkTheme() || MaterialTheme.colorScheme.surface.luminance() < 0.5f
-
     // Outer container with overlapping RamadanSehriIftarCard at the bottom
     Box(
         modifier = Modifier.fillMaxWidth()
@@ -657,7 +656,7 @@ private fun TopInformationHeader(
     onCalendarClick: () -> Unit,
     onLocationClick: () -> Unit
 ) {
-    val isDark = isSystemInDarkTheme() || MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
     // Theme palette:
     // Highlighted text: Light Green (Color(0xFF86EFAC) / Color(0xFFA7F3D0))
@@ -836,7 +835,7 @@ private fun FiveColumnPrayerTimetable(
     isEnglish: Boolean,
     onPrayerTimesClick: () -> Unit
 ) {
-    val isDark = isSystemInDarkTheme() || MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
     Surface(
         modifier = Modifier

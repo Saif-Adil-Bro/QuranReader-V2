@@ -1,46 +1,26 @@
-# Implementation Plan - Hero Section Waqt Synchronization with Full-Page Prayer Timetable
+# Implementation Plan: Fix Alignment Shift in Highlighted Prayer Row
 
-## Summary of Goal
-Synchronize the Hero Section's running prayer time card (`DarkEmeraldPrayerStatusPanel`) with the exact sequence, calculation, and display logic used in the full-page prayer timetable screen (`PrayerSunPathCard.kt`). Specifically, when sunrise finishes, it will display "চাশত ও দুহা" (Chasht & Duha / Ishraq & Duha) along with its exact time range (`duhaRange`), and during forbidden periods (Sunrise Makruh, Zawal Makruh, Sunset Makruh), it will display the specific Makruh reason and time range.
+## 原因 (Causes of Alignment Shift)
+1. **প্যাডিং পার্থক্য (Padding Discrepancy):** 
+   রানিং ওয়াক্তের রো (Row)-তে প্যাডিং দেওয়া ছিল `horizontal = 10.dp`, কিন্তু অন্য রো-গুলোতে ছিল `horizontal = 4.dp`। এর ফলে কার্ডের ভেতরের ব্যাকগ্রাউন্ড প্যাডিং-এর পার্থক্যের কারণে চিহ্নিত রো-টি সরে যাচ্ছিল।
 
----
-
-## Code Analysis & Implementation Details
-
-### 1. Calculations in `FullWidthPrayerHeroSection.kt`
-- Extract `sunriseMinutes`, `dhuhrMinutes`, `duhaStartMinutes` (sunrise + 16 min), and `duhaEndMinutes` (dhuhr - 4 min / zawal start).
-- Determine current state:
-  1. **Sunrise Makruh (`isSunriseMakruhNow`):**
-     - `isForbiddenTime` = true (Red crimson theme)
-     - Title: "সূর্যোদয় (মাকরূহ)" / "Sunrise (Makruh)"
-     - Time Range: `schedule.forbiddenMorningRange`
-     - Countdown: Remaining time until Chasht starts
-  2. **Chasht & Duha (`isDuhaNow`):**
-     - `isForbiddenTime` = false (Emerald green theme)
-     - Title: "চাশত ও দুহা" / "Chasht & Duha"
-     - Time Range: `schedule.duhaRange` (e.g. "০৬:১৬ - ১:৩৪")
-     - Countdown: Remaining time until Zawal / Dhuhr
-  3. **Zawal Makruh (`isZawalMakruhNow`):**
-     - `isForbiddenTime` = true (Red crimson theme)
-     - Title: "দ্বিপ্রহর (জাওয়াল)" / "Midday (Zawal)"
-     - Time Range: `schedule.forbiddenNoonRange`
-     - Countdown: Remaining time until Dhuhr starts
-  4. **Sunset Makruh (`isSunsetMakruhNow`):**
-     - `isForbiddenTime` = true (Red crimson theme)
-     - Title: "সূর্যাস্ত (মাকরূহ)" / "Sunset (Makruh)"
-     - Time Range: `schedule.forbiddenEveningRange`
-     - Countdown: Remaining time until Maghrib
-  5. **Regular Prayers (Fajr, Dhuhr, Asr, Maghrib, Isha):**
-     - `isForbiddenTime` = false (Emerald green theme)
-     - Title: Current prayer name
-     - Time Range: Prayer start to end time
-     - Countdown: Time remaining in current waqt or until next prayer
-
-### 2. UI Updates in `DarkEmeraldPrayerStatusPanel`
-- Update `DarkEmeraldPrayerStatusPanel` to accept and render these synchronized titles, time ranges, and countdown indicators.
+2. **ডায়নামিক উইডথ চেঞ্জ (Dynamic Width Shift):** 
+   রানিং ওয়াক্তে নামের পাশে "• চলমান" ব্যাজ যুক্ত হওয়ার কারণে বামপাশের কলামের চওড়া (Width) বেড়ে যাচ্ছিল। ফলে মাঝখানের ফেক্সিবল স্পেস ডানদিকে চেপে বেল আইকনটিকে ডানে ঠেলে দিচ্ছিল।
 
 ---
 
-## Verification Strategy
-- Compile the applet using `compile_applet` to verify no syntax or compilation issues exist.
-- Test time state transitions (Fajr -> Sunrise Makruh -> Chasht & Duha -> Zawal Makruh -> Dhuhr/Jumuah -> Asr -> Sunset Makruh -> Maghrib -> Isha) to ensure display parity with the full-page timetable.
+## Proposed Fixes
+
+### 1. `PrayerTimesDetailSheet.kt` (`PrayerDetailRow` Component)
+- **ইউনিফর্ম হরাইজন্টাল প্যাডিং (Uniform Horizontal Padding):**
+  - সকল রো (Row)-এর জন্য প্যাডিং একই রাখা হবে: `padding(horizontal = 8.dp, vertical = if (isCurrentWaqt) 8.dp else 6.dp)`।
+- **ওয়েটেড থ্রি-কলাম লেআউট (Weighted 3-Column Layout):**
+  - **বাম কলাম (`weight(1.2f)`)**: আইকন + ওয়াক্তের নাম + "চলমান" ব্যাজ ধারণ করবে।
+  - **মাঝের কলাম (`weight(0.6f)`)**: বেল আইকন সংসংক্রান্ত `IconButton`-টি একদম স্ক্রিনের ৫০% নিখুঁত সেন্টারে লক করা থাকবে।
+  - **ডান কলাম (`weight(1.2f)`)**: সালাতের সময়সূচী (Time Range) ডানে অ্যালাইনড থাকবে।
+
+---
+
+## Verification
+- `compile_applet` চালিয়ে বিল্ড সফল কিনা তা যাচাই করা।
+- রানিং ওয়াক্ত ("চলমান" ব্যাজ থাকা অবস্থায়) এবং সাধারণ ওয়াক্তের সময় বেল আইকনগুলো নিখুঁত একই লাইনে লক থাকে কিনা পরীক্ষা করা।

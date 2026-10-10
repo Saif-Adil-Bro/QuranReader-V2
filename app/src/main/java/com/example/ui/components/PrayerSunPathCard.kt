@@ -67,8 +67,10 @@ fun PrayerSunPathCard(
     modifier: Modifier = Modifier,
     isEnglish: Boolean = false,
     onDetailsClick: () -> Unit = {},
+    onLocationClick: () -> Unit = {},
     notificationStates: Map<com.example.data.model.PrayerName, Boolean> = emptyMap(),
-    onToggleNotification: (com.example.data.model.PrayerName, Boolean) -> Unit = { _, _ -> }
+    onToggleNotification: (com.example.data.model.PrayerName, Boolean) -> Unit = { _, _ -> },
+    topHeaderContent: (@Composable () -> Unit)? = null
 ) {
     val context = LocalContext.current
     val currentDate = remember(schedule, isEnglish) {
@@ -163,7 +165,7 @@ fun PrayerSunPathCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp))
             .background(
                 brush = Brush.verticalGradient(
                     colors = dynamicColors
@@ -184,9 +186,13 @@ fun PrayerSunPathCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (topHeaderContent != null) {
+                topHeaderContent()
+            }
+
             // 1. Header (Date + Location)
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -223,6 +229,7 @@ fun PrayerSunPathCard(
                         .clip(RoundedCornerShape(100.dp))
                         .background(Color.Black.copy(alpha = 0.3f))
                         .border(0.8.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(100.dp))
+                        .clickable { onLocationClick() }
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {

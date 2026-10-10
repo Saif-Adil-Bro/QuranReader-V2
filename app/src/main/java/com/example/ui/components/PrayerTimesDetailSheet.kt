@@ -196,139 +196,100 @@ fun PrayerTimesDetailSheet(
                     .windowInsetsPadding(WindowInsets.statusBars)
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
-                // 1. Top Navigation Bar (Back, Title, Share, District, Close)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = onDismiss,
-                            modifier = Modifier.size(38.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = if (effectiveIsEnglish) "Back" else "ফিরে যান",
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = if (effectiveIsEnglish) "Calendar & Schedule" else "ক্যালেন্ডার ও সময়সূচি",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // District selector chip
-                        Surface(
-                            onClick = { showDistrictPicker = true },
-                            shape = RoundedCornerShape(100.dp),
-                            color = EmeraldAccent.copy(alpha = 0.14f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldAccent.copy(alpha = 0.35f))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                val topHeaderComposable = @Composable {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = onDismiss,
+                                modifier = Modifier.size(38.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.LocationOn,
-                                    contentDescription = null,
-                                    tint = EmeraldAccent,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                val locationLabel = if (effectiveIsEnglish) {
-                                    if (schedule.district.countryEn == "Bangladesh") schedule.district.nameEn else "${schedule.district.nameEn}, ${schedule.district.countryEn}"
-                                } else {
-                                    if (schedule.district.countryBn == "বাংলাদেশ") schedule.district.nameBn else "${schedule.district.nameBn}, ${schedule.district.countryBn}"
-                                }
-                                Text(
-                                    text = locationLabel,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = EmeraldAccent,
-                                    maxLines = 1
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.ArrowDropDown,
-                                    contentDescription = null,
-                                    tint = EmeraldAccent,
-                                    modifier = Modifier.size(16.dp)
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = if (effectiveIsEnglish) "Back" else "ফিরে যান",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (effectiveIsEnglish) "Calendar & Schedule" else "ক্যালেন্ডার ও সময়সূচি",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
                         }
 
-                        Spacer(modifier = Modifier.width(6.dp))
-
-                        // Share button
-                        IconButton(
-                            onClick = {
-                                if (!isSharingImage) {
-                                    isSharingImage = true
-                                    coroutineScope.launch {
-                                        PrayerTimesShareUtil.shareAsImage(
-                                            context = context,
-                                            schedule = activeSchedule,
-                                            date = selectedDate,
-                                            hijriOffset = hijriOffset,
-                                            isEnglish = effectiveIsEnglish
-                                        )
-                                        isSharingImage = false
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // Share button
+                            IconButton(
+                                onClick = {
+                                    if (!isSharingImage) {
+                                        isSharingImage = true
+                                        coroutineScope.launch {
+                                            PrayerTimesShareUtil.shareAsImage(
+                                                context = context,
+                                                schedule = activeSchedule,
+                                                date = selectedDate,
+                                                hijriOffset = hijriOffset,
+                                                isEnglish = effectiveIsEnglish
+                                            )
+                                            isSharingImage = false
+                                        }
                                     }
+                                },
+                                modifier = Modifier.size(38.dp)
+                            ) {
+                                if (isSharingImage) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        strokeWidth = 2.dp,
+                                        color = EmeraldAccent
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Share,
+                                        contentDescription = if (effectiveIsEnglish) "Share" else "শেয়ার করুন",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
                                 }
-                            },
-                            modifier = Modifier.size(38.dp)
-                        ) {
-                            if (isSharingImage) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(18.dp),
-                                    strokeWidth = 2.dp,
-                                    color = EmeraldAccent
-                                )
-                            } else {
+                            }
+
+                            Spacer(modifier = Modifier.width(2.dp))
+
+                            // Close button
+                            IconButton(
+                                onClick = onDismiss,
+                                modifier = Modifier.size(38.dp)
+                            ) {
                                 Icon(
-                                    imageVector = Icons.Default.Share,
-                                    contentDescription = if (effectiveIsEnglish) "Share" else "শেয়ার করুন",
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = if (effectiveIsEnglish) "Close" else "বন্ধ করুন",
                                     tint = Color.White,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
-
-                        Spacer(modifier = Modifier.width(2.dp))
-
-                        // Close button
-                        IconButton(
-                            onClick = onDismiss,
-                            modifier = Modifier.size(38.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = if (effectiveIsEnglish) "Close" else "বন্ধ করুন",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
                     }
+                }
+
+                if (!isToday) {
+                    topHeaderComposable()
                 }
 
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .padding(horizontal = 16.dp)
                         .padding(bottom = 24.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-
-            Spacer(modifier = Modifier.height(14.dp))
 
             // 1.5 Top Visual Sun Path Hero Card
             if (isToday) {
@@ -336,6 +297,7 @@ fun PrayerTimesDetailSheet(
                     schedule = activeSchedule,
                     isEnglish = effectiveIsEnglish,
                     onDetailsClick = { /* Already in detail view */ },
+                    onLocationClick = { showDistrictPicker = true },
                     notificationStates = mapOf(
                         com.example.data.model.PrayerName.FAJR to isNotifFajr,
                         com.example.data.model.PrayerName.DHUHR to isNotifDhuhr,
@@ -357,14 +319,15 @@ fun PrayerTimesDetailSheet(
                             com.example.data.model.PrayerName.IFTAR -> isNotifIftar = isEnabled
                             else -> { /* No-op */ }
                         }
-                    }
+                    },
+                    topHeaderContent = topHeaderComposable
                 )
                 Spacer(modifier = Modifier.height(14.dp))
             }
 
             // 2. Date Header & Weekly 7-Day Selector Bar
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(0.dp),
                 color = DarkCardSurface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26333D)),
                 modifier = Modifier.fillMaxWidth()
@@ -711,7 +674,7 @@ fun PrayerTimesDetailSheet(
 
             // 5. Section 3: সালাতের নিষিদ্ধ সময় (Forbidden Times)
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(0.dp),
                 color = DarkCardSurface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26333D)),
                 modifier = Modifier.fillMaxWidth()
@@ -855,7 +818,7 @@ fun PrayerTimesDetailSheet(
 
             // 6. Section: ওয়াক্ত শুরুর নোটিফিকেশন (Prayer Start Notification Settings)
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(0.dp),
                 color = DarkCardSurface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26333D)),
                 modifier = Modifier.fillMaxWidth()
@@ -1104,7 +1067,7 @@ fun PrayerTimesDetailSheet(
 
             // 8. Prayer Calculation Method Card
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(0.dp),
                 color = DarkCardSurface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26333D)),
                 modifier = Modifier.fillMaxWidth()
@@ -1162,7 +1125,7 @@ fun PrayerTimesDetailSheet(
 
             // 8.1. Asr Calculation Method Switch (Hanafi / Standard)
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(0.dp),
                 color = DarkCardSurface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26333D)),
                 modifier = Modifier.fillMaxWidth()
@@ -1224,7 +1187,7 @@ fun PrayerTimesDetailSheet(
                     PrayerTimesShareUtil.copyToClipboard(context, activeSchedule, selectedDate, hijriOffset)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(0.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155))
             ) {
@@ -1243,7 +1206,6 @@ fun PrayerTimesDetailSheet(
             }
         }
     }
-}
 }
 
     // Reference Hadith Dialog
@@ -1400,6 +1362,7 @@ fun PrayerTimesDetailSheet(
         )
     }
 }
+}
 
 data class BulletSubItem(val text: String, val color: Color)
 
@@ -1411,7 +1374,7 @@ private fun DarkSectionCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(0.dp),
         color = DarkCardSurface,
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26333D)),
         modifier = Modifier.fillMaxWidth()
@@ -1472,19 +1435,19 @@ private fun PrayerDetailRow(
             .clip(RoundedCornerShape(12.dp))
             .background(if (isCurrentWaqt) Color(0xFF10B981).copy(alpha = 0.14f) else Color.Transparent)
             .padding(
-                horizontal = if (isCurrentWaqt) 10.dp else 4.dp,
-                vertical = if (isCurrentWaqt) 8.dp else 5.dp
+                horizontal = 8.dp,
+                vertical = if (isCurrentWaqt) 8.dp else 6.dp
             )
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // 1. Left: Icon + Name + Active Badge (weighted 1.2f)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1.2f)
                 ) {
                     Box(
                         modifier = Modifier
@@ -1500,7 +1463,7 @@ private fun PrayerDetailRow(
                             modifier = Modifier.size(17.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -1510,12 +1473,12 @@ private fun PrayerDetailRow(
                                 color = if (isCurrentWaqt) Color.White else Color(0xFFF1F5F9)
                             )
                             if (isCurrentWaqt) {
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.width(5.dp))
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(100.dp))
                                         .background(Color(0xFF10B981).copy(alpha = 0.25f))
-                                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically
@@ -1526,7 +1489,7 @@ private fun PrayerDetailRow(
                                                 .clip(CircleShape)
                                                 .background(Color(0xFF34D399))
                                         )
-                                        Spacer(modifier = Modifier.width(3.5.dp))
+                                        Spacer(modifier = Modifier.width(3.dp))
                                         Text(
                                             text = currentBadgeText,
                                             fontSize = 9.5.sp,
@@ -1540,16 +1503,12 @@ private fun PrayerDetailRow(
                     }
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = timeRange,
-                        fontSize = 15.sp,
-                        fontWeight = if (isCurrentWaqt) FontWeight.Bold else FontWeight.SemiBold,
-                        color = if (isCurrentWaqt) Color(0xFF6EE7B7) else Color.White
-                    )
-
+                // 2. Middle: Bell Icon in central locked column (weighted 0.6f)
+                Box(
+                    modifier = Modifier.weight(0.6f),
+                    contentAlignment = Alignment.Center
+                ) {
                     if (prayerName != null && onAlarmClick != null) {
-                        Spacer(modifier = Modifier.width(6.dp))
                         IconButton(
                             onClick = { onAlarmClick(prayerName) },
                             modifier = Modifier.size(28.dp)
@@ -1562,6 +1521,20 @@ private fun PrayerDetailRow(
                             )
                         }
                     }
+                }
+
+                // 3. Right: Time Range Text (weighted 1.2f, right-aligned)
+                Box(
+                    modifier = Modifier.weight(1.2f),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    Text(
+                        text = timeRange,
+                        fontSize = 15.sp,
+                        fontWeight = if (isCurrentWaqt) FontWeight.Bold else FontWeight.SemiBold,
+                        color = if (isCurrentWaqt) Color(0xFF6EE7B7) else Color.White,
+                        textAlign = TextAlign.End
+                    )
                 }
             }
 

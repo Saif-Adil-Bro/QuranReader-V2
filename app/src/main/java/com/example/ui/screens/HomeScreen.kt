@@ -877,6 +877,7 @@ fun HomeScreen(
                             hijriOffset = combinedHijriOffset,
                             prayerSchedule = prayerSchedule,
                             isEnglish = isEnglish,
+                            isDark = isDark,
                             extraBottomPadding = 10.dp,
                             onResumeClick = {
                                 when (lastReadMode) {
@@ -1175,6 +1176,7 @@ fun HeroSection(
     hijriOffset: Int,
     prayerSchedule: com.example.data.model.DailyPrayerSchedule,
     isEnglish: Boolean = false,
+    isDark: Boolean = false,
     extraBottomPadding: androidx.compose.ui.unit.Dp = 28.dp,
     onResumeClick: () -> Unit = {},
     onHijriDateClick: () -> Unit = {},
@@ -1186,6 +1188,7 @@ fun HeroSection(
         prayerSchedule = prayerSchedule,
         hijriOffset = hijriOffset,
         isEnglish = isEnglish,
+        isDark = isDark,
         extraBottomPadding = extraBottomPadding,
         onPrayerTimesClick = onPrayerTimesClick,
         onLocationClick = onLocationClick,
