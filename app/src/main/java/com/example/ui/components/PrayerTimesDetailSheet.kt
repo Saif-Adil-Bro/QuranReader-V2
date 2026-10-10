@@ -1067,10 +1067,12 @@ fun PrayerTimesDetailSheet(
 
             // 8. Prayer Calculation Method Card
             Surface(
-                shape = RoundedCornerShape(0.dp),
+                shape = RoundedCornerShape(14.dp),
                 color = DarkCardSurface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26333D)),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -1125,10 +1127,12 @@ fun PrayerTimesDetailSheet(
 
             // 8.1. Asr Calculation Method Switch (Hanafi / Standard)
             Surface(
-                shape = RoundedCornerShape(0.dp),
+                shape = RoundedCornerShape(14.dp),
                 color = DarkCardSurface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF26333D)),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -1186,8 +1190,10 @@ fun PrayerTimesDetailSheet(
                 onClick = {
                     PrayerTimesShareUtil.copyToClipboard(context, activeSchedule, selectedDate, hijriOffset)
                 },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(0.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155))
             ) {

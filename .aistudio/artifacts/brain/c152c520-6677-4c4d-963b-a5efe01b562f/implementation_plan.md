@@ -1,26 +1,25 @@
-# Implementation Plan: Fix Alignment Shift in Highlighted Prayer Row
+# Implementation Plan: Curved Sun Arc Path & Rounded Bottom Cards
 
-## 原因 (Causes of Alignment Shift)
-1. **প্যাডিং পার্থক্য (Padding Discrepancy):** 
-   রানিং ওয়াক্তের রো (Row)-তে প্যাডিং দেওয়া ছিল `horizontal = 10.dp`, কিন্তু অন্য রো-গুলোতে ছিল `horizontal = 4.dp`। এর ফলে কার্ডের ভেতরের ব্যাকগ্রাউন্ড প্যাডিং-এর পার্থক্যের কারণে চিহ্নিত রো-টি সরে যাচ্ছিল।
+## Proposed Changes
 
-2. **ডায়নামিক উইডথ চেঞ্জ (Dynamic Width Shift):** 
-   রানিং ওয়াক্তে নামের পাশে "• চলমান" ব্যাজ যুক্ত হওয়ার কারণে বামপাশের কলামের চওড়া (Width) বেড়ে যাচ্ছিল। ফলে মাঝখানের ফেক্সিবল স্পেস ডানদিকে চেপে বেল আইকনটিকে ডানে ঠেলে দিচ্ছিল।
+### 1. `PrayerSunPathCard.kt` (`VisualSunPathSection`)
+- Increase the Bezier curve peak height factor in `VisualSunPathSection` (e.g. from `-0.30f` to `-0.65f`) so the Sun Arc Path is noticeably higher, rounder, and more prominently curved.
+- Update node coordinate calculations to match the new curve peak height so the nodes sit precisely along the new rounder arc path.
 
----
-
-## Proposed Fixes
-
-### 1. `PrayerTimesDetailSheet.kt` (`PrayerDetailRow` Component)
-- **ইউনিফর্ম হরাইজন্টাল প্যাডিং (Uniform Horizontal Padding):**
-  - সকল রো (Row)-এর জন্য প্যাডিং একই রাখা হবে: `padding(horizontal = 8.dp, vertical = if (isCurrentWaqt) 8.dp else 6.dp)`।
-- **ওয়েটেড থ্রি-কলাম লেআউট (Weighted 3-Column Layout):**
-  - **বাম কলাম (`weight(1.2f)`)**: আইকন + ওয়াক্তের নাম + "চলমান" ব্যাজ ধারণ করবে।
-  - **মাঝের কলাম (`weight(0.6f)`)**: বেল আইকন সংসংক্রান্ত `IconButton`-টি একদম স্ক্রিনের ৫০% নিখুঁত সেন্টারে লক করা থাকবে।
-  - **ডান কলাম (`weight(1.2f)`)**: সালাতের সময়সূচী (Time Range) ডানে অ্যালাইনড থাকবে।
+### 2. `PrayerTimesDetailSheet.kt`
+Restore rounded corner shapes and horizontal side margins for the bottom 3 components:
+1. **Calculation Method Card (`গণনা পদ্ধতি`)**:
+   - `shape = RoundedCornerShape(14.dp)`
+   - `modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)`
+2. **Asr Method Card (`আসরের পদ্ধতি / হানাফী-শাফেয়ী`)**:
+   - `shape = RoundedCornerShape(14.dp)`
+   - `modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)`
+3. **Copy Prayer Times Button (`সময়সূচির টেক্সট কপি করুন`)**:
+   - `shape = RoundedCornerShape(14.dp)`
+   - `modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)`
 
 ---
 
 ## Verification
-- `compile_applet` চালিয়ে বিল্ড সফল কিনা তা যাচাই করা।
-- রানিং ওয়াক্ত ("চলমান" ব্যাজ থাকা অবস্থায়) এবং সাধারণ ওয়াক্তের সময় বেল আইকনগুলো নিখুঁত একই লাইনে লক থাকে কিনা পরীক্ষা করা।
+- Run `compile_applet` to verify compilation.
+- Verify visual curvature of the Sun Arc path and the floating rounded appearance of the bottom 3 cards.

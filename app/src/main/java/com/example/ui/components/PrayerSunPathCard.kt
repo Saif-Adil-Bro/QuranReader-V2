@@ -736,9 +736,9 @@ private fun VisualSunPathSection(
                 val t = index.toFloat() / (prayers.size - 1).coerceAtLeast(1)
                 val oneMinusT = 1f - t
                 // Exact Bezier curve equations mapping to our Canvas control points:
-                // start(0.05, 0.85), peak(0.50, -0.30), end(0.95, 0.85)
+                // start(0.05, 0.85), peak(0.50, -0.65), end(0.95, 0.85)
                 val x = (oneMinusT * oneMinusT * 0.05f) + (2f * oneMinusT * t * 0.50f) + (t * t * 0.95f)
-                val y = (oneMinusT * oneMinusT * 0.85f) + (2f * oneMinusT * t * -0.30f) + (t * t * 0.85f)
+                val y = (oneMinusT * oneMinusT * 0.85f) + (2f * oneMinusT * t * -0.65f) + (t * t * 0.85f)
                 Offset(x, y)
             }
         }
@@ -749,7 +749,7 @@ private fun VisualSunPathSection(
 
             val pathStart = Offset(x = size.width * 0.05f, y = size.height * 0.85f)
             val pathEnd = Offset(x = size.width * 0.95f, y = size.height * 0.85f)
-            val peak = Offset(x = size.width * 0.50f, y = -size.height * 0.30f)
+            val peak = Offset(x = size.width * 0.50f, y = -size.height * 0.65f)
 
             val path = Path().apply {
                 moveTo(pathStart.x, pathStart.y)
@@ -791,7 +791,7 @@ private fun VisualSunPathSection(
                 val t = 0.5f
                 val oneMinusT = 1f - t
                 val relX = (oneMinusT * oneMinusT * 0.05f) + (2f * oneMinusT * t * 0.50f) + (t * t * 0.95f)
-                val relY = (oneMinusT * oneMinusT * 0.85f) + (2f * oneMinusT * t * -0.30f) + (t * t * 0.85f)
+                val relY = (oneMinusT * oneMinusT * 0.85f) + (2f * oneMinusT * t * -0.65f) + (t * t * 0.85f)
                 drawCircle(
                     color = Color.White.copy(alpha = 0.8f),
                     radius = 3.dp.toPx(),
@@ -837,7 +837,7 @@ private fun VisualSunPathSection(
                 
                 val oneMinusT = 1f - sunT
                 val sunX = size.width * ((oneMinusT * oneMinusT * 0.05f) + (2f * oneMinusT * sunT * 0.50f) + (sunT * sunT * 0.95f))
-                val sunY = size.height * ((oneMinusT * oneMinusT * 0.85f) + (2f * oneMinusT * sunT * -0.30f) + (sunT * sunT * 0.85f))
+                val sunY = size.height * ((oneMinusT * oneMinusT * 0.85f) + (2f * oneMinusT * sunT * -0.65f) + (sunT * sunT * 0.85f))
                 
                 // Draw dynamic glowing sun
                 drawCircle(
