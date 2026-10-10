@@ -1513,7 +1513,7 @@ fun QuickSurahPills(
                 initialValue = 0f,
                 targetValue = 360f,
                 animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis = 3500, easing = LinearEasing),
+                    animation = tween(durationMillis = 4000, easing = LinearEasing),
                     repeatMode = RepeatMode.Restart
                 ),
                 label = "neonRotationAngle"
@@ -1522,35 +1522,35 @@ fun QuickSurahPills(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(100.dp))
+                    .then(
+                        if (isActive) {
+                            Modifier.drawBehind {
+                                rotate(neonRotationAngle) {
+                                    val radius = size.maxDimension
+                                    drawCircle(
+                                        brush = Brush.sweepGradient(
+                                            colors = listOf(
+                                                item.dotColor,
+                                                Color(0xFF00E5FF),
+                                                item.dotColor.copy(alpha = 0.2f),
+                                                Color.White,
+                                                item.dotColor,
+                                                Color(0xFF38BDF8),
+                                                item.dotColor
+                                            )
+                                        ),
+                                        radius = radius
+                                    )
+                                }
+                            }
+                        } else Modifier
+                    )
                     .clickable {
                         onNavigateToSurahWithAyah(item.surahId, "MUSHAF", item.startAyah ?: 1)
                     }
             ) {
-                if (isActive) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .graphicsLayer { rotationZ = neonRotationAngle }
-                            .drawBehind {
-                                drawRect(
-                                    brush = Brush.sweepGradient(
-                                        colors = listOf(
-                                            item.dotColor,
-                                            item.dotColor.copy(alpha = 0.25f),
-                                            Color(0xFF00E5FF),
-                                            item.dotColor,
-                                            Color.White,
-                                            item.dotColor.copy(alpha = 0.25f),
-                                            item.dotColor
-                                        )
-                                    )
-                                )
-                            }
-                    )
-                }
-
                 Surface(
-                    modifier = Modifier.padding(if (isActive) 1.5.dp else 0.dp),
+                    modifier = Modifier.padding(if (isActive) 1.8.dp else 0.dp),
                     shape = RoundedCornerShape(100.dp),
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = if (isActive) 3.dp else 1.dp,
@@ -2295,8 +2295,8 @@ fun ModesGridSection(
                 title = if (isEnglish) "Hafezi Quran" else "হাফেজী কুরআন",
                 subtitle = if (isEnglish) "15 Lines Image View" else "১৫ লাইন ইমেজ ভিউ",
                 iconRes = R.drawable.ic_hafezi_quran_custom,
-                iconSize = 28.dp,
-                containerSize = 56.dp,
+                iconSize = 22.dp,
+                containerSize = 48.dp,
                 containerColor = if (isDark) Color(0xFF064E3B).copy(alpha = 0.5f) else Color(0xFFECFDF5),
                 iconColor = Color(0xFF10B981),
                 onClick = onHafeziPdfClick,
