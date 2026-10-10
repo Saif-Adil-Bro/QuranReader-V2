@@ -1,25 +1,26 @@
-# Implementation Plan: Curved Sun Arc Path & Rounded Bottom Cards
+# Implementation Plan: Vector Crescent Moon & Exact Star Node Path Alignment
+
+## Problems Identified
+1. **চাঁদের উপর কালো বৃত্ত সমস্যা (Ugly Dark Circle on Moon):** 
+   নাইট স্কাই ব্যাকগ্রাউন্ডে চাঁদ আঁকার জন্য সাদা বৃত্তের উপর নির্দিষ্ট গাঢ় রঙের একটি বৃত্ত ওভারল্যাপ করা হচ্ছিল। ডায়নামিক গ্র্যাডিয়েন্ট ও লোকেশন ব্যাজের সাথে ওই রঙের অমিলের কারণে একটি বিশ্রী কালচে বৃত্ত দেখা যাচ্ছিল।
+2. **স্টার/নোড পাথের সাথে অসঙ্গতি (Star/Node Path Misalignment):** 
+   সান আর্কের বক্রতা `-0.65f`-এ পরিবর্তন করা হলেও তাহাজ্জুদ স্টার নোডের পজিশনিং সমীকরণটি `-0.30f`-এ রয়ে গিয়েছিল। ফলে স্টার আইকনটি আর্কের রেখার সাথে না মিশে নিচে শূন্যে ভাসছিল।
+
+---
 
 ## Proposed Changes
 
-### 1. `PrayerSunPathCard.kt` (`VisualSunPathSection`)
-- Increase the Bezier curve peak height factor in `VisualSunPathSection` (e.g. from `-0.30f` to `-0.65f`) so the Sun Arc Path is noticeably higher, rounder, and more prominently curved.
-- Update node coordinate calculations to match the new curve peak height so the nodes sit precisely along the new rounder arc path.
+### `PrayerSunPathCard.kt`
+1. **ভেক্টর ক্রেসেন্ট মুন (Vector Crescent Moon with Soft Glow):**
+   - `DynamicSkyBackground`-এ জোড়াতালি দেওয়া জোড়া বৃত্তের পরিবর্তে সুনির্দিষ্ট `Path()` দিয়ে একটি মসৃণ ভেক্টর চাঁদ (Crescent Moon Path) আঁকা হবে।
+   - পেছনে সফট গোল্ডেন/হোয়াইট আভা (Outer Glow Radial Gradient) যোগ করা হবে যাতে কোনো কালো সার্কেল বা ওভারল্যাপ ছাড়া চাঁদের অবয়বটি ১০০% রিয়েলিস্টিক দেখায়।
 
-### 2. `PrayerTimesDetailSheet.kt`
-Restore rounded corner shapes and horizontal side margins for the bottom 3 components:
-1. **Calculation Method Card (`গণনা পদ্ধতি`)**:
-   - `shape = RoundedCornerShape(14.dp)`
-   - `modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)`
-2. **Asr Method Card (`আসরের পদ্ধতি / হানাফী-শাফেয়ী`)**:
-   - `shape = RoundedCornerShape(14.dp)`
-   - `modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)`
-3. **Copy Prayer Times Button (`সময়সূচির টেক্সট কপি করুন`)**:
-   - `shape = RoundedCornerShape(14.dp)`
-   - `modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)`
+2. **পাথের সাথে সমস্ত স্টার ও নোডের নিখুঁত ম্যাপিং (Exact Node Locking on Arc Path):**
+   - `VisualSunPathSection`-এ তাহাজ্জুদ স্টার এবং অন্যান্য নোডের $Y$-স্থানাঙ্ক সমীকরণ `-0.65f`-এ আপডেট করা হবে।
+   - সকল স্টার ও ওয়াক্তের নোড আইকন গাণিতিকভাবে সঠিক স্থানে সান আর্কের কার্ভ রেখার উপর লক হয়ে থাকবে।
 
 ---
 
 ## Verification
-- Run `compile_applet` to verify compilation.
-- Verify visual curvature of the Sun Arc path and the floating rounded appearance of the bottom 3 cards.
+- `compile_applet` দিয়ে কোড বিল্ড ও সিনট্যাক্স যাচাই করা।
+- নাইট ভিউতে চাঁদটি মসৃণ ও সুন্দর দেখায় কিনা এবং তাহাজ্জুদ স্টার ও সকল নোড আইকন সান আর্কের রেখার সাথে মিশে আছে কিনা নিশ্চিত করা।

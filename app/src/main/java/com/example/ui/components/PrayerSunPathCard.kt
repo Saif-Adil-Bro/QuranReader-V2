@@ -948,7 +948,7 @@ private fun VisualSunPathSection(
             val t = 0.5f
             val oneMinusT = 1f - t
             val relX = (oneMinusT * oneMinusT * 0.05f) + (2f * oneMinusT * t * 0.50f) + (t * t * 0.95f)
-            val relY = (oneMinusT * oneMinusT * 0.85f) + (2f * oneMinusT * t * -0.30f) + (t * t * 0.85f)
+            val relY = (oneMinusT * oneMinusT * 0.85f) + (2f * oneMinusT * t * -0.65f) + (t * t * 0.85f)
             
             val xOffset = width * relX
             val verticalY = (height * relY) - 8.dp
@@ -1049,26 +1049,61 @@ private fun DynamicSkyBackground(
         val h = size.height
         
         if (isNight) {
-            val moonCenter = Offset(w * 0.85f, h * 0.25f)
+            val moonCenter = Offset(w * 0.84f, h * 0.24f)
+            val moonRadius = 16.dp.toPx()
+
+            // 1. Soft glowing aura around moon
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFFE2E8F0).copy(alpha = 0.25f), Color.Transparent),
+                    colors = listOf(
+                        Color(0xFFFFDF78).copy(alpha = 0.35f),
+                        Color(0xFFE2E8F0).copy(alpha = 0.15f),
+                        Color.Transparent
+                    ),
                     center = moonCenter,
-                    radius = w * 0.4f
+                    radius = moonRadius * 2.8f
                 ),
-                radius = w * 0.4f,
+                radius = moonRadius * 2.8f,
                 center = moonCenter
             )
-            drawCircle(
-                color = Color(0xFFF8FAFC).copy(alpha = 0.95f),
-                radius = 18.dp.toPx(),
-                center = moonCenter
-            )
-            val skyColor = if (currentIndex == 0) Color(0xFF0C2B3C) else Color(0xFF0B1120)
-            drawCircle(
-                color = skyColor, 
-                radius = 15.dp.toPx(),
-                center = Offset(moonCenter.x - 6.dp.toPx(), moonCenter.y - 4.dp.toPx())
+
+            // 2. Pure Vector Crescent Moon Path (no dark circle overlay needed)
+            val crescentPath = Path().apply {
+                addArc(
+                    oval = androidx.compose.ui.geometry.Rect(
+                        left = moonCenter.x - moonRadius,
+                        top = moonCenter.y - moonRadius,
+                        right = moonCenter.x + moonRadius,
+                        bottom = moonCenter.y + moonRadius
+                    ),
+                    startAngleDegrees = 115f,
+                    sweepAngleDegrees = 220f
+                )
+                arcTo(
+                    rect = androidx.compose.ui.geometry.Rect(
+                        left = moonCenter.x - moonRadius * 0.45f,
+                        top = moonCenter.y - moonRadius * 0.92f,
+                        right = moonCenter.x + moonRadius * 1.05f,
+                        bottom = moonCenter.y + moonRadius * 0.92f
+                    ),
+                    startAngleDegrees = 335f,
+                    sweepAngleDegrees = -220f,
+                    forceMoveTo = false
+                )
+                close()
+            }
+
+            drawPath(
+                path = crescentPath,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFFFFFFFF),
+                        Color(0xFFFFDF78),
+                        Color(0xFFE2E8F0)
+                    ),
+                    start = Offset(moonCenter.x - moonRadius, moonCenter.y - moonRadius),
+                    end = Offset(moonCenter.x + moonRadius, moonCenter.y + moonRadius)
+                )
             )
         } else {
             val sunCenter = Offset(w * 0.85f, h * 0.25f)
