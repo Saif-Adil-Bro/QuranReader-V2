@@ -31,10 +31,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -1494,78 +1497,133 @@ fun QuickSurahPills(
         ) { item ->
             val isActive = item.isActive(currentTime)
             
-            Surface(
+            val pillTransition = rememberInfiniteTransition(label = "AmaliPillPulse_${item.surahId}")
+            val pillDotProgress by pillTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "pillDotProgress"
+            )
+
+            val rotationTransition = rememberInfiniteTransition(label = "AmaliNeonRotate_${item.surahId}")
+            val neonRotationAngle by rotationTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 360f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 3500, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "neonRotationAngle"
+            )
+
+            Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(100.dp))
                     .clickable {
                         onNavigateToSurahWithAyah(item.surahId, "MUSHAF", item.startAyah ?: 1)
-                    },
-                shape = RoundedCornerShape(100.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = if (isActive) 3.dp else 1.dp,
-                shadowElevation = if (isActive) 2.dp else 0.dp,
-                border = BorderStroke(
-                    width = if (isActive) 1.5.dp else 1.dp,
-                    color = if (isActive) item.dotColor.copy(alpha = 0.75f) else if (isDark) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.08f)
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier.size(8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isActive) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .background(item.dotColor.copy(alpha = 0.25f), CircleShape)
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .background(item.dotColor, CircleShape)
-                        )
                     }
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Column(verticalArrangement = Arrangement.Center) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = item.subtitle,
-                                color = if (isActive) item.dotColor else GrayText,
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Bold,
-                                lineHeight = 9.5.sp
-                            )
+            ) {
+                if (isActive) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .graphicsLayer { rotationZ = neonRotationAngle }
+                            .drawBehind {
+                                drawRect(
+                                    brush = Brush.sweepGradient(
+                                        colors = listOf(
+                                            item.dotColor,
+                                            item.dotColor.copy(alpha = 0.25f),
+                                            Color(0xFF00E5FF),
+                                            item.dotColor,
+                                            Color.White,
+                                            item.dotColor.copy(alpha = 0.25f),
+                                            item.dotColor
+                                        )
+                                    )
+                                )
+                            }
+                    )
+                }
+
+                Surface(
+                    modifier = Modifier.padding(if (isActive) 1.5.dp else 0.dp),
+                    shape = RoundedCornerShape(100.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = if (isActive) 3.dp else 1.dp,
+                    shadowElevation = if (isActive) 2.dp else 0.dp,
+                    border = if (!isActive) {
+                        BorderStroke(
+                            width = 1.dp,
+                            color = if (isDark) Color.White.copy(alpha = 0.1f) else Color.Black.copy(alpha = 0.08f)
+                        )
+                    } else null
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier.size(10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                             if (isActive) {
-                                Spacer(modifier = Modifier.width(3.dp))
+                                val rippleScale = 0.6f + 0.8f * pillDotProgress
+                                val rippleAlpha = (1f - pillDotProgress).coerceIn(0f, 1f) * 0.5f
                                 Box(
                                     modifier = Modifier
-                                        .background(item.dotColor.copy(alpha = 0.18f), RoundedCornerShape(3.dp))
-                                        .padding(horizontal = 3.dp, vertical = 0.5.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = if (isEnglish) "ACTIVE" else "চলমান",
-                                        color = item.dotColor,
-                                        fontSize = 7.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        lineHeight = 7.sp
-                                    )
+                                        .size(10.dp * rippleScale)
+                                        .clip(CircleShape)
+                                        .background(item.dotColor.copy(alpha = rippleAlpha))
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(4.dp)
+                                    .clip(CircleShape)
+                                    .background(item.dotColor)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Column(verticalArrangement = Arrangement.Center) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = item.subtitle,
+                                    color = if (isActive) item.dotColor else GrayText,
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    lineHeight = 9.5.sp
+                                )
+                                if (isActive) {
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .background(item.dotColor.copy(alpha = 0.18f), RoundedCornerShape(3.dp))
+                                            .padding(horizontal = 3.dp, vertical = 0.5.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = if (isEnglish) "ACTIVE" else "চলমান",
+                                            color = item.dotColor,
+                                            fontSize = 7.sp,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            lineHeight = 7.sp
+                                        )
+                                    }
                                 }
                             }
+                            Spacer(modifier = Modifier.height(0.5.dp))
+                            Text(
+                                text = item.title,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                lineHeight = 12.sp
+                            )
                         }
-                        Spacer(modifier = Modifier.height(0.5.dp))
-                        Text(
-                            text = item.title,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            lineHeight = 12.sp
-                        )
                     }
                 }
             }
@@ -2237,8 +2295,8 @@ fun ModesGridSection(
                 title = if (isEnglish) "Hafezi Quran" else "হাফেজী কুরআন",
                 subtitle = if (isEnglish) "15 Lines Image View" else "১৫ লাইন ইমেজ ভিউ",
                 iconRes = R.drawable.ic_hafezi_quran_custom,
-                iconSize = 50.dp,
-                containerSize = 60.dp,
+                iconSize = 28.dp,
+                containerSize = 56.dp,
                 containerColor = if (isDark) Color(0xFF064E3B).copy(alpha = 0.5f) else Color(0xFFECFDF5),
                 iconColor = Color(0xFF10B981),
                 onClick = onHafeziPdfClick,

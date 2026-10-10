@@ -149,19 +149,23 @@ fun FullWidthPrayerHeroSection(
     val ishaStart = ishaItem?.timestampMillis ?: 0L
 
     // Match core module's calculated prayerSchedule for consistency
-    val currentPrayerItem = remember(prayerSchedule, mainPrayers, currentTimeMillis) {
-        prayerSchedule.currentPrayer
-            ?: mainPrayers.firstOrNull { it.isCurrent }
-            ?: run {
-                when {
-                    fajrStart > 0L && sunriseMillis > 0L && currentTimeMillis in fajrStart until sunriseMillis -> fajrItem
-                    dhuhrStart > 0L && asrStart > 0L && currentTimeMillis in dhuhrStart until asrStart -> dhuhrItem
-                    asrStart > 0L && maghribStart > 0L && currentTimeMillis in asrStart until maghribStart -> asrItem
-                    maghribStart > 0L && ishaStart > 0L && currentTimeMillis in maghribStart until ishaStart -> maghribItem
-                    ishaStart > 0L && (currentTimeMillis >= ishaStart || (fajrStart > 0L && currentTimeMillis < fajrStart)) -> ishaItem
-                    else -> null // Between sunrise and Dhuhr (Ishraq / Chasht) or pre-Fajr
-                }
-            }
+    val currentPrayerItem: SinglePrayerTime? = remember(prayerSchedule, mainPrayers, currentTimeMillis, fajrStart, sunriseMillis, dhuhrStart, asrStart, maghribStart, ishaStart) {
+        if (sunriseMillis > 0L && dhuhrStart > 0L && currentTimeMillis in sunriseMillis until dhuhrStart) {
+            null // Between Sunrise and Dhuhr (Chasht / Duha or Makruh periods)
+        } else if (fajrStart > 0L && sunriseMillis > 0L && currentTimeMillis in fajrStart until sunriseMillis) {
+            fajrItem
+        } else if (dhuhrStart > 0L && asrStart > 0L && currentTimeMillis in dhuhrStart until asrStart) {
+            dhuhrItem
+        } else if (asrStart > 0L && maghribStart > 0L && currentTimeMillis in asrStart until maghribStart) {
+            asrItem
+        } else if (maghribStart > 0L && ishaStart > 0L && currentTimeMillis in maghribStart until ishaStart) {
+            maghribItem
+        } else if (ishaStart > 0L && (currentTimeMillis >= ishaStart || (fajrStart > 0L && currentTimeMillis < fajrStart))) {
+            ishaItem
+        } else {
+            val candidate = prayerSchedule.currentPrayer ?: mainPrayers.firstOrNull { it.isCurrent }
+            if (candidate?.name == PrayerName.SUNRISE) null else candidate
+        }
     }
 
     // End time of current prayer
@@ -215,10 +219,92 @@ fun FullWidthPrayerHeroSection(
 
     val nextStartsInMillis = (nextPrayerStartMillis - currentTimeMillis).coerceAtLeast(0L)
 
+    val currentZdt = remember(currentTimeMillis, zoneId) {
+        try {
+            Instant.ofEpochMilli(currentTimeMillis).atZone(zoneId)
+        } catch (e: Exception) {
+            ZonedDateTime.now(zoneId)
+        }
+    }
+    val currentLocalDate = currentZdt.toLocalDate()
+    val currentLocalTime = currentZdt.toLocalTime()
+    val currentMinutes = currentLocalTime.hour * 60 + currentLocalTime.minute
+
+    val sunriseMinutes = remember(sunriseMillis, zoneId) {
+        if (sunriseMillis > 0L) {
+            try {
+                val zdt = Instant.ofEpochMilli(sunriseMillis).atZone(zoneId)
+                zdt.hour * 60 + zdt.minute
+            } catch (e: Exception) { 6 * 60 }
+        } else 6 * 60
+    }
+    val duhaStartMinutes = sunriseMinutes + 16
+
+    val dhuhrMinutes = remember(dhuhrStart, zoneId) {
+        if (dhuhrStart > 0L) {
+            try {
+                val zdt = Instant.ofEpochMilli(dhuhrStart).atZone(zoneId)
+                zdt.hour * 60 + zdt.minute
+            } catch (e: Exception) { 12 * 60 }
+        } else 12 * 60
+    }
+    val duhaEndMinutes = (dhuhrMinutes - 4).coerceAtLeast(duhaStartMinutes)
+
     // -------------------------------------------------------------------------
-    // User Specification for Sun Time Display:
-    // - সূর্যাস্তের পর থেকে নিয়ে সূর্যোদয় পর্যন্ত সূর্যোদয়ের সময় দেখাবে
-    // - এবং সূর্যোদয়ের পর থেকে নিয়ে সূর্যাস্ত পর্যন্ত সূর্যাস্তের সময় শো করবে
+    // Forbidden Prayer Times (মাকরূহ / নিষিদ্ধ সময়) & Duha Calculation
+    // -------------------------------------------------------------------------
+    val isSunriseMakruhNow = sunriseMillis > 0L && currentTimeMillis in sunriseMillis until (sunriseMillis + 16 * 60 * 1000L)
+    val isZawalMakruhNow = dhuhrStart > 0L && currentTimeMillis in (dhuhrStart - 12 * 60 * 1000L) until dhuhrStart
+    val isSunsetMakruhNow = maghribStart > 0L && currentTimeMillis in (maghribStart - 15 * 60 * 1000L) until maghribStart
+    val isDuhaNow = !isSunriseMakruhNow && !isZawalMakruhNow && (currentMinutes in duhaStartMinutes until duhaEndMinutes)
+
+    val isForbiddenTimeNow = isSunriseMakruhNow || isZawalMakruhNow || isSunsetMakruhNow || prayerSchedule.isForbiddenTimeNow
+
+    val forbiddenReasonText = remember(currentTimeMillis, sunriseMillis, dhuhrStart, maghribStart, prayerSchedule.forbiddenTimeReason, isEnglish) {
+        when {
+            isSunriseMakruhNow -> if (isEnglish) "Prohibited: Sunrise" else "সূর্যোদয় (মাকরূহ)"
+            isZawalMakruhNow -> if (isEnglish) "Prohibited: Midday" else "দ্বিপ্রহর (জাওয়াল)"
+            isSunsetMakruhNow -> if (isEnglish) "Prohibited: Sunset" else "সূর্যাস্ত (মাকরূহ)"
+            else -> prayerSchedule.forbiddenTimeReason ?: if (isEnglish) "Prohibited Prayer Time" else "নামাজের নিষিদ্ধ সময়"
+        }
+    }
+
+    val forbiddenTimeRange = remember(currentTimeMillis, sunriseMillis, dhuhrStart, maghribStart, prayerSchedule, isEnglish) {
+        val raw = when {
+            isSunriseMakruhNow -> prayerSchedule.forbiddenMorningRange
+            isZawalMakruhNow -> prayerSchedule.forbiddenNoonRange
+            isSunsetMakruhNow -> prayerSchedule.forbiddenEveningRange
+            else -> ""
+        }
+        if (isEnglish) toEnglishDigits(raw) else raw
+    }
+
+    val (overrideTitle, overrideTimeRange) = remember(
+        isSunriseMakruhNow,
+        isDuhaNow,
+        isZawalMakruhNow,
+        isSunsetMakruhNow,
+        prayerSchedule,
+        forbiddenReasonText,
+        forbiddenTimeRange,
+        isEnglish
+    ) {
+        when {
+            isSunriseMakruhNow -> Pair(forbiddenReasonText, forbiddenTimeRange)
+            isDuhaNow -> {
+                val title = if (isEnglish) "Chasht & Duha" else "চাশত ও দুহা"
+                val rawRange = prayerSchedule.duhaRange.ifBlank { "সকাল থেকে দ্বিপ্রহর" }
+                val range = if (isEnglish) toEnglishDigits(rawRange) else rawRange
+                Pair(title, range)
+            }
+            isZawalMakruhNow -> Pair(forbiddenReasonText, forbiddenTimeRange)
+            isSunsetMakruhNow -> Pair(forbiddenReasonText, forbiddenTimeRange)
+            else -> Pair("", "")
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // User Specification for Sun Time Display
     // -------------------------------------------------------------------------
     val sunriseLocalTime = remember(sunriseMillis, zoneId) {
         if (sunriseMillis > 0L) {
@@ -244,18 +330,6 @@ fun FullWidthPrayerHeroSection(
         }
     }
 
-    val currentZdt = remember(currentTimeMillis, zoneId) {
-        try {
-            Instant.ofEpochMilli(currentTimeMillis).atZone(zoneId)
-        } catch (e: Exception) {
-            ZonedDateTime.now(zoneId)
-        }
-    }
-    val currentLocalDate = currentZdt.toLocalDate()
-    val currentLocalTime = currentZdt.toLocalTime()
-
-    // Daytime: between Sunrise and Sunset -> Show Sunset (showSunrise = false)
-    // Nighttime: between Sunset and Sunrise -> Show Sunrise (showSunrise = true)
     val isDaytime = currentLocalTime >= sunriseLocalTime && currentLocalTime < sunsetLocalTime
     val showSunrise = !isDaytime
 
@@ -276,13 +350,10 @@ fun FullWidthPrayerHeroSection(
             val rawDigits = sunrisePrayer?.timeDigits ?: prayerSchedule.sunriseTimeDigits.ifEmpty { "০৫:৪৫" }
             val formattedDigits = if (isEnglish) toEnglishDigits(rawDigits) else rawDigits
 
-            // Nighttime from Sunset to Sunrise: countdown to upcoming sunrise
             val targetSunriseMillis = if (currentLocalTime >= sunsetLocalTime) {
-                // Evening/night before midnight: upcoming sunrise is tomorrow morning
                 LocalDateTime.of(currentLocalDate.plusDays(1), sunriseLocalTime)
                     .atZone(zoneId).toInstant().toEpochMilli()
             } else {
-                // After midnight before sunrise: upcoming sunrise is this morning
                 LocalDateTime.of(currentLocalDate, sunriseLocalTime)
                     .atZone(zoneId).toInstant().toEpochMilli()
             }
@@ -304,7 +375,6 @@ fun FullWidthPrayerHeroSection(
             val rawDigits = maghribItem?.timeDigits ?: prayerSchedule.sunsetTimeDigits.ifEmpty { "০৫:৪৫" }
             val formattedDigits = if (isEnglish) toEnglishDigits(rawDigits) else rawDigits
 
-            // Daytime from Sunrise to Sunset: countdown to today's upcoming sunset
             val todaySunsetMillis = LocalDateTime.of(currentLocalDate, sunsetLocalTime)
                 .atZone(zoneId).toInstant().toEpochMilli()
             val diff = (todaySunsetMillis - currentTimeMillis).coerceAtLeast(0L)
@@ -322,33 +392,101 @@ fun FullWidthPrayerHeroSection(
         }
     }
 
-    // Whether current time is in daytime after sunrise but before Dhuhr
     val isAfterSunrise = currentTimeMillis in sunriseMillis until (if (dhuhrStart > 0L) dhuhrStart else (sunriseMillis + 6 * 3600 * 1000L))
 
     // -------------------------------------------------------------------------
     // Capsule 1: Current Waqt Remaining Dynamic Time (বর্তমান ওয়াক্ত কত মিনিট বাকি)
     // -------------------------------------------------------------------------
-    val (currentWaqtLabel, currentWaqtTimeText) = remember(currentPrayerItem, currentPrayerRemainingMillis, isAfterSunrise, isEnglish) {
-        if (currentPrayerItem != null) {
-            val totalMins = currentPrayerRemainingMillis / (1000 * 60)
-            val hrs = totalMins / 60
-            val mins = totalMins % 60
-            if (isEnglish) {
-                val label = "Waqt Remaining"
-                val text = if (hrs > 0) "${hrs}h ${mins}m left" else "${mins}m left"
-                Pair(label, text)
-            } else {
-                val label = "ওয়াক্ত বাকি"
-                val hrsBn = DateUtil.toBengaliNumerals(hrs)
-                val minsBn = DateUtil.toBengaliNumerals(mins)
-                val text = if (hrs > 0) "${hrsBn} ঘণ্টা ${minsBn} মি." else "${minsBn} মিনিট বাকি"
+    val (currentWaqtLabel, currentWaqtTimeText) = remember(
+        currentPrayerItem,
+        currentPrayerRemainingMillis,
+        isSunriseMakruhNow,
+        isDuhaNow,
+        isZawalMakruhNow,
+        isSunsetMakruhNow,
+        currentMinutes,
+        duhaStartMinutes,
+        duhaEndMinutes,
+        dhuhrMinutes,
+        maghribStart,
+        currentTimeMillis,
+        isEnglish
+    ) {
+        when {
+            isSunriseMakruhNow -> {
+                val label = if (isEnglish) "Chasht Starts" else "চাশত শুরু"
+                val remainingMins = (duhaStartMinutes - currentMinutes).coerceAtLeast(0)
+                val hrs = remainingMins / 60
+                val mins = remainingMins % 60
+                val text = if (isEnglish) {
+                    if (hrs > 0) "in ${hrs}h ${mins}m" else "in ${mins}m"
+                } else {
+                    val hrsBn = DateUtil.toBengaliNumerals(hrs)
+                    val minsBn = DateUtil.toBengaliNumerals(mins)
+                    if (hrs > 0) "${hrsBn} ঘ. ${minsBn} মি. পর" else "${minsBn} মিনিট পর"
+                }
                 Pair(label, text)
             }
-        } else {
-            if (isEnglish) {
-                Pair("Current Status", if (isAfterSunrise) "Ishraq / Chasht" else "Tahajjud")
-            } else {
-                Pair("বর্তমান অবস্থা", if (isAfterSunrise) "ইশরাক / চাশত" else "তাহাজ্জুদ")
+            isDuhaNow -> {
+                val label = if (isEnglish) "Waqt Remaining" else "ওয়াক্ত বাকি"
+                val remainingMins = (duhaEndMinutes - currentMinutes).coerceAtLeast(0)
+                val hrs = remainingMins / 60
+                val mins = remainingMins % 60
+                val text = if (isEnglish) {
+                    if (hrs > 0) "${hrs}h ${mins}m left" else "${mins}m left"
+                } else {
+                    val hrsBn = DateUtil.toBengaliNumerals(hrs)
+                    val minsBn = DateUtil.toBengaliNumerals(mins)
+                    if (hrs > 0) "${hrsBn} ঘণ্টা ${minsBn} মি." else "${minsBn} মিনিট বাকি"
+                }
+                Pair(label, text)
+            }
+            isZawalMakruhNow -> {
+                val label = if (isEnglish) "Dhuhr Starts" else "যোহর শুরু"
+                val remainingMins = (dhuhrMinutes - currentMinutes).coerceAtLeast(0)
+                val hrs = remainingMins / 60
+                val mins = remainingMins % 60
+                val text = if (isEnglish) {
+                    if (hrs > 0) "in ${hrs}h ${mins}m" else "in ${mins}m"
+                } else {
+                    val hrsBn = DateUtil.toBengaliNumerals(hrs)
+                    val minsBn = DateUtil.toBengaliNumerals(mins)
+                    if (hrs > 0) "${hrsBn} ঘ. ${minsBn} মি. পর" else "${minsBn} মিনিট পর"
+                }
+                Pair(label, text)
+            }
+            isSunsetMakruhNow -> {
+                val label = if (isEnglish) "Maghrib Starts" else "মাগরিব শুরু"
+                val remainingMins = (maghribStart - currentTimeMillis).coerceAtLeast(0L) / (1000 * 60)
+                val hrs = (remainingMins / 60).toInt()
+                val mins = (remainingMins % 60).toInt()
+                val text = if (isEnglish) {
+                    if (hrs > 0) "in ${hrs}h ${mins}m" else "in ${mins}m"
+                } else {
+                    val hrsBn = DateUtil.toBengaliNumerals(hrs)
+                    val minsBn = DateUtil.toBengaliNumerals(mins)
+                    if (hrs > 0) "${hrsBn} ঘ. ${minsBn} মি. পর" else "${minsBn} মিনিট পর"
+                }
+                Pair(label, text)
+            }
+            currentPrayerItem != null -> {
+                val totalMins = currentPrayerRemainingMillis / (1000 * 60)
+                val hrs = totalMins / 60
+                val mins = totalMins % 60
+                val label = if (isEnglish) "Waqt Remaining" else "ওয়াক্ত বাকি"
+                val text = if (isEnglish) {
+                    if (hrs > 0) "${hrs}h ${mins}m left" else "${mins}m left"
+                } else {
+                    val hrsBn = DateUtil.toBengaliNumerals(hrs)
+                    val minsBn = DateUtil.toBengaliNumerals(mins)
+                    if (hrs > 0) "${hrsBn} ঘণ্টা ${minsBn} মি." else "${minsBn} মিনিট বাকি"
+                }
+                Pair(label, text)
+            }
+            else -> {
+                val label = if (isEnglish) "Current Status" else "বর্তমান অবস্থা"
+                val text = if (isEnglish) "Tahajjud" else "তাহাজ্জুদ"
+                Pair(label, text)
             }
         }
     }
@@ -456,7 +594,7 @@ fun FullWidthPrayerHeroSection(
                     Spacer(modifier = Modifier.height(5.dp))
 
                     // =================================================================
-                    // SECTION 3: BOTTOM DARK-GREEN PRAYER STATUS PANEL (Running Waqt Card)
+                    // SECTION 3: BOTTOM DARK-GREEN / RED PRAYER STATUS PANEL (Running Waqt Card)
                     // =================================================================
                     DarkEmeraldPrayerStatusPanel(
                         currentPrayerItem = currentPrayerItem,
@@ -465,6 +603,11 @@ fun FullWidthPrayerHeroSection(
                         currentWaqtTimeText = currentWaqtTimeText,
                         nextPrayerLabel = nextPrayerLabel,
                         countdownFormatted = countdownFormatted,
+                        isForbiddenTime = isForbiddenTimeNow,
+                        forbiddenReasonText = forbiddenReasonText,
+                        forbiddenTimeRange = forbiddenTimeRange,
+                        overrideTitle = overrideTitle,
+                        overrideTimeRange = overrideTimeRange,
                         isEnglish = isEnglish,
                         onClick = onPrayerTimesClick,
                         modifier = Modifier.padding(horizontal = 8.dp)
@@ -841,6 +984,11 @@ private fun DarkEmeraldPrayerStatusPanel(
     nextPrayerLabel: String,
     countdownFormatted: String,
     isEnglish: Boolean,
+    isForbiddenTime: Boolean = false,
+    forbiddenReasonText: String = "",
+    forbiddenTimeRange: String = "",
+    overrideTitle: String = "",
+    overrideTimeRange: String = "",
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -855,23 +1003,55 @@ private fun DarkEmeraldPrayerStatusPanel(
         startTimeStr
     }
 
+    val displayTitle = when {
+        overrideTitle.isNotEmpty() -> overrideTitle
+        isForbiddenTime -> if (forbiddenReasonText.isNotEmpty()) forbiddenReasonText else if (isEnglish) "Prohibited Time" else "নামাজের নিষিদ্ধ সময়"
+        else -> activePrayerName
+    }
+
+    val displayTimeRange = when {
+        overrideTimeRange.isNotEmpty() -> overrideTimeRange
+        isForbiddenTime && forbiddenTimeRange.isNotEmpty() -> forbiddenTimeRange
+        else -> activePrayerTimeRange
+    }
+
+    val cardBg = if (isForbiddenTime) {
+        Brush.horizontalGradient(
+            colors = listOf(
+                Color(0xFF3D0810), // Deep Dark Crimson
+                Color(0xFF5E0F1D), // Rich Wine Red
+                Color(0xFF801627)  // Ruby Red highlight
+            )
+        )
+    } else {
+        Brush.horizontalGradient(
+            colors = listOf(
+                Color(0xFF063321), // Rich Dark Islamic Green
+                Color(0xFF0A442D), // Deep Emerald
+                Color(0xFF0F5438)  // Subtle Emerald highlight
+            )
+        )
+    }
+
+    val cardBorderColor = if (isForbiddenTime) {
+        Color(0xFFF87171).copy(alpha = 0.6f)
+    } else {
+        Color(0xFF2E7D5B).copy(alpha = 0.4f)
+    }
+
+    val badgeTint = if (isForbiddenTime) Color(0xFFFCA5A5) else Color(0xFF86EFAC)
+    val titleTextColor = if (isForbiddenTime) Color(0xFFFECACA) else Color(0xFF86EFAC)
+    val dotColor = if (isForbiddenTime) Color(0xFFEF4444) else Color(0xFF4ADE80)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(58.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(
-                Brush.horizontalGradient(
-                    colors = listOf(
-                        Color(0xFF063321), // Rich Dark Islamic Green
-                        Color(0xFF0A442D), // Deep Emerald
-                        Color(0xFF0F5438)  // Subtle Emerald highlight
-                    )
-                )
-            )
+            .background(cardBg)
             .border(
                 width = 0.8.dp,
-                color = Color(0xFF2E7D5B).copy(alpha = 0.4f),
+                color = cardBorderColor,
                 shape = RoundedCornerShape(12.dp)
             )
             .clickable { onClick() }
@@ -914,14 +1094,14 @@ private fun DarkEmeraldPrayerStatusPanel(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // LEFT: Mosque Vector Outline + Active Waqt Name + Live Dot + Time Range (৮:১০ - ৪:৩৭)
+            // LEFT: Mosque Vector Outline + Active Waqt Name + Live Dot + Time Range
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(end = 4.dp)
             ) {
                 MosqueOutlineBadge(
                     modifier = Modifier.size(32.dp),
-                    tint = Color(0xFF86EFAC)
+                    tint = badgeTint
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Column {
@@ -929,18 +1109,18 @@ private fun DarkEmeraldPrayerStatusPanel(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = activePrayerName,
-                            fontSize = 17.sp,
-                            lineHeight = 19.sp,
+                            text = displayTitle,
+                            fontSize = 16.sp,
+                            lineHeight = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF86EFAC)
+                            color = titleTextColor
                         )
                         Spacer(modifier = Modifier.width(5.dp))
-                        LiveIndicatorDot()
+                        LiveIndicatorDot(color = dotColor)
                     }
                     Spacer(modifier = Modifier.height(1.dp))
                     Text(
-                        text = activePrayerTimeRange,
+                        text = displayTimeRange,
                         fontSize = 13.5.sp,
                         lineHeight = 15.sp,
                         fontWeight = FontWeight.Bold,
@@ -955,12 +1135,13 @@ private fun DarkEmeraldPrayerStatusPanel(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                // Capsule 1: ওয়াক্ত বাকি ৪২ মিনিট
+                // Capsule 1: ওয়াক্ত বাকি ৪২ মিনিট / নামাজ নিষেধ
                 DarkCapsuleButton(
                     icon = Icons.Outlined.AccessTime,
                     title = currentWaqtLabel,
                     subtitle = currentWaqtTimeText,
-                    hasArrow = false
+                    hasArrow = false,
+                    isForbidden = isForbiddenTime
                 )
 
                 // Capsule 2: পরবর্তী নামাজ যোহর ২ ঘ. ১২ মি. পর >
@@ -968,7 +1149,8 @@ private fun DarkEmeraldPrayerStatusPanel(
                     icon = Icons.Outlined.AccessTime,
                     title = nextPrayerLabel,
                     subtitle = countdownFormatted,
-                    hasArrow = true
+                    hasArrow = true,
+                    isForbidden = isForbiddenTime
                 )
             }
         }
@@ -976,50 +1158,59 @@ private fun DarkEmeraldPrayerStatusPanel(
 }
 
 /**
- * Pulsing live indicator dot for running/active waqt
+ * Pulsing live indicator dot for running/active waqt (Liquid smooth radar pulse)
  */
 @Composable
 private fun LiveIndicatorDot(
     modifier: Modifier = Modifier,
     color: Color = Color(0xFF4ADE80)
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "LivePulse")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 0.85f,
-        targetValue = 1.35f,
+    val infiniteTransition = rememberInfiniteTransition(label = "LiveDotRadarPulse")
+    val pulseProgress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 900, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
+            animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
         ),
-        label = "pulseScale"
+        label = "pulseProgress"
     )
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 0.95f,
+    val coreAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 700, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "pulseAlpha"
+        label = "coreAlpha"
     )
 
     Box(
-        modifier = modifier.size(10.dp),
+        modifier = modifier.size(14.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Outer glowing halo
+        // Outer expanding and fading ripple ring
+        val rippleScale = 0.6f + 0.9f * pulseProgress
+        val rippleAlpha = (1f - pulseProgress).coerceIn(0f, 1f) * 0.5f
         Box(
             modifier = Modifier
-                .size(9.dp * scale)
+                .size(13.dp * rippleScale)
                 .clip(CircleShape)
-                .background(color.copy(alpha = alpha * 0.4f))
+                .background(color.copy(alpha = rippleAlpha))
         )
-        // Inner solid dot
+        // Middle ambient halo
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(color.copy(alpha = 0.25f * coreAlpha))
+        )
+        // Solid core dot
         Box(
             modifier = Modifier
                 .size(5.dp)
                 .clip(CircleShape)
-                .background(color)
+                .background(color.copy(alpha = coreAlpha))
         )
     }
 }
@@ -1037,8 +1228,8 @@ private fun toEnglishDigits(str: String): String {
 }
 
 /**
- * Capsule button matching the screenshot:
- * Dark translucent pill with green border, clock icon, title on top, subtitle below, optional right chevron.
+ * Capsule button matching design:
+ * Dark translucent pill with green/red border, clock icon, title on top, subtitle below, optional right chevron.
  */
 @Composable
 private fun DarkCapsuleButton(
@@ -1046,15 +1237,21 @@ private fun DarkCapsuleButton(
     title: String,
     subtitle: String,
     hasArrow: Boolean,
+    isForbidden: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val pillBg = if (isForbidden) Color(0xFF3A080F).copy(alpha = 0.88f) else Color(0xFF04281A).copy(alpha = 0.85f)
+    val pillBorder = if (isForbidden) Color(0xFFF87171).copy(alpha = 0.7f) else Color(0xFF2E7D5B).copy(alpha = 0.75f)
+    val iconTint = if (isForbidden) Color(0xFFFCA5A5) else Color(0xFFFFD54F)
+    val subtitleColor = if (isForbidden) Color(0xFFFECACA) else Color(0xFF86EFAC)
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(100.dp))
-            .background(Color(0xFF04281A).copy(alpha = 0.85f))
+            .background(pillBg)
             .border(
                 width = 0.8.dp,
-                color = Color(0xFF2E7D5B).copy(alpha = 0.75f),
+                color = pillBorder,
                 shape = RoundedCornerShape(100.dp)
             )
             .padding(horizontal = 7.dp, vertical = 3.5.dp)
@@ -1062,18 +1259,18 @@ private fun DarkCapsuleButton(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Clock icon with golden tint
+            // Clock icon
             Box(
                 modifier = Modifier
                     .size(18.dp)
                     .clip(CircleShape)
-                    .border(0.8.dp, Color(0xFFFFD54F).copy(alpha = 0.75f), CircleShape),
+                    .border(0.8.dp, iconTint.copy(alpha = 0.75f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = Color(0xFFFFD54F),
+                    tint = iconTint,
                     modifier = Modifier.size(10.dp)
                 )
             }
@@ -1093,7 +1290,7 @@ private fun DarkCapsuleButton(
                     fontSize = 8.8.sp,
                     lineHeight = 10.5.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF86EFAC),
+                    color = subtitleColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1103,7 +1300,7 @@ private fun DarkCapsuleButton(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = Color(0xFFFFD54F),
+                    tint = iconTint,
                     modifier = Modifier.size(11.dp)
                 )
             }
@@ -1314,10 +1511,10 @@ private fun RamadanSehriIftarCard(
     }
 
     val cardBg = if (isDark) Color(0xFF0D0D0D) else Color.White
-    val cardBorder = if (isDark) Color.White.copy(alpha = 0.15f) else Color(0xFFE2E8F0)
-    val textPrimary = if (isDark) Color.White else Color(0xFF0F172A)
-    val textSecondary = if (isDark) Color(0xFFA1A1AA) else Color(0xFF64748B)
-    val dividerColor = if (isDark) Color.White.copy(alpha = 0.15f) else Color(0xFFE2E8F0)
+    val cardBorder = if (isDark) Color.White.copy(alpha = 0.15f) else Color(0xFFE5E7EB)
+    val textPrimary = if (isDark) Color.White else Color.Black
+    val textSecondary = if (isDark) Color(0xFFA1A1AA) else Color(0xFF374151)
+    val dividerColor = if (isDark) Color.White.copy(alpha = 0.15f) else Color(0xFFE5E7EB)
 
     Box(
         modifier = modifier
