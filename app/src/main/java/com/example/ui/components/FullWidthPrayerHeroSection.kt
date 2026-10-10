@@ -27,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -51,6 +52,10 @@ import com.example.utils.DateUtil
 import com.example.utils.HijriCalendarUtil
 import kotlinx.coroutines.delay
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.Instant
+import java.time.ZonedDateTime
 
 /**
  * MASTER PROMPT SPECIFICATION — Prayer Timetable Hero Section
@@ -68,7 +73,7 @@ fun FullWidthPrayerHeroSection(
     prayerSchedule: DailyPrayerSchedule,
     hijriOffset: Int,
     isEnglish: Boolean = false,
-    extraBottomPadding: Dp = 28.dp,
+    extraBottomPadding: Dp = 10.dp,
     onPrayerTimesClick: () -> Unit,
     onLocationClick: () -> Unit,
     onCalendarClick: () -> Unit = {}
@@ -212,83 +217,106 @@ fun FullWidthPrayerHeroSection(
 
     // -------------------------------------------------------------------------
     // User Specification for Sun Time Display:
-    // - সূর্যাস্তের এক ঘণ্টা পর থেকে সূর্যোদয়ের এক ঘণ্টা পর পর্যন্ত সূর্যোদয়ের টাইম শো করবে।
-    // - সূর্যোদয়ের এক ঘণ্টা পর থেকে সূর্যাস্তের এক ঘণ্টা পর পর্যন্ত সূর্যাস্তের টাইম শো করবে।
+    // - সূর্যাস্তের পর থেকে নিয়ে সূর্যোদয় পর্যন্ত সূর্যোদয়ের সময় দেখাবে
+    // - এবং সূর্যোদয়ের পর থেকে নিয়ে সূর্যাস্ত পর্যন্ত সূর্যাস্তের সময় শো করবে
     // -------------------------------------------------------------------------
-    val oneHourMillis = 3600 * 1000L
-    val sunsetMillis = maghribStart
-
-    val showSunrise = remember(currentTimeMillis, sunriseMillis, sunsetMillis) {
-        if (sunriseMillis > 0L && sunsetMillis > 0L) {
-            val sunsetPlus1h = sunsetMillis + oneHourMillis
-            val sunrisePlus1h = sunriseMillis + oneHourMillis
-            // After sunset+1h (night until midnight and early morning) or before sunrise+1h
-            if (currentTimeMillis >= sunsetPlus1h || currentTimeMillis < sunrisePlus1h) {
-                true
-            } else {
-                false
+    val sunriseLocalTime = remember(sunriseMillis, zoneId) {
+        if (sunriseMillis > 0L) {
+            try {
+                Instant.ofEpochMilli(sunriseMillis).atZone(zoneId).toLocalTime()
+            } catch (e: Exception) {
+                LocalTime.of(5, 45)
             }
         } else {
-            true // default fallback
+            LocalTime.of(5, 45)
         }
     }
 
-    // Dynamic sun time label, digits, and relative countdown/elapsed text
-    val (sunTitle, sunDigits, sunRelativeText) = remember(showSunrise, currentTimeMillis, sunriseMillis, sunsetMillis, sunrisePrayer, maghribItem, isEnglish) {
+    val sunsetLocalTime = remember(maghribStart, zoneId) {
+        if (maghribStart > 0L) {
+            try {
+                Instant.ofEpochMilli(maghribStart).atZone(zoneId).toLocalTime()
+            } catch (e: Exception) {
+                LocalTime.of(17, 45)
+            }
+        } else {
+            LocalTime.of(17, 45)
+        }
+    }
+
+    val currentZdt = remember(currentTimeMillis, zoneId) {
+        try {
+            Instant.ofEpochMilli(currentTimeMillis).atZone(zoneId)
+        } catch (e: Exception) {
+            ZonedDateTime.now(zoneId)
+        }
+    }
+    val currentLocalDate = currentZdt.toLocalDate()
+    val currentLocalTime = currentZdt.toLocalTime()
+
+    // Daytime: between Sunrise and Sunset -> Show Sunset (showSunrise = false)
+    // Nighttime: between Sunset and Sunrise -> Show Sunrise (showSunrise = true)
+    val isDaytime = currentLocalTime >= sunriseLocalTime && currentLocalTime < sunsetLocalTime
+    val showSunrise = !isDaytime
+
+    // Dynamic sun time label, digits, and relative countdown text
+    val (sunTitle, sunDigits, sunRelativeText) = remember(
+        showSunrise,
+        currentTimeMillis,
+        currentLocalDate,
+        currentLocalTime,
+        sunriseLocalTime,
+        sunsetLocalTime,
+        sunrisePrayer,
+        maghribItem,
+        isEnglish
+    ) {
         if (showSunrise) {
             val title = if (isEnglish) "Sunrise" else "সূর্যোদয়"
-            val rawDigits = sunrisePrayer?.timeDigits ?: ""
+            val rawDigits = sunrisePrayer?.timeDigits ?: prayerSchedule.sunriseTimeDigits.ifEmpty { "০৫:৪৫" }
             val formattedDigits = if (isEnglish) toEnglishDigits(rawDigits) else rawDigits
 
-            val diff = currentTimeMillis - sunriseMillis
-            val isPassed = diff >= 0
-            val absDiff = Math.abs(diff)
-            val diffMins = absDiff / (60 * 1000)
+            // Nighttime from Sunset to Sunrise: countdown to upcoming sunrise
+            val targetSunriseMillis = if (currentLocalTime >= sunsetLocalTime) {
+                // Evening/night before midnight: upcoming sunrise is tomorrow morning
+                LocalDateTime.of(currentLocalDate.plusDays(1), sunriseLocalTime)
+                    .atZone(zoneId).toInstant().toEpochMilli()
+            } else {
+                // After midnight before sunrise: upcoming sunrise is this morning
+                LocalDateTime.of(currentLocalDate, sunriseLocalTime)
+                    .atZone(zoneId).toInstant().toEpochMilli()
+            }
+
+            val diff = (targetSunriseMillis - currentTimeMillis).coerceAtLeast(0L)
+            val diffMins = diff / (60 * 1000)
             val hrs = diffMins / 60
             val mins = diffMins % 60
-
             val relText = if (isEnglish) {
-                if (isPassed) {
-                    if (hrs > 0) "${hrs}h ${mins}m ago" else "${mins}m ago"
-                } else {
-                    if (hrs > 0) "in ${hrs}h ${mins}m" else "in ${mins}m"
-                }
+                if (hrs > 0) "in ${hrs}h ${mins}m" else "in ${mins}m"
             } else {
                 val hBn = DateUtil.toBengaliNumerals(hrs)
                 val mBn = DateUtil.toBengaliNumerals(mins)
-                if (isPassed) {
-                    if (hrs > 0) "${hBn} ঘণ্টা আগে" else "${mBn} মিনিট আগে"
-                } else {
-                    if (hrs > 0) "${hBn} ঘণ্টা বাকি" else "${mBn} মিনিট বাকি"
-                }
+                if (hrs > 0) "${hBn} ঘণ্টা বাকি" else "${mBn} মিনিট বাকি"
             }
             Triple(title, formattedDigits, relText)
         } else {
             val title = if (isEnglish) "Sunset" else "সূর্যাস্ত"
-            val rawDigits = maghribItem?.timeDigits ?: ""
+            val rawDigits = maghribItem?.timeDigits ?: prayerSchedule.sunsetTimeDigits.ifEmpty { "০৫:৪৫" }
             val formattedDigits = if (isEnglish) toEnglishDigits(rawDigits) else rawDigits
 
-            val diff = currentTimeMillis - sunsetMillis
-            val isPassed = diff >= 0
-            val absDiff = Math.abs(diff)
-            val diffMins = absDiff / (60 * 1000)
+            // Daytime from Sunrise to Sunset: countdown to today's upcoming sunset
+            val todaySunsetMillis = LocalDateTime.of(currentLocalDate, sunsetLocalTime)
+                .atZone(zoneId).toInstant().toEpochMilli()
+            val diff = (todaySunsetMillis - currentTimeMillis).coerceAtLeast(0L)
+            val diffMins = diff / (60 * 1000)
             val hrs = diffMins / 60
             val mins = diffMins % 60
-
             val relText = if (isEnglish) {
-                if (isPassed) {
-                    if (hrs > 0) "${hrs}h ${mins}m ago" else "${mins}m ago"
-                } else {
-                    if (hrs > 0) "in ${hrs}h ${mins}m" else "in ${mins}m"
-                }
+                if (hrs > 0) "in ${hrs}h ${mins}m" else "in ${mins}m"
             } else {
                 val hBn = DateUtil.toBengaliNumerals(hrs)
                 val mBn = DateUtil.toBengaliNumerals(mins)
-                if (isPassed) {
-                    if (hrs > 0) "${hBn} ঘণ্টা আগে" else "${mBn} মিনিট আগে"
-                } else {
-                    if (hrs > 0) "${hBn} ঘণ্টা বাকি" else "${mBn} মিনিট বাকি"
-                }
+                if (hrs > 0) "${hBn} ঘণ্টা বাকি" else "${mBn} মিনিট বাকি"
             }
             Triple(title, formattedDigits, relText)
         }
@@ -348,114 +376,121 @@ fun FullWidthPrayerHeroSection(
 
     val isDark = isSystemInDarkTheme() || MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
-    // Outer Main Card — Islamic Emerald Theme with 100% full-width profile
-    // Light mode features rich emerald Islamic green background with soft border,
-    // and dark mode maintains serene deep dark emerald surface.
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    // Outer container with overlapping RamadanSehriIftarCard at the bottom
+    Box(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Box(
+        // Outer Main Card — Islamic Emerald Theme with 100% full-width profile
+        // Light mode features rich emerald Islamic green background with soft border,
+        // and dark mode maintains serene deep dark emerald surface.
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    if (isDark) {
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color(0xFF061E14),
-                                Color(0xFF03140D)
-                            )
-                        )
-                    } else {
-                        // Rich Islamic Emerald Green shape in light mode
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color(0xFF094E35),
-                                Color(0xFF063B28)
-                            )
-                        )
-                    }
-                )
-                .border(
-                    width = 1.dp,
-                    color = if (isDark) Color(0xFF16442E).copy(alpha = 0.6f) else Color(0xFF1B7351).copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
-                )
+                .padding(bottom = 25.dp),
+            shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Transparent
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 8.dp, end = 8.dp, top = 6.dp, bottom = 6.dp + extraBottomPadding)
+                    .background(
+                        if (isDark) {
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color(0xFF061E14),
+                                    Color(0xFF03140D)
+                                )
+                            )
+                        } else {
+                            // Rich Islamic Emerald Green shape in light mode
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color(0xFF094E35),
+                                    Color(0xFF063B28)
+                                )
+                            )
+                        }
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = if (isDark) Color(0xFF16442E).copy(alpha = 0.6f) else Color(0xFF1B7351).copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
+                    )
             ) {
-                // =================================================================
-                // SECTION 1: TOP INFORMATION HEADER (Date | Location | Sunrise/Sunset)
-                // =================================================================
-                TopInformationHeader(
-                    dateLine1 = dateLine1,
-                    dateLine2 = dateLine2,
-                    districtName = if (isEnglish) prayerSchedule.district.nameEn else prayerSchedule.district.nameBn,
-                    sunTitle = sunTitle,
-                    sunDigits = sunDigits,
-                    sunRelativeText = sunRelativeText,
-                    showSunrise = showSunrise,
-                    isEnglish = isEnglish,
-                    onCalendarClick = onCalendarClick,
-                    onLocationClick = onLocationClick
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, end = 8.dp, top = 6.dp, bottom = 28.dp + extraBottomPadding)
+                ) {
+                    // =================================================================
+                    // SECTION 1: TOP INFORMATION HEADER (Date | Location | Sunrise/Sunset)
+                    // =================================================================
+                    TopInformationHeader(
+                        dateLine1 = dateLine1,
+                        dateLine2 = dateLine2,
+                        districtName = if (isEnglish) prayerSchedule.district.nameEn else prayerSchedule.district.nameBn,
+                        sunTitle = sunTitle,
+                        sunDigits = sunDigits,
+                        sunRelativeText = sunRelativeText,
+                        showSunrise = showSunrise,
+                        isEnglish = isEnglish,
+                        onCalendarClick = onCalendarClick,
+                        onLocationClick = onLocationClick
+                    )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
 
-                // =================================================================
-                // SECTION 2: FIVE-COLUMN PRAYER TIMETABLE
-                // =================================================================
-                FiveColumnPrayerTimetable(
-                    mainPrayers = mainPrayers,
-                    currentPrayerItem = currentPrayerItem,
-                    currentPrayerRemainingMillis = currentPrayerRemainingMillis,
-                    currentTimeMillis = currentTimeMillis,
-                    isEnglish = isEnglish,
-                    onPrayerTimesClick = onPrayerTimesClick
-                )
+                    // =================================================================
+                    // SECTION 2: FIVE-COLUMN PRAYER TIMETABLE
+                    // =================================================================
+                    FiveColumnPrayerTimetable(
+                        mainPrayers = mainPrayers,
+                        currentPrayerItem = currentPrayerItem,
+                        isEnglish = isEnglish,
+                        onPrayerTimesClick = onPrayerTimesClick
+                    )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(5.dp))
 
-                // =================================================================
-                // SECTION 3: BOTTOM DARK-GREEN PRAYER STATUS PANEL (Exact Single-Row Layout)
-                // =================================================================
-                DarkEmeraldPrayerStatusPanel(
-                    currentPrayerItem = currentPrayerItem,
-                    nextPrayerItem = nextPrayerItem,
-                    currentWaqtLabel = currentWaqtLabel,
-                    currentWaqtTimeText = currentWaqtTimeText,
-                    nextPrayerLabel = nextPrayerLabel,
-                    countdownFormatted = countdownFormatted,
-                    isEnglish = isEnglish,
-                    onClick = onPrayerTimesClick,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // =================================================================
-                // SECTION 4: SEHRI & IFTAR STATUS CARD (Matching reference image)
-                // =================================================================
-                RamadanSehriIftarCard(
-                    sahriDigits = prayerSchedule.sahriTimeDigits,
-                    iftarDigits = prayerSchedule.iftarTimeDigits,
-                    today = today,
-                    maghribStart = maghribStart,
-                    zoneId = zoneId,
-                    currentTimeMillis = currentTimeMillis,
-                    isEnglish = isEnglish,
-                    onClick = onPrayerTimesClick,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
+                    // =================================================================
+                    // SECTION 3: BOTTOM DARK-GREEN PRAYER STATUS PANEL (Running Waqt Card)
+                    // =================================================================
+                    DarkEmeraldPrayerStatusPanel(
+                        currentPrayerItem = currentPrayerItem,
+                        nextPrayerItem = nextPrayerItem,
+                        currentWaqtLabel = currentWaqtLabel,
+                        currentWaqtTimeText = currentWaqtTimeText,
+                        nextPrayerLabel = nextPrayerLabel,
+                        countdownFormatted = countdownFormatted,
+                        isEnglish = isEnglish,
+                        onClick = onPrayerTimesClick,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                }
             }
         }
+
+        // =================================================================
+        // SECTION 4: OVERLAPPING SEHRI & IFTAR STATUS CARD
+        // Overlaps the bottom boundary like the search box
+        // =================================================================
+        RamadanSehriIftarCard(
+            sahriDigits = prayerSchedule.sahriTimeDigits,
+            iftarDigits = prayerSchedule.iftarTimeDigits,
+            today = today,
+            maghribStart = maghribStart,
+            zoneId = zoneId,
+            currentTimeMillis = currentTimeMillis,
+            isEnglish = isEnglish,
+            isDark = isDark,
+            onClick = onPrayerTimesClick,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 14.dp)
+        )
     }
 }
 
@@ -649,14 +684,12 @@ private fun TopInformationHeader(
 }
 
 /**
- * SECTION 2: Five-Column Prayer Timetable (Minimal height, balanced gap, matching reference image)
+ * SECTION 2: Five-Column Prayer Timetable (Enlarged icons, prayer names & digits, countdown removed)
  */
 @Composable
 private fun FiveColumnPrayerTimetable(
     mainPrayers: List<SinglePrayerTime>,
     currentPrayerItem: SinglePrayerTime?,
-    currentPrayerRemainingMillis: Long,
-    currentTimeMillis: Long,
     isEnglish: Boolean,
     onPrayerTimesClick: () -> Unit
 ) {
@@ -676,61 +709,15 @@ private fun FiveColumnPrayerTimetable(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 3.dp, horizontal = 2.dp),
+                .padding(vertical = 5.dp, horizontal = 2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             mainPrayers.forEachIndexed { index, prayer ->
                 val isCurrent = (currentPrayerItem?.name == prayer.name)
 
-                // Dynamic relative status line 1 and line 2
-                val (line1, line2) = remember(prayer, currentTimeMillis, isCurrent, currentPrayerRemainingMillis, isEnglish) {
-                    if (isCurrent) {
-                        val totalMins = currentPrayerRemainingMillis / (1000 * 60)
-                        val hrs = totalMins / 60
-                        val mins = totalMins % 60
-                        if (isEnglish) {
-                            val l1 = "Time Left"
-                            val l2 = if (totalMins <= 0) "Ending soon" else if (hrs > 0) "${hrs}h ${mins}m" else "${mins}m left"
-                            Pair(l1, l2)
-                        } else {
-                            val l1 = "ওয়াক্ত বাকি"
-                            val hrsBn = DateUtil.toBengaliNumerals(hrs)
-                            val minsBn = DateUtil.toBengaliNumerals(mins)
-                            val l2 = if (totalMins <= 0) "শেষ পর্যায়ে" else if (hrs > 0) "${hrsBn} ঘ. ${minsBn} মি." else "${minsBn} মিনিট"
-                            Pair(l1, l2)
-                        }
-                    } else {
-                        val diffMillis = prayer.timestampMillis - currentTimeMillis
-                        if (diffMillis > 0) {
-                            val totalMins = diffMillis / (1000 * 60)
-                            val hrs = totalMins / 60
-                            val mins = totalMins % 60
-                            if (isEnglish) {
-                                val l1 = "Starts in"
-                                val l2 = if (hrs > 0) "${hrs}h ${mins}m" else "${mins}m"
-                                Pair(l1, l2)
-                            } else {
-                                val l1 = "শুরু হতে বাকি"
-                                val hrsBn = DateUtil.toBengaliNumerals(hrs)
-                                val minsBn = DateUtil.toBengaliNumerals(mins)
-                                val l2 = if (hrs > 0) "${hrsBn} ঘ. ${minsBn} মি." else "${minsBn} মিনিট"
-                                Pair(l1, l2)
-                            }
-                        } else {
-                            if (isEnglish) {
-                                Pair("Status", "Ended")
-                            } else {
-                                Pair("ওয়াক্ত", "সময় শেষ")
-                            }
-                        }
-                    }
-                }
-
                 PrayerColumnItem(
                     prayer = prayer,
                     isCurrent = isCurrent,
-                    statusLine1 = line1,
-                    statusLine2 = line2,
                     isEnglish = isEnglish,
                     isDark = isDark,
                     modifier = Modifier.weight(1f)
@@ -740,7 +727,7 @@ private fun FiveColumnPrayerTimetable(
                 if (index < mainPrayers.size - 1) {
                     VerticalDivider(
                         modifier = Modifier
-                            .height(48.dp)
+                            .height(38.dp)
                             .padding(vertical = 2.dp),
                         thickness = 0.6.dp,
                         color = Color.White.copy(alpha = 0.16f)
@@ -762,8 +749,6 @@ private fun FiveColumnPrayerTimetable(
 private fun PrayerColumnItem(
     prayer: SinglePrayerTime,
     isCurrent: Boolean,
-    statusLine1: String,
-    statusLine2: String,
     isEnglish: Boolean,
     isDark: Boolean,
     modifier: Modifier = Modifier
@@ -777,7 +762,6 @@ private fun PrayerColumnItem(
     val goldenColor = Color(0xFFFFD54F)
     val lightGreenHighlight = Color(0xFF86EFAC)
     val textWhite = Color.White
-    val textSoftWhite = Color.White.copy(alpha = 0.82f)
 
     // Current active item card background: Subtle dark green tint with soft golden/green border
     val cardBg = if (isCurrent) {
@@ -798,67 +782,42 @@ private fun PrayerColumnItem(
                 color = cardBorder,
                 shape = RoundedCornerShape(8.dp)
             )
-            .padding(vertical = 3.dp, horizontal = 1.5.dp),
+            .padding(vertical = 5.dp, horizontal = 2.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // 1. Prayer Vector Icon (Golden color as requested by user)
+            // 1. Prayer Vector Icon (Golden color, enlarged for clear viewing)
             MinimalVectorPrayerIcon(
                 prayerName = prayer.name,
-                tint = if (isCurrent) goldenColor else goldenColor.copy(alpha = 0.78f),
-                modifier = Modifier.size(13.dp)
+                tint = if (isCurrent) goldenColor else goldenColor.copy(alpha = 0.82f),
+                modifier = Modifier.size(16.dp)
             )
 
-            Spacer(modifier = Modifier.height(1.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
             // 2. Prayer Name (e.g. "ফজর", "যোহর")
-            // Active is highlighted with light green; non-active is white/soft white
             Text(
                 text = prayer.getDisplayName(isEnglish),
-                fontSize = 9.2.sp,
-                lineHeight = 10.sp,
+                fontSize = 10.5.sp,
+                lineHeight = 12.sp,
                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
                 color = if (isCurrent) lightGreenHighlight else textWhite,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
 
-            Spacer(modifier = Modifier.height(1.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
             // 3. Large Time Digits (e.g. "৪:৩১")
-            // Highlighted with light green when current; crisp white otherwise
             Text(
                 text = timeDigits,
-                fontSize = 11.8.sp,
-                lineHeight = 13.sp,
+                fontSize = 13.5.sp,
+                lineHeight = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (isCurrent) lightGreenHighlight else textWhite,
-                maxLines = 1
-            )
-
-            Spacer(modifier = Modifier.height(1.dp))
-
-            // 4. Supporting Status Line 1 (e.g. "ওয়াক্ত বাকি" / "শুরু হতে বাকি")
-            Text(
-                text = statusLine1,
-                fontSize = 7.2.sp,
-                lineHeight = 8.sp,
-                fontWeight = FontWeight.Normal,
-                color = textSoftWhite,
-                maxLines = 1
-            )
-
-            // 5. Supporting Status Line 2 (e.g. "৪২ মিনিট" / "১ ঘ. ১২ মি.")
-            // Highlighting status line with light green for clear reading
-            Text(
-                text = statusLine2,
-                fontSize = 7.8.sp,
-                lineHeight = 9.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isCurrent) lightGreenHighlight else Color(0xFFA7F3D0).copy(alpha = 0.9f),
                 maxLines = 1
             )
         }
@@ -899,7 +858,7 @@ private fun DarkEmeraldPrayerStatusPanel(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp)
+            .height(58.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(
                 Brush.horizontalGradient(
@@ -916,7 +875,7 @@ private fun DarkEmeraldPrayerStatusPanel(
                 shape = RoundedCornerShape(12.dp)
             )
             .clickable { onClick() }
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .padding(horizontal = 10.dp, vertical = 5.dp),
         contentAlignment = Alignment.Center
     ) {
         // Mosque silhouette in background
@@ -961,30 +920,31 @@ private fun DarkEmeraldPrayerStatusPanel(
                 modifier = Modifier.padding(end = 4.dp)
             ) {
                 MosqueOutlineBadge(
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(32.dp),
                     tint = Color(0xFF86EFAC)
                 )
-                Spacer(modifier = Modifier.width(5.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Column {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = activePrayerName,
-                            fontSize = 14.5.sp,
-                            lineHeight = 16.sp,
+                            fontSize = 17.sp,
+                            lineHeight = 19.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF86EFAC)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                         LiveIndicatorDot()
                     }
+                    Spacer(modifier = Modifier.height(1.dp))
                     Text(
                         text = activePrayerTimeRange,
-                        fontSize = 9.sp,
-                        lineHeight = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White.copy(alpha = 0.9f),
+                        fontSize = 13.5.sp,
+                        lineHeight = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
                         maxLines = 1
                     )
                 }
@@ -993,7 +953,7 @@ private fun DarkEmeraldPrayerStatusPanel(
             // RIGHT: Two capsules in the same row
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 // Capsule 1: ওয়াক্ত বাকি ৪২ মিনিট
                 DarkCapsuleButton(
@@ -1097,7 +1057,7 @@ private fun DarkCapsuleButton(
                 color = Color(0xFF2E7D5B).copy(alpha = 0.75f),
                 shape = RoundedCornerShape(100.dp)
             )
-            .padding(horizontal = 6.dp, vertical = 3.dp)
+            .padding(horizontal = 7.dp, vertical = 3.5.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -1105,7 +1065,7 @@ private fun DarkCapsuleButton(
             // Clock icon with golden tint
             Box(
                 modifier = Modifier
-                    .size(17.dp)
+                    .size(18.dp)
                     .clip(CircleShape)
                     .border(0.8.dp, Color(0xFFFFD54F).copy(alpha = 0.75f), CircleShape),
                 contentAlignment = Alignment.Center
@@ -1114,15 +1074,15 @@ private fun DarkCapsuleButton(
                     imageVector = icon,
                     contentDescription = null,
                     tint = Color(0xFFFFD54F),
-                    modifier = Modifier.size(9.5.dp)
+                    modifier = Modifier.size(10.dp)
                 )
             }
             Spacer(modifier = Modifier.width(4.dp))
             Column {
                 Text(
                     text = title,
-                    fontSize = 7.2.sp,
-                    lineHeight = 8.sp,
+                    fontSize = 7.8.sp,
+                    lineHeight = 9.sp,
                     fontWeight = FontWeight.Normal,
                     color = Color.White.copy(alpha = 0.82f),
                     maxLines = 1,
@@ -1130,8 +1090,8 @@ private fun DarkCapsuleButton(
                 )
                 Text(
                     text = subtitle,
-                    fontSize = 8.sp,
-                    lineHeight = 9.5.sp,
+                    fontSize = 8.8.sp,
+                    lineHeight = 10.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF86EFAC),
                     maxLines = 1,
@@ -1144,7 +1104,7 @@ private fun DarkCapsuleButton(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
                     tint = Color(0xFFFFD54F),
-                    modifier = Modifier.size(12.dp)
+                    modifier = Modifier.size(11.dp)
                 )
             }
         }
@@ -1300,6 +1260,7 @@ private fun RamadanSehriIftarCard(
     zoneId: java.time.ZoneId,
     currentTimeMillis: Long,
     isEnglish: Boolean,
+    isDark: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1352,27 +1313,30 @@ private fun RamadanSehriIftarCard(
         }
     }
 
+    val cardBg = if (isDark) Color(0xFF0D0D0D) else Color.White
+    val cardBorder = if (isDark) Color.White.copy(alpha = 0.15f) else Color(0xFFE2E8F0)
+    val textPrimary = if (isDark) Color.White else Color(0xFF0F172A)
+    val textSecondary = if (isDark) Color(0xFFA1A1AA) else Color(0xFF64748B)
+    val dividerColor = if (isDark) Color.White.copy(alpha = 0.15f) else Color(0xFFE2E8F0)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                Brush.horizontalGradient(
-                    colors = listOf(
-                        Color(0xFF063321), // Rich Dark Islamic Green
-                        Color(0xFF0A442D), // Deep Emerald
-                        Color(0xFF0F5438)  // Subtle Emerald highlight
-                    )
-                )
+            .height(52.dp)
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(14.dp),
+                spotColor = if (isDark) Color.Black.copy(alpha = 0.6f) else Color(0x33000000)
             )
+            .clip(RoundedCornerShape(14.dp))
+            .background(cardBg)
             .border(
-                width = 0.8.dp,
-                color = Color(0xFF2E7D5B).copy(alpha = 0.4f),
-                shape = RoundedCornerShape(12.dp)
+                width = 1.dp,
+                color = cardBorder,
+                shape = RoundedCornerShape(14.dp)
             )
             .clickable { onClick() }
-            .padding(horizontal = 4.dp, vertical = 4.dp),
+            .padding(horizontal = 6.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -1387,10 +1351,10 @@ private fun RamadanSehriIftarCard(
             ) {
                 Text(
                     text = displaySahri,
-                    fontSize = 14.sp,
-                    lineHeight = 16.sp,
+                    fontSize = 15.sp,
+                    lineHeight = 17.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = textPrimary,
                     maxLines = 1
                 )
                 Spacer(modifier = Modifier.height(1.dp))
@@ -1399,7 +1363,7 @@ private fun RamadanSehriIftarCard(
                     fontSize = 9.sp,
                     lineHeight = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = textSecondary,
                     maxLines = 1
                 )
             }
@@ -1409,7 +1373,7 @@ private fun RamadanSehriIftarCard(
                     .height(24.dp)
                     .padding(horizontal = 2.dp),
                 thickness = 0.8.dp,
-                color = Color(0xFF2E7D5B).copy(alpha = 0.5f)
+                color = dividerColor
             )
 
             // Column 2: Iftar
@@ -1420,10 +1384,10 @@ private fun RamadanSehriIftarCard(
             ) {
                 Text(
                     text = displayIftar,
-                    fontSize = 14.sp,
-                    lineHeight = 16.sp,
+                    fontSize = 15.sp,
+                    lineHeight = 17.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = textPrimary,
                     maxLines = 1
                 )
                 Spacer(modifier = Modifier.height(1.dp))
@@ -1432,7 +1396,7 @@ private fun RamadanSehriIftarCard(
                     fontSize = 9.sp,
                     lineHeight = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = textSecondary,
                     maxLines = 1
                 )
             }
@@ -1442,7 +1406,7 @@ private fun RamadanSehriIftarCard(
                     .height(24.dp)
                     .padding(horizontal = 2.dp),
                 thickness = 0.8.dp,
-                color = Color(0xFF2E7D5B).copy(alpha = 0.5f)
+                color = dividerColor
             )
 
             // Column 3: Live Countdown
@@ -1453,10 +1417,10 @@ private fun RamadanSehriIftarCard(
             ) {
                 Text(
                     text = countdownStr,
-                    fontSize = 13.5.sp,
-                    lineHeight = 16.sp,
+                    fontSize = 14.5.sp,
+                    lineHeight = 17.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF86EFAC),
+                    color = textPrimary,
                     maxLines = 1
                 )
                 Spacer(modifier = Modifier.height(1.dp))
@@ -1465,7 +1429,7 @@ private fun RamadanSehriIftarCard(
                     fontSize = 9.sp,
                     lineHeight = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color.White.copy(alpha = 0.85f),
+                    color = textSecondary,
                     maxLines = 1
                 )
             }

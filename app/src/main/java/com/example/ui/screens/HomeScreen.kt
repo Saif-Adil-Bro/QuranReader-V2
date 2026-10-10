@@ -800,6 +800,13 @@ fun HomeScreen(
                             )
                         }
                     }
+                    IconButton(onClick = onNavigateToSearch) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = if (isEnglish) "Search" else "অনুসন্ধান",
+                            tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                        )
+                    }
                     IconButton(onClick = { viewModel.toggleTheme() }) {
                         Icon(
                             imageVector = if (isDark) Icons.Filled.LightMode else Icons.Outlined.DarkMode,
@@ -861,44 +868,28 @@ fun HomeScreen(
                             }
                         }
                         
-                        // Overlapping Hero Section & Search Pill
-                        // Green background extends downwards to halfway through the search box
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                HeroSection(
-                                    lastReadTitle = actionTextForHero,
-                                    lastReadSubtitle = subTextForHero,
-                                    hijriOffset = combinedHijriOffset,
-                                    prayerSchedule = prayerSchedule,
-                                    isEnglish = isEnglish,
-                                    extraBottomPadding = 28.dp,
-                                    onResumeClick = {
-                                        when (lastReadMode) {
-                                            "HAFEZI" -> onNavigateToHafeziMode(lastReadPage)
-                                            "TAJWEED" -> onNavigateToTajweedMode(lastReadPage)
-                                            "READING" -> onNavigateToReadingMode(lastReadSurah)
-                                            "MUSHAF" -> onNavigateToMushafPage(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId, lastReadMushafPage, false)
-                                            "DETAIL" -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
-                                            else -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
-                                        }
-                                    },
-                                    onHijriDateClick = { onNavigateToCalendar() },
-                                    onDuaClick = { selectedDuaForDetail = it },
-                                    onPrayerTimesClick = { showPrayerTimesDetailSheet = true },
-                                    onLocationClick = { showDistrictSelectionDialog = true }
-                                )
-                                // Bottom half of search pill extends out onto the screen background
-                                Spacer(modifier = Modifier.height(26.dp))
-                            }
-                            // Search pill overlapping the bottom edge of the hero section
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .align(Alignment.BottomCenter)
-                            ) {
-                                SearchSection(isEnglish = isEnglish, onClick = onNavigateToSearch)
-                            }
-                        }
+                        HeroSection(
+                            lastReadTitle = actionTextForHero,
+                            lastReadSubtitle = subTextForHero,
+                            hijriOffset = combinedHijriOffset,
+                            prayerSchedule = prayerSchedule,
+                            isEnglish = isEnglish,
+                            extraBottomPadding = 10.dp,
+                            onResumeClick = {
+                                when (lastReadMode) {
+                                    "HAFEZI" -> onNavigateToHafeziMode(lastReadPage)
+                                    "TAJWEED" -> onNavigateToTajweedMode(lastReadPage)
+                                    "READING" -> onNavigateToReadingMode(lastReadSurah)
+                                    "MUSHAF" -> onNavigateToMushafPage(lastReadMushafId?.takeIf { it.isNotEmpty() } ?: defaultMushafId, lastReadMushafPage, false)
+                                    "DETAIL" -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
+                                    else -> onNavigateToSurahWithAyah(lastReadSurah, "LIST", lastReadAyah)
+                                }
+                            },
+                            onHijriDateClick = { onNavigateToCalendar() },
+                            onDuaClick = { selectedDuaForDetail = it },
+                            onPrayerTimesClick = { showPrayerTimesDetailSheet = true },
+                            onLocationClick = { showDistrictSelectionDialog = true }
+                        )
                     }
                 }
                 item(key = "quick_pills", contentType = "pills") {
@@ -1495,7 +1486,7 @@ fun QuickSurahPills(
         state = lazyRowState,
         modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(
             items = sortedAmaliList,
@@ -1519,60 +1510,61 @@ fun QuickSurahPills(
                 )
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         if (isActive) {
                             Box(
                                 modifier = Modifier
-                                    .size(14.dp)
+                                    .size(8.dp)
                                     .background(item.dotColor.copy(alpha = 0.25f), CircleShape)
                             )
                         }
                         Box(
                             modifier = Modifier
-                                .size(7.dp)
+                                .size(4.dp)
                                 .background(item.dotColor, CircleShape)
                         )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Column(verticalArrangement = Arrangement.Center) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = item.subtitle,
                                 color = if (isActive) item.dotColor else GrayText,
-                                fontSize = 9.sp,
+                                fontSize = 8.sp,
                                 fontWeight = FontWeight.Bold,
-                                lineHeight = 10.sp
+                                lineHeight = 9.5.sp
                             )
                             if (isActive) {
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
                                 Box(
                                     modifier = Modifier
-                                        .background(item.dotColor.copy(alpha = 0.18f), RoundedCornerShape(4.dp))
-                                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                                        .background(item.dotColor.copy(alpha = 0.18f), RoundedCornerShape(3.dp))
+                                        .padding(horizontal = 3.dp, vertical = 0.5.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = if (isEnglish) "ACTIVE" else "চলমান",
                                         color = item.dotColor,
-                                        fontSize = 8.sp,
+                                        fontSize = 7.sp,
                                         fontWeight = FontWeight.ExtraBold,
-                                        lineHeight = 8.sp
+                                        lineHeight = 7.sp
                                     )
                                 }
                             }
                         }
+                        Spacer(modifier = Modifier.height(0.5.dp))
                         Text(
                             text = item.title,
                             color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 12.sp,
+                            fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
-                            lineHeight = 14.sp
+                            lineHeight = 12.sp
                         )
                     }
                 }
@@ -2155,12 +2147,12 @@ fun RecentReadCardItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(15.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(38.dp)
+                    .size(44.dp)
                     .background(badgeColor.copy(alpha = 0.12f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
@@ -2168,10 +2160,10 @@ fun RecentReadCardItem(
                     imageVector = icon,
                     contentDescription = null,
                     tint = badgeColor,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Surface(
                     shape = RoundedCornerShape(4.dp),
@@ -2179,16 +2171,16 @@ fun RecentReadCardItem(
                 ) {
                     Text(
                         text = badgeText,
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         color = badgeColor,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                     )
                 }
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(3.dp))
                 Text(
                     text = mainText,
-                    fontSize = 14.sp,
+                    fontSize = 15.5.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
@@ -2196,7 +2188,7 @@ fun RecentReadCardItem(
                 )
                 Text(
                     text = subtitleText,
-                    fontSize = 11.sp,
+                    fontSize = 12.5.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
@@ -2207,7 +2199,7 @@ fun RecentReadCardItem(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
                 tint = GrayText,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(20.dp)
             )
         }
     }
@@ -2231,7 +2223,7 @@ fun ModesGridSection(
     ) {
         Text(
             text = if (isEnglish) "Quran Reading & Listening Modes" else "কুরআন পঠন ও শ্রবণ মোড",
-            fontSize = 14.sp,
+            fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 12.dp)
@@ -2245,6 +2237,8 @@ fun ModesGridSection(
                 title = if (isEnglish) "Hafezi Quran" else "হাফেজী কুরআন",
                 subtitle = if (isEnglish) "15 Lines Image View" else "১৫ লাইন ইমেজ ভিউ",
                 iconRes = R.drawable.ic_hafezi_quran_custom,
+                iconSize = 50.dp,
+                containerSize = 60.dp,
                 containerColor = if (isDark) Color(0xFF064E3B).copy(alpha = 0.5f) else Color(0xFFECFDF5),
                 iconColor = Color(0xFF10B981),
                 onClick = onHafeziPdfClick,
@@ -2719,7 +2713,7 @@ fun NearbyMosqueHomeBanner(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(18.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -2729,7 +2723,7 @@ fun NearbyMosqueHomeBanner(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(46.dp)
+                        .size(52.dp)
                         .background(
                             color = PrimaryGreen,
                             shape = RoundedCornerShape(14.dp)
@@ -2740,17 +2734,17 @@ fun NearbyMosqueHomeBanner(
                         imageVector = Icons.Default.Place,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(14.dp))
 
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = if (isEnglish) "Find Nearby Mosques" else "নিকটবর্তী মসজিদ খুঁজুন",
-                            fontSize = 15.sp,
+                            fontSize = 16.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -2761,21 +2755,21 @@ fun NearbyMosqueHomeBanner(
                         ) {
                             Text(
                                 text = if (isEnglish) "LIVE GPS" else "লাইভ জিপিএস",
-                                fontSize = 9.5.sp,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isDark) Color(0xFFFBBF24) else Color(0xFFB45309),
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
 
                     Text(
                         text = if (isEnglish) "Nearby Jame Mosques, Jama'ah times & navigation" else "আশপাশের জামে মসজিদ, জামাতের সময় ও দিকনির্দেশনা",
-                        fontSize = 11.5.sp,
+                        fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 16.sp,
+                        lineHeight = 18.sp,
                         maxLines = 2
                     )
                 }
@@ -2819,7 +2813,7 @@ fun UmrahTrackerHomeBanner(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(18.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -2829,7 +2823,7 @@ fun UmrahTrackerHomeBanner(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(46.dp)
+                        .size(52.dp)
                         .background(
                             color = PrimaryGreen,
                             shape = RoundedCornerShape(14.dp)
@@ -2840,17 +2834,17 @@ fun UmrahTrackerHomeBanner(
                         imageVector = Icons.Default.Mosque,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(14.dp))
 
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = if (isEnglish) "Umrah Tracker" else "উমরাহ ট্র্যাকার",
-                            fontSize = 15.sp,
+                            fontSize = 16.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -2861,21 +2855,21 @@ fun UmrahTrackerHomeBanner(
                         ) {
                             Text(
                                 text = if (isEnglish) "NEW" else "নতুন",
-                                fontSize = 9.5.sp,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isDark) Color(0xFF34D399) else Color(0xFF047857),
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
 
                     Text(
                         text = if (isEnglish) "Tawaf, Sa'i, Ihram step-by-step counter & guide" else "ইহরাম, তাওয়াফ ও সাঈ ৭ চক্কর কাউন্টার ও সুন্নাহ গাইড",
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 16.sp,
+                        lineHeight = 18.sp,
                         maxLines = 2
                     )
                 }
@@ -2910,13 +2904,13 @@ fun TopFeatureCircleButton(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .width(76.dp)
+            .width(80.dp)
             .clickable(onClick = onClick)
             .padding(vertical = 4.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(52.dp)
+                .size(58.dp)
                 .background(bgColor, CircleShape)
                 .border(
                     1.dp,
@@ -2929,7 +2923,7 @@ fun TopFeatureCircleButton(
                 imageVector = icon,
                 contentDescription = title,
                 tint = iconTint,
-                modifier = Modifier.size(26.dp)
+                modifier = Modifier.size(30.dp)
             )
         }
 
@@ -2937,8 +2931,8 @@ fun TopFeatureCircleButton(
 
         Text(
             text = title,
-            fontSize = 11.5.sp,
-            fontWeight = FontWeight.Medium,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             maxLines = 1,
@@ -3061,56 +3055,56 @@ fun DailyDuaFeaturedSection(
             // Title
             Text(
                 text = duaTitle,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.5.sp,
+                fontWeight = FontWeight.Bold,
                 color = PrimaryGreen
             )
 
             // Arabic text
             if (arabic.isNotEmpty() && arabic != "null") {
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = arabic,
-                    fontSize = 20.sp,
+                    fontSize = 23.sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = com.example.ui.theme.getArabicFont(arabicFontName),
                     color = if (isDark) Color(0xFFE6F4EA) else Color(0xFF134E34),
                     textAlign = TextAlign.Right,
-                    lineHeight = 34.sp,
+                    lineHeight = 38.sp,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
             // Transliteration
             if (transliteration.isNotEmpty() && transliteration != "null") {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
                     text = if (isEnglish) "Pronunciation: $transliteration" else "উচ্চারণ: $transliteration",
-                    fontSize = 12.5.sp,
+                    fontSize = 14.sp,
                     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 18.sp
+                    lineHeight = 20.sp
                 )
             }
 
             // Translation
             if (translation.isNotEmpty() && translation != "null") {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
                     text = if (isEnglish) "Meaning: $translation" else "অর্থ: $translation",
-                    fontSize = 13.5.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Normal,
                     color = MaterialTheme.colorScheme.onSurface,
-                    lineHeight = 20.sp
+                    lineHeight = 22.sp
                 )
             }
 
             // Reference
             if (reference.isNotEmpty() && reference != "null") {
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "— $reference",
-                    fontSize = 12.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     color = PrimaryGreen.copy(alpha = 0.85f)
                 )
@@ -4075,6 +4069,8 @@ fun ModeItemCard(
     subtitle: String,
     icon: ImageVector = Icons.Default.MenuBook,
     iconRes: Int? = null,
+    iconSize: androidx.compose.ui.unit.Dp = 28.dp,
+    containerSize: androidx.compose.ui.unit.Dp = 56.dp,
     containerColor: Color,
     iconColor: Color,
     onClick: () -> Unit,
@@ -4104,27 +4100,27 @@ fun ModeItemCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 18.dp),
+                    .padding(horizontal = 14.dp, vertical = 22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(containerSize)
                         .background(containerColor, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     if (isPdfBadge) {
                         Box(
                             modifier = Modifier
-                                .size(26.dp)
+                                .size(28.dp)
                                 .background(iconColor, RoundedCornerShape(6.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "PDF",
                                 color = Color.White,
-                                fontSize = 10.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Black
                             )
                         }
@@ -4133,36 +4129,36 @@ fun ModeItemCard(
                             painter = painterResource(id = iconRes),
                             contentDescription = null,
                             tint = iconColor,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(iconSize)
                         )
                     } else {
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
                             tint = iconColor,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(iconSize)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // Title
                 Text(
                     text = title,
-                    fontSize = 14.5.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 // Subtitle
                 Text(
                     text = subtitle,
-                    fontSize = 11.5.sp,
+                    fontSize = 12.5.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     textAlign = TextAlign.Center
