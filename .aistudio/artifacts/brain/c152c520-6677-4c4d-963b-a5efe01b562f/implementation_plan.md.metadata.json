@@ -1,6 +1,6 @@
 {
-  "summary":  "Implementation plan to convert the date selector strip into a horizontally scrollable LazyRow with full month range, centering today (or active selected date) in the exact horizontal middle of the viewport with smooth bidirectional scrolling.",
-  "updatedAt":  "2026-10-10T23:45:38.329377339Z",
+  "summary":  "Comprehensive implementation plan to replace the static text 'চলমান' badge next to the active waqt name in PrayerTimesDetailSheet with a subtle pulsing green radar live dot animation matching the home screen's hero section.",
+  "updatedAt":  "2026-10-11T12:26:37.277279093Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

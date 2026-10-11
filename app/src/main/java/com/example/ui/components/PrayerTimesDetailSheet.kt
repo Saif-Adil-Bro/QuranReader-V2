@@ -10,6 +10,12 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -1601,6 +1607,64 @@ private fun DarkSectionCard(
     }
 }
 
+/**
+ * Pulsing live indicator dot for running/active waqt (Liquid smooth radar pulse matching home screen)
+ */
+@Composable
+private fun LiveIndicatorDot(
+    modifier: Modifier = Modifier,
+    color: Color = Color(0xFF34D399)
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "LiveDotRadarPulseDetail")
+    val pulseProgress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "pulseProgress"
+    )
+    val coreAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 700, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "coreAlpha"
+    )
+
+    Box(
+        modifier = modifier.size(14.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Outer expanding and fading ripple ring
+        val rippleScale = 0.6f + 0.9f * pulseProgress
+        val rippleAlpha = (1f - pulseProgress).coerceIn(0f, 1f) * 0.5f
+        Box(
+            modifier = Modifier
+                .size(13.dp * rippleScale)
+                .clip(CircleShape)
+                .background(color.copy(alpha = rippleAlpha))
+        )
+        // Middle ambient halo
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(color.copy(alpha = 0.25f * coreAlpha))
+        )
+        // Solid core dot
+        Box(
+            modifier = Modifier
+                .size(5.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+    }
+}
+
 @Composable
 private fun PrayerDetailRow(
     icon: ImageVector,
@@ -1662,31 +1726,8 @@ private fun PrayerDetailRow(
                                 color = if (isCurrentWaqt) Color.White else Color(0xFFF1F5F9)
                             )
                             if (isCurrentWaqt) {
-                                Spacer(modifier = Modifier.width(5.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(100.dp))
-                                        .background(Color(0xFF10B981).copy(alpha = 0.25f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(5.dp)
-                                                .clip(CircleShape)
-                                                .background(Color(0xFF34D399))
-                                        )
-                                        Spacer(modifier = Modifier.width(3.dp))
-                                        Text(
-                                            text = currentBadgeText,
-                                            fontSize = 9.5.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Color(0xFF34D399)
-                                        )
-                                    }
-                                }
+                                Spacer(modifier = Modifier.width(6.dp))
+                                LiveIndicatorDot(color = Color(0xFF34D399))
                             }
                         }
                     }
