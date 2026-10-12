@@ -194,6 +194,31 @@ fun FullWidthPrayerHeroSection(
         currentPrayerEndMillis - currentTimeMillis
     } else 0L
 
+    // Start time of current prayer
+    val currentPrayerStartMillis: Long = remember(currentPrayerItem, fajrStart, dhuhrStart, asrStart, maghribStart, ishaStart, currentTimeMillis) {
+        when (currentPrayerItem?.name) {
+            PrayerName.FAJR -> fajrStart
+            PrayerName.DHUHR -> dhuhrStart
+            PrayerName.ASR -> asrStart
+            PrayerName.MAGHRIB -> maghribStart
+            PrayerName.ISHA -> {
+                if (currentTimeMillis >= ishaStart && ishaStart > 0L) {
+                    ishaStart
+                } else if (ishaStart > 0L && currentTimeMillis < fajrStart) {
+                    ishaStart - 24 * 3600 * 1000L
+                } else {
+                    ishaStart
+                }
+            }
+            else -> 0L
+        }
+    }
+
+    // Elapsed time of current prayer
+    val currentPrayerElapsedMillis: Long = if (currentPrayerStartMillis > 0L && currentTimeMillis >= currentPrayerStartMillis) {
+        currentTimeMillis - currentPrayerStartMillis
+    } else 0L
+
     // Next upcoming obligatory prayer and start timestamp
     val (nextPrayerItem, nextPrayerStartMillis) = remember(prayerSchedule, mainPrayers, fajrStart, sunriseMillis, dhuhrStart, asrStart, maghribStart, ishaStart, currentTimeMillis) {
         val nextCandidate = prayerSchedule.nextPrayer
@@ -396,11 +421,11 @@ fun FullWidthPrayerHeroSection(
     val isAfterSunrise = currentTimeMillis in sunriseMillis until (if (dhuhrStart > 0L) dhuhrStart else (sunriseMillis + 6 * 3600 * 1000L))
 
     // -------------------------------------------------------------------------
-    // Capsule 1: Current Waqt Remaining Dynamic Time (বর্তমান ওয়াক্ত কত মিনিট বাকি)
+    // Capsule 1: Current Waqt Elapsed Time (বর্তমান ওয়াক্ত কত মিনিট আগে শুরু হয়েছে)
     // -------------------------------------------------------------------------
     val (currentWaqtLabel, currentWaqtTimeText) = remember(
         currentPrayerItem,
-        currentPrayerRemainingMillis,
+        currentPrayerElapsedMillis,
         isSunriseMakruhNow,
         isDuhaNow,
         isZawalMakruhNow,
@@ -429,16 +454,16 @@ fun FullWidthPrayerHeroSection(
                 Pair(label, text)
             }
             isDuhaNow -> {
-                val label = if (isEnglish) "Waqt Remaining" else "ওয়াক্ত বাকি"
-                val remainingMins = (duhaEndMinutes - currentMinutes).coerceAtLeast(0)
-                val hrs = remainingMins / 60
-                val mins = remainingMins % 60
+                val label = if (isEnglish) "Started" else "শুরু হয়েছে"
+                val elapsedMins = (currentMinutes - duhaStartMinutes).coerceAtLeast(0)
+                val hrs = elapsedMins / 60
+                val mins = elapsedMins % 60
                 val text = if (isEnglish) {
-                    if (hrs > 0) "${hrs}h ${mins}m left" else "${mins}m left"
+                    if (hrs > 0) "${hrs}h ${mins}m ago" else "${mins}m ago"
                 } else {
                     val hrsBn = DateUtil.toBengaliNumerals(hrs)
                     val minsBn = DateUtil.toBengaliNumerals(mins)
-                    if (hrs > 0) "${hrsBn} ঘণ্টা ${minsBn} মি." else "${minsBn} মিনিট বাকি"
+                    if (hrs > 0) "${hrsBn} ঘণ্টা ${minsBn} মি. আগে" else "${minsBn} মিনিট আগে"
                 }
                 Pair(label, text)
             }
@@ -471,16 +496,16 @@ fun FullWidthPrayerHeroSection(
                 Pair(label, text)
             }
             currentPrayerItem != null -> {
-                val totalMins = currentPrayerRemainingMillis / (1000 * 60)
-                val hrs = totalMins / 60
-                val mins = totalMins % 60
-                val label = if (isEnglish) "Waqt Remaining" else "ওয়াক্ত বাকি"
+                val totalElapsedMins = currentPrayerElapsedMillis / (1000 * 60)
+                val hrs = totalElapsedMins / 60
+                val mins = totalElapsedMins % 60
+                val label = if (isEnglish) "Started" else "শুরু হয়েছে"
                 val text = if (isEnglish) {
-                    if (hrs > 0) "${hrs}h ${mins}m left" else "${mins}m left"
+                    if (hrs > 0) "${hrs}h ${mins}m ago" else "${mins}m ago"
                 } else {
                     val hrsBn = DateUtil.toBengaliNumerals(hrs)
                     val minsBn = DateUtil.toBengaliNumerals(mins)
-                    if (hrs > 0) "${hrsBn} ঘণ্টা ${minsBn} মি." else "${minsBn} মিনিট বাকি"
+                    if (hrs > 0) "${hrsBn} ঘণ্টা ${minsBn} মি. আগে" else "${minsBn} মিনিট আগে"
                 }
                 Pair(label, text)
             }
@@ -501,11 +526,11 @@ fun FullWidthPrayerHeroSection(
         val mins = (totalSec % 3600) / 60
         val nextName = nextPrayerItem.getDisplayName(isEnglish)
         if (isEnglish) {
-            val label = "Next Prayer"
+            val label = "Next Waqt"
             val text = "$nextName in ${if (hrs > 0) "${hrs}h ${mins}m" else "${mins}m"}"
             Pair(label, text)
         } else {
-            val label = "পরবর্তী নামাজ"
+            val label = "পরবর্তী ওয়াক্ত"
             val hrsBn = DateUtil.toBengaliNumerals(hrs)
             val minsBn = DateUtil.toBengaliNumerals(mins)
             val text = if (hrs > 0) "$nextName ${hrsBn} ঘ. ${minsBn} মি. পর" else "$nextName ${minsBn} মিনিট পর"
@@ -971,8 +996,8 @@ private fun PrayerColumnItem(
  * EXACT SINGLE-ROW DESIGN MATCHING SCREENSHOT:
  * Left: Mosque Vector Badge + Prayer Name (e.g. "ইশা") + Live Pulsing Dot • + Time Range "০৬:৫৪ - ০৪:৩৮"
  * Right: Two rounded outlined capsules side-by-side:
- *   - Capsule 1: Clock Icon + "ওয়াক্ত বাকি" + "৪২ মিনিট বাকি"
- *   - Capsule 2: Clock Icon + "পরবর্তী নামাজ" + "ফজর ৪ ঘ. ১২ মি. পর" + Arrow Right
+ *   - Capsule 1: Clock Icon + "শুরু হয়েছে" + "৪২ মিনিট আগে"
+ *   - Capsule 2: Clock Icon + "পরবর্তী ওয়াক্ত" + "ফজর ৪ ঘ. ১২ মি. পর" + Arrow Right
  */
 @Composable
 private fun DarkEmeraldPrayerStatusPanel(
@@ -1143,7 +1168,7 @@ private fun DarkEmeraldPrayerStatusPanel(
                     isForbidden = isForbiddenTime
                 )
 
-                // Capsule 2: পরবর্তী নামাজ যোহর ২ ঘ. ১২ মি. পর >
+                // Capsule 2: পরবর্তী ওয়াক্ত যোহর ২ ঘ. ১২ মি. পর >
                 DarkCapsuleButton(
                     icon = Icons.Outlined.AccessTime,
                     title = nextPrayerLabel,

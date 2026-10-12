@@ -20,6 +20,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.foundation.layout.padding
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import com.example.ui.components.BottomNavBar
 
 import androidx.compose.runtime.collectAsState
@@ -125,6 +127,8 @@ class MainActivity : ComponentActivity() {
       val arabicFontName by appContainer.settingsRepository.arabicFontNameFlow.collectAsState(initial = "Me Quran")
       val bengaliFontName by appContainer.settingsRepository.bengaliFontNameFlow.collectAsState(initial = "SolaimanLipi")
       val currentLanguage by appContainer.settingsRepository.appLanguageFlow.collectAsState(initial = "bn")
+      var showHijriAdjustmentDialog by remember { androidx.compose.runtime.mutableStateOf(false) }
+      val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
       
       val localizedContext = remember(currentLanguage) {
           com.example.utils.LocaleHelper.getLocalizedContext(this@MainActivity, currentLanguage)
@@ -278,16 +282,12 @@ class MainActivity : ComponentActivity() {
                       targetIntent.removeExtra("target_screen")
                       targetIntent.removeExtra("navigate_to")
                       currentIntentState.value = null
-                  } else if (navigateTo == "hijri_adjustment" || targetIntent.getBooleanExtra("highlight_hijri_adjustment", false)) {
-                      if (currentRoute != "notifications") {
-                          navController.navigate("notifications") { launchSingleTop = true }
-                      }
-                      navController.navigate("settings?highlightHijri=true") {
-                          launchSingleTop = true
-                      }
+                  } else if (navigateTo == "hijri_adjustment" || targetIntent.getBooleanExtra("highlight_hijri_adjustment", false) || targetIntent.getBooleanExtra("show_hijri_adjustment_dialog", false)) {
+                      showHijriAdjustmentDialog = true
                       targetIntent.removeExtra("target_screen")
                       targetIntent.removeExtra("navigate_to")
                       targetIntent.removeExtra("highlight_hijri_adjustment")
+                      targetIntent.removeExtra("show_hijri_adjustment_dialog")
                       currentIntentState.value = null
                   }
               }
@@ -317,6 +317,24 @@ class MainActivity : ComponentActivity() {
                   viewModel = homeViewModel,
                   onClick = { navController.navigate("recitation/player") },
                   modifier = Modifier.align(Alignment.BottomEnd)
+                )
+              }
+
+              if (showHijriAdjustmentDialog) {
+                val currentOffset by appContainer.settingsRepository.hijriOffsetFlow.collectAsState(initial = 0)
+                val globalOffset by appContainer.settingsRepository.globalHijriOffsetFlow.collectAsState(initial = -1)
+                val isEnglish = (currentLanguage == "en")
+                com.example.ui.components.ModernHijriAdjustmentDialog(
+                  currentOffset = currentOffset,
+                  globalOffset = globalOffset,
+                  isEnglish = isEnglish,
+                  onDismiss = { showHijriAdjustmentDialog = false },
+                  onSaveOffset = { newOffset ->
+                    coroutineScope.launch {
+                      appContainer.settingsRepository.setHijriOffset(newOffset)
+                    }
+                    showHijriAdjustmentDialog = false
+                  }
                 )
               }
             }

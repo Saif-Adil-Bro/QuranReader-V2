@@ -428,6 +428,8 @@ class SettingsViewModel(
             initialValue = 0
         )
 
+    val globalHijriOffset: StateFlow<Int> = repository.globalHijriOffsetFlow
+
     val combinedHijriOffset: StateFlow<Int> = repository.combinedHijriOffsetFlow
         .stateIn(
             scope = viewModelScope,

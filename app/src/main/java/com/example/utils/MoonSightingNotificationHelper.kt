@@ -101,6 +101,12 @@ object MoonSightingNotificationHelper {
             return
         }
 
+        // Trigger strictly in the afternoon at or after 4:00 PM (16:00)
+        val currentHour = java.time.LocalTime.now().hour
+        if (currentHour < 16) {
+            return
+        }
+
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val lastMonth = prefs.getInt(KEY_LAST_NOTIFIED_HIJRI_MONTH, -1)
         val lastYear = prefs.getInt(KEY_LAST_NOTIFIED_HIJRI_YEAR, -1)

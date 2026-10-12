@@ -126,6 +126,7 @@ fun SettingsScreen(
     val keepScreenOn by viewModel.keepScreenOnFlow.collectAsState()
     val hijriOffset by viewModel.hijriOffset.collectAsState()
     val combinedHijriOffset by viewModel.combinedHijriOffset.collectAsState()
+    val globalHijriOffset by viewModel.globalHijriOffset.collectAsState()
     val tanzilTextStyle by viewModel.tanzilTextStyle.collectAsState()
     val username by viewModel.username.collectAsState()
     val readingTime by viewModel.readingTimeMinutes.collectAsState()
@@ -672,8 +673,24 @@ fun SettingsScreen(
             val hijriBorderWidth = if (shouldHighlightHijri) 2.dp else 1.dp
             val hijriBgColor = if (shouldHighlightHijri) PrimaryGreen.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
 
+            var showModernHijriDialog by remember { mutableStateOf(false) }
+            if (showModernHijriDialog) {
+                com.example.ui.components.ModernHijriAdjustmentDialog(
+                    currentOffset = hijriOffset,
+                    globalOffset = globalHijriOffset,
+                    isEnglish = (currentLanguage == "en"),
+                    onDismiss = { showModernHijriDialog = false },
+                    onSaveOffset = { newOffset ->
+                        viewModel.setHijriOffset(newOffset)
+                        showModernHijriDialog = false
+                    }
+                )
+            }
+
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showModernHijriDialog = true },
                 colors = CardDefaults.cardColors(containerColor = hijriBgColor),
                 shape = RoundedCornerShape(12.dp),
                 border = BorderStroke(hijriBorderWidth, hijriBorderColor)
@@ -713,12 +730,12 @@ fun SettingsScreen(
                             Icon(Icons.Default.Remove, contentDescription = if (currentLanguage == "en") "Decrease" else "কমান", tint = PrimaryGreen, modifier = Modifier.size(16.dp))
                         }
                         val offsetDisplay = if (currentLanguage == "en") {
-                            if (combinedHijriOffset > 0) "+$combinedHijriOffset"
-                            else if (combinedHijriOffset < 0) "$combinedHijriOffset"
+                            if (hijriOffset > 0) "+$hijriOffset"
+                            else if (hijriOffset < 0) "$hijriOffset"
                             else "0"
                         } else {
-                            if (combinedHijriOffset > 0) "+${com.example.utils.DateUtil.toBengaliNumerals(combinedHijriOffset)}" 
-                            else if (combinedHijriOffset < 0) "-${com.example.utils.DateUtil.toBengaliNumerals(-combinedHijriOffset)}" 
+                            if (hijriOffset > 0) "+${com.example.utils.DateUtil.toBengaliNumerals(hijriOffset)}" 
+                            else if (hijriOffset < 0) "-${com.example.utils.DateUtil.toBengaliNumerals(-hijriOffset)}" 
                             else "০"
                         }
                         Text(

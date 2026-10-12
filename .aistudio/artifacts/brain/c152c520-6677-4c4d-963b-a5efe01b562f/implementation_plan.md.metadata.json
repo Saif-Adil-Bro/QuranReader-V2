@@ -1,6 +1,6 @@
 {
-  "summary":  "Comprehensive implementation plan to replace the static text 'চলমান' badge next to the active waqt name in PrayerTimesDetailSheet with a subtle pulsing green radar live dot animation matching the home screen's hero section.",
-  "updatedAt":  "2026-10-11T12:26:37.277279093Z",
+  "summary":  "Implementation plan to calibrate Bangladesh base Hijri calendar calculation so that 0 (স্বাভাবিক) displays today's real date (২৯ রবিউস সানী) across the app and popup dialog.",
+  "updatedAt":  "2026-10-12T03:34:39.873524339Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

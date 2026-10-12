@@ -1,83 +1,82 @@
-# Live Radar Dot Indicator for Active Waqt in Prayer Times Detail Sheet
+# Implementation Plan: Bangladesh Real Hijri Date Alignment for Default (0) Offset
 
-Replace the text-based `"চলমান"` (running) badge in the prayer times details sheet with a sleek, distraction-free pulsing radar live dot animation matching the home screen's hero section.
+Calibrate the core Hijri calendar calculation in `HijriCalendarUtil` so that the default zero offset (`০ দিন স্বাভাবিক`) accurately displays Bangladesh's real Islamic lunar date (**২৯ রবিউস সানী ১৪৪৮**) instead of the astronomical ICU civil calendar's lagging date (**২৮ রবিউস সানী**).
 
 ---
 
 ### User Review & Critical Decisions
 
 > [!IMPORTANT]
-> The user confirmed the visual styling: **"Subtle pulsing green radar dot matching the home screen"** without any text label.
+> The user confirmed the following requirements:
+> 1. **স্বাভাবিক (০) অফসেটের তারিখ:** বাংলাদেশের বর্তমান বাস্তব তারিখ **২৯ রবিউস সানী** হতে হবে।
+> 2. **পপআপ ডায়ালগের ডিফল্ট নির্বাচন:** পপআপ ডায়ালগ খোলার সময় সবসময় **স্বাভাবিক (০)** অফসেট নির্বাচিত থাকবে এবং এটি শুরুতেই রিয়েল তারিখ (২৯ রবিউস সানী) প্রদর্শন করবে।
 
-- **Confirmed Decision 1**: Remove the rounded pill container and text label (`"চলমান"` / `"Active"`) completely from the active waqt row in `PrayerTimesDetailSheet.kt`.
-- **Confirmed Decision 2**: Introduce a dedicated `LiveIndicatorDot` with a continuous radar pulse effect (soft expanding green ripple ring + glowing ambient halo + solid core dot) beside the active waqt name.
-- **Confirmed Decision 3**: Retain identical 3-column weight distribution (`1.2f` left, `0.6f` middle bell icon, `1.2f` right time text) so the bell icon and timing text alignment never shifts.
+- **Confirmed Decision 1**: Calibrate the base Hijri calendar calculation in `HijriCalendarUtil.kt` by applying Bangladesh's standard local lunar alignment (`+1` day base offset against ICU's astronomical civil computation).
+- **Confirmed Decision 2**: Ensure that when offset is `0` (স্বাভাবিক), the date is **২৯ রবিউস সানী ১৪৪৮**, giving users the accurate date out-of-the-box without requiring manual adjustments.
+- **Confirmed Decision 3**: Retain full manual adjustment range (`-2, -1, 0, +1, +2`) in `ModernHijriAdjustmentDialog` and Settings so users can still adapt to any local crescent sighting variations.
 
 ---
 
-### 1. Overview & Core Concept
+### 1. Overview & Root Cause Analysis
 
-- **What It Does**: During prayer times inspection, the currently ongoing prayer (e.g., Dhuhr, Asr, Isha) is marked with a subtle, radiant live pulsing radar dot in emerald green next to its title. This replaces the bulkier pill badge containing the word "চলমান", offering a much cleaner, more refined, and spiritual Islamic aesthetic.
-- **Target Audience / Persona**: Devout Muslim users seeking quick, serene visual feedback on which prayer waqt is presently active without reading clutter.
-- **Key Value**: Visual consistency across the application—matching the aesthetic radar dot in the home screen's prayer hero card while preserving rock-solid layout alignment.
+- **Why was 'স্বাভাবিক (০)' showing ২৮ রবিউস সানী?**
+  - Android's `android.icu.util.IslamicCalendar()` computes dates using astronomical civil moon conjunctions (Umm al-Qura / astronomical standard).
+  - In Bangladesh and the Indian Subcontinent, the Islamic calendar is strictly established by Islamic Foundation Bangladesh (জাতীয় চাঁদ দেখা কমিটি) via physical crescent sighting, which occurs approximately 1 day later than astronomical conjunction.
+  - Consequently, raw ICU calculation without regional calibration produced **২৮ রবিউস সানী** on Sunday, 11 October 2026, while the real date in Bangladesh was **২৯ রবিউস সানী**.
+  - Users previously had to manually apply a `+1` offset in Settings just to see the real date.
+- **The Solution**:
+  - Introduce `BASE_BANGLADESH_OFFSET = 1` into `HijriCalendarUtil.calculateHijriDate`.
+  - When `offsetDays = 0` (স্বাভাবিক), the effective offset is aligned to Bangladesh's calendar, yielding **২৯ রবিউস সানী**.
+  - The dialog opens with `০ দিন (স্বাভাবিক)` selected, immediately showing **২৯ রবিউস সানী ১৪৪৮ হিজরী**.
 
 ---
 
 ### 2. User Experience & Visual Design
 
-- **Visual Identity & Theme**:
-  - *Dot Core*: Solid emerald dot (`Color(0xFF34D399)` / `Color(0xFF4ADE80)`), `5.dp` diameter.
-  - *Ambient Halo*: Glowing middle ring (`8.dp` diameter) with `25%` opacity oscillating softly.
-  - *Radar Ripple*: Liquid outer ripple scaling smoothly from `0.6x` to `1.5x` while fading opacity from `0.5` to `0.0` over a `1400ms` loop with `FastOutSlowInEasing`.
-  - *Container*: Compact `14.dp` Box positioned immediately adjacent to the waqt name with `6.dp` horizontal spacing.
-- **Row Composition & Layout Stability**:
-  - The left section containing `Icon + Waqt Name + LiveIndicatorDot` maintains `weight(1.2f)`.
-  - The middle section containing the Notification Bell icon remains strictly centered with `weight(0.6f)`.
-  - The right section containing the start and end prayer times remains right-aligned with `weight(1.2f)`.
-  - Inactive prayer rows display only the Waqt name without any dot or text badge.
+- **ModernHijriAdjustmentDialog Preview at 0 Offset**:
+  - *Gregorian Date*: `রবিবার, ১১ অক্টোবর ২০২৬`
+  - *Hijri Date Display*: `২৯ রবিউস সানী ১৪৪৮ হিজরী` (Arabic: `29 ربيع الثاني 1448 هـ`)
+  - *Selected Pill*: `স্বাভাবিক (০)`
+  - *Stepper Display*: `০ দিন (স্বাভাবিক)`
+- **Interactive Adjustments**:
+  - If user selects `-১ দিন`: shows `২৮ রবিউস সানী`
+  - If user selects `০ দিন (স্বাভাবিক)`: shows `২৯ রবিউস সানী` (Real current date)
+  - If user selects `+১ দিন`: shows `৩০ রবিউস সানী`
+- **Application-wide Consistency**:
+  - Home screen hero waqt card, top bar calendar indicator, prayer times sheet, and monthly grid will all show the real Bangladesh date by default.
 
 ---
 
-### 3. Key Product Decisions & Trade-Offs
-
-- **Decision 1: No Text Label Alongside Dot**
-  - *Chosen Approach*: Display only the pulsing live radar dot beside the active prayer name; no `"চলমান"` text badge.
-  - *Why*: Eliminates redundant visual noise, preserves horizontal room on compact devices, and matches the user's explicit preference.
-- **Decision 2: Reusable Local Live Dot Component**
-  - *Chosen Approach*: Add `LiveIndicatorDot` inside `PrayerTimesDetailSheet.kt` matching the exact timing and parameters from `FullWidthPrayerHeroSection.kt`.
-  - *Why*: Decouples the component cleanly while ensuring identical 60fps Compose transition performance across both screens.
-
----
-
-### 4. Technical Architecture & Data Strategy
+### 3. Key Technical Decisions & Data Strategy
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                 PrayerTimesDetailSheet                      │
+│                      HijriCalendarUtil                      │
 │                                                             │
-│   ┌─────────────────────────────────────────────────────┐   │
-│   │                 PrayerDetailRow                     │   │
-│   │                                                     │   │
-│   │  ┌───────────────┐ ┌──────────────┐ ┌─────────────┐ │   │
-│   │  │ Left (1.2f)   │ │ Center (0.6f)│ │ Right (1.2f)│ │   │
-│   │  │ Icon + Name + │ │ Notification │ │ Waqt Time   │ │   │
-│   │  │ LiveDot (●)   │ │ Bell Icon    │ │ Range       │ │   │
-│   │  └───────────────┘ └──────────────┘ └─────────────┘ │   │
-│   └─────────────────────────────────────────────────────┘   │
+│   LocalDate (e.g. 2026-10-11) + User Offset (0 / +/-)       │
+│                             │                               │
+│                             ▼                               │
+│   Total Offset = User Offset + BASE_BANGLADESH_OFFSET (1)   │
+│                             │                               │
+│                             ▼                               │
+│        Output: 29 Rabi us-Sani 1448 AH (Real Date)          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-- **Component Implementation**:
-  - `LiveIndicatorDot` uses `rememberInfiniteTransition` animating `pulseProgress` (0f to 1f over 1400ms) and `coreAlpha` (0.7f to 1f over 700ms).
-  - In `PrayerDetailRow`, replace the `Box(RoundedCornerShape(100.dp))` text badge block with `LiveIndicatorDot(color = Color(0xFF34D399))`.
-  - Update any parameter or call site cleanly without breaking existing preview or sheet callers.
+- **File to Modify**: `app/src/main/java/com/example/utils/HijriCalendarUtil.kt`
+  - In `calculateHijriDate(date: LocalDate, offsetDays: Int)`:
+    - Apply `val totalOffset = offsetDays + BASE_BANGLADESH_OFFSET` (where `BASE_BANGLADESH_OFFSET = 1`).
+    - Pass `totalOffset` to both `IslamicCalendar` and fallback `HijrahDate`.
+- **Dialog & Settings**:
+  - `ModernHijriAdjustmentDialog.kt` automatically reflects the calibrated date preview when `selectedOffset == 0`.
+  - Settings screen item shows the calibrated date accurately when offset is reset to 0.
 
 ---
 
 ### Verification Plan
 
-1. Verify build succeeds with `compile_applet`.
-2. Inspect `PrayerDetailRow` rendering:
-   - When `isCurrentWaqt == true`, verify emerald live radar dot pulses smoothly next to the prayer name.
-   - When `isCurrentWaqt == false`, verify no indicator or badge is shown.
-   - Verify bell icon and time text remain in exact horizontal alignment with inactive rows.
+1. **Compilation Check**:
+   - Run `compile_applet` to ensure error-free compilation.
+2. **Date Verification**:
+   - Verify that for `offsetDays = 0`, `HijriCalendarUtil.getHijriDate(LocalDate.of(2026, 10, 11), 0)` outputs `hijriDay == 29`, `hijriMonth == 4` (রবিউস সানী), `hijriYear == 1448`.
+   - Verify that `ModernHijriAdjustmentDialog` shows "২৯ রবিউস সানী ১৪৪৮ হিজরী" when `০ দিন (স্বাভাবিক)` is selected.

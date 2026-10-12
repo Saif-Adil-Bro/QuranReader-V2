@@ -786,7 +786,7 @@ fun BlogPostDetailScreen(
     val context = LocalContext.current
     var textSizeSp by remember { mutableFloatStateOf(16f) }
     val sharedPrefs = remember(context) { context.getSharedPreferences("quran_menu_prefs", android.content.Context.MODE_PRIVATE) }
-    val hijriOffset = sharedPrefs.getInt("hijri_offset", 0)
+    val hijriOffset = sharedPrefs.getInt("hijri_offset", -1)
 
     var fullPostContent by remember(post.id, post.content) { mutableStateOf(post.content) }
     var fullPostTitle by remember(post.id, post.title) { mutableStateOf(post.title) }

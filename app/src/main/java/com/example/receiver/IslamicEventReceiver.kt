@@ -35,29 +35,37 @@ class IslamicEventReceiver : BroadcastReceiver() {
             return
         }
 
-        val hijriOffset = sharedPrefs.getInt("hijri_offset", 0)
+        val hijriOffset = sharedPrefs.getInt("hijri_offset", -1)
 
-        // Check and notify for New Hijri Month transition
+        // 1. Check and notify for 30th Hijri day Date Adjustment (Morning at or after 6:00 AM)
+        try {
+            com.example.utils.HijriNewMonthNotificationHelper.checkAndNotify30th(context, hijriOffset)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // 2. Check and notify for New Hijri Month transition (1st day morning at or after 6:00 AM)
         try {
             com.example.utils.HijriNewMonthNotificationHelper.checkAndNotifyNewMonth(context, hijriOffset)
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
-        // Check and notify for 29th Hijri day Moon Sighting notice
+        // 3. Check and notify for 29th Hijri day Moon Sighting notice (Afternoon at or after 4:00 PM / 16:00)
         try {
             com.example.utils.MoonSightingNotificationHelper.checkAndNotify29th(context, hijriOffset)
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
-        // Check and notify for Friday Jumu'ah reminder
+        // 4. Check and notify for Friday Jumu'ah reminder
         try {
             com.example.utils.JumuahReminderHelper.checkAndNotifyFriday(context)
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
+        // 5. Islamic Event / Sunnah Fast reminder for upcoming days
         val isEnglish = com.example.utils.NotificationLocalization.isEnglish(context)
         val today = LocalDate.now()
         val eventInfo = IslamicEventGuidanceHelper.checkNotificationForDate(today, hijriOffset, isEnglish)
@@ -130,30 +138,59 @@ class IslamicEventReceiver : BroadcastReceiver() {
             notificationManager.notify(eventInfo.id.hashCode(), notification)
         }
 
-        // Schedule next alarm for tomorrow evening
+        // Schedule next alarms for tomorrow
         scheduleNextAlarm(context)
     }
 
     companion object {
+        private const val REQUEST_CODE_AFTERNOON = 3001 // 16:00 (4:00 PM) for 29th moon sighting & events
+        private const val REQUEST_CODE_MORNING = 3002   // 06:00 (6:00 AM) for 30th date adjustment & new month
+
         fun scheduleNextAlarm(context: Context) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val intent = Intent(context, IslamicEventReceiver::class.java)
+
+            // 1. Schedule Morning Alarm at 6:00 AM (06:00)
+            scheduleDailyAlarm(
+                context = context,
+                alarmManager = alarmManager,
+                requestCode = REQUEST_CODE_MORNING,
+                targetHour = 6,
+                targetMinute = 0
+            )
+
+            // 2. Schedule Afternoon Alarm at 4:00 PM (16:00)
+            scheduleDailyAlarm(
+                context = context,
+                alarmManager = alarmManager,
+                requestCode = REQUEST_CODE_AFTERNOON,
+                targetHour = 16,
+                targetMinute = 0
+            )
+        }
+
+        private fun scheduleDailyAlarm(
+            context: Context,
+            alarmManager: AlarmManager,
+            requestCode: Int,
+            targetHour: Int,
+            targetMinute: Int
+        ) {
+            val intent = Intent(context, IslamicEventReceiver::class.java).apply {
+                action = "com.example.ACTION_ISLAMIC_ALARM_$requestCode"
+            }
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
-                3001,
+                requestCode,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            val sharedPrefs = context.getSharedPreferences("quran_menu_prefs", Context.MODE_PRIVATE)
-            val hour = sharedPrefs.getInt("islamic_events_hour", 17) // Default 5:15 PM (17:15) - Afternoon after Asr
-            val minute = sharedPrefs.getInt("islamic_events_minute", 15)
-
             val calendar = Calendar.getInstance().apply {
                 timeInMillis = System.currentTimeMillis()
-                set(Calendar.HOUR_OF_DAY, hour)
-                set(Calendar.MINUTE, minute)
+                set(Calendar.HOUR_OF_DAY, targetHour)
+                set(Calendar.MINUTE, targetMinute)
                 set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
 
                 if (timeInMillis <= System.currentTimeMillis()) {
                     add(Calendar.DAY_OF_YEAR, 1)
@@ -161,11 +198,19 @@ class IslamicEventReceiver : BroadcastReceiver() {
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.timeInMillis,
-                    pendingIntent
-                )
+                try {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        calendar.timeInMillis,
+                        pendingIntent
+                    )
+                } catch (e: SecurityException) {
+                    alarmManager.setAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        calendar.timeInMillis,
+                        pendingIntent
+                    )
+                }
             } else {
                 alarmManager.set(
                     AlarmManager.RTC_WAKEUP,
@@ -177,14 +222,18 @@ class IslamicEventReceiver : BroadcastReceiver() {
 
         fun cancelAlarm(context: Context) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val intent = Intent(context, IslamicEventReceiver::class.java)
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                3001,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            alarmManager.cancel(pendingIntent)
+            for (code in listOf(REQUEST_CODE_AFTERNOON, REQUEST_CODE_MORNING)) {
+                val intent = Intent(context, IslamicEventReceiver::class.java).apply {
+                    action = "com.example.ACTION_ISLAMIC_ALARM_$code"
+                }
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    code,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                alarmManager.cancel(pendingIntent)
+            }
         }
     }
 }

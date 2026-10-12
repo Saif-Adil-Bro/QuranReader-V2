@@ -75,4 +75,24 @@ class ExampleUnitTest {
             println("Finished mapping diagnostics.")
         }
     }
+
+    @Test
+    fun testHijriDateCalculation() {
+        val testDate = java.time.LocalDate.of(2026, 10, 11)
+        val defaultGlobalOffset = -1 // Bangladesh Remote Config calibrated base offset
+
+        // Default 0 user offset + default global offset (-1) -> Must be 29 Rabi us-Sani (Bangladeshi real date)
+        val defaultRes = com.example.utils.HijriCalendarUtil.getHijriDate(testDate, 0 + defaultGlobalOffset)
+        org.junit.Assert.assertEquals(29, defaultRes.hijriDay)
+        org.junit.Assert.assertEquals("রবিউস সানী", defaultRes.hijriMonthNameBn)
+        org.junit.Assert.assertEquals(1448, defaultRes.hijriYear)
+
+        // User selected -1 day offset -> 28 Rabi us-Sani
+        val minusOneRes = com.example.utils.HijriCalendarUtil.getHijriDate(testDate, -1 + defaultGlobalOffset)
+        org.junit.Assert.assertEquals(28, minusOneRes.hijriDay)
+
+        // User selected +1 day offset -> 30 Rabi us-Sani
+        val plusOneRes = com.example.utils.HijriCalendarUtil.getHijriDate(testDate, 1 + defaultGlobalOffset)
+        org.junit.Assert.assertEquals(30, plusOneRes.hijriDay)
+    }
 }

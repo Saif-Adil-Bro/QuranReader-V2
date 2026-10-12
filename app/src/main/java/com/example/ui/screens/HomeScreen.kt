@@ -1117,12 +1117,12 @@ fun HomeScreen(
                         }
 
                         val offsetDisplay = if (isEnglish) {
-                            if (combinedHijriOffset > 0) "+$combinedHijriOffset day(s)"
-                            else if (combinedHijriOffset < 0) "$combinedHijriOffset day(s)"
+                            if (hijriOffset > 0) "+$hijriOffset day(s)"
+                            else if (hijriOffset < 0) "$hijriOffset day(s)"
                             else "0 day(s)"
                         } else {
-                            if (combinedHijriOffset > 0) "+${com.example.utils.DateUtil.toBengaliNumerals(combinedHijriOffset)} দিন"
-                            else if (combinedHijriOffset < 0) "-${com.example.utils.DateUtil.toBengaliNumerals(-combinedHijriOffset)} দিন"
+                            if (hijriOffset > 0) "+${com.example.utils.DateUtil.toBengaliNumerals(hijriOffset)} দিন"
+                            else if (hijriOffset < 0) "-${com.example.utils.DateUtil.toBengaliNumerals(-hijriOffset)} দিন"
                             else "${com.example.utils.DateUtil.toBengaliNumerals(0)} দিন"
                         }
 

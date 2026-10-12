@@ -201,7 +201,7 @@ class SettingsRepository(val context: Context) {
     val iftarOffsetFlow: Flow<Int> = context.dataStore.data
         .map { preferences -> preferences[IFTAR_OFFSET_KEY] ?: 0 }
 
-    private val _globalHijriOffsetFlow = MutableStateFlow(0)
+    private val _globalHijriOffsetFlow = MutableStateFlow(-1)
     val globalHijriOffsetFlow: StateFlow<Int> = _globalHijriOffsetFlow.asStateFlow()
     
     val combinedHijriOffsetFlow: Flow<Int> = hijriOffsetFlow.combine(globalHijriOffsetFlow) { local, global ->
@@ -209,6 +209,14 @@ class SettingsRepository(val context: Context) {
     }
 
     init {
+        try {
+            val sharedPrefs = context.getSharedPreferences("quran_menu_prefs", Context.MODE_PRIVATE)
+            if (!sharedPrefs.contains("hijri_offset")) {
+                sharedPrefs.edit().putInt("hijri_offset", -1).apply()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         fetchGlobalHijriOffset()
         CoroutineScope(Dispatchers.IO).launch {
             combinedHijriOffsetFlow.collect { combined ->
@@ -229,6 +237,9 @@ class SettingsRepository(val context: Context) {
                 minimumFetchIntervalInSeconds = 3600
             }
             remoteConfig.setConfigSettingsAsync(configSettings)
+            remoteConfig.setDefaultsAsync(mapOf("global_hijri_offset" to -1L))
+            val initialVal = remoteConfig.getLong("global_hijri_offset")
+            _globalHijriOffsetFlow.value = initialVal.toInt()
             remoteConfig.fetchAndActivate().addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val globalOffset = remoteConfig.getLong("global_hijri_offset").toInt()
@@ -237,6 +248,7 @@ class SettingsRepository(val context: Context) {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            _globalHijriOffsetFlow.value = -1
         }
     }
 
