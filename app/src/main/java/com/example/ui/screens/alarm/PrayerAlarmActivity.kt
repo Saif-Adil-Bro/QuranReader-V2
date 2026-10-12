@@ -74,9 +74,14 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+import android.view.KeyEvent
+
 class PrayerAlarmActivity : ComponentActivity() {
 
     private var isAlarmDismissed = false
+    private var currentPrayerName: PrayerName = PrayerName.FAJR
+    private var currentNotifId: Int = -1
+    private var isEnglishLocale: Boolean = false
 
     private val closeReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -87,6 +92,34 @@ class PrayerAlarmActivity : ComponentActivity() {
                 handleStopAlarm(notifId, com.example.utils.NotificationLocalization.isEnglish(this@PrayerAlarmActivity))
             }
         }
+    }
+
+    private val screenOffReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_SCREEN_OFF) {
+                // When Power button is pressed and screen turns off, directly dismiss the alarm
+                handleStopAlarm(currentNotifId, isEnglishLocale)
+            }
+        }
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_VOLUME_UP,
+                KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                    // Volume button press -> Snooze alarm by 10 minutes
+                    handleSnoozeAlarm(currentPrayerName, currentNotifId, isEnglishLocale)
+                    return true
+                }
+                KeyEvent.KEYCODE_POWER -> {
+                    // Power button press -> Dismiss alarm directly
+                    handleStopAlarm(currentNotifId, isEnglishLocale)
+                    return true
+                }
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -102,6 +135,10 @@ class PrayerAlarmActivity : ComponentActivity() {
         } else {
             registerReceiver(closeReceiver, filter)
         }
+
+        // Register screen-off receiver to detect Power button turning screen off
+        val screenFilter = android.content.IntentFilter(Intent.ACTION_SCREEN_OFF)
+        registerReceiver(screenOffReceiver, screenFilter)
 
         turnScreenOnAndShowWhenLocked()
 
@@ -119,6 +156,10 @@ class PrayerAlarmActivity : ComponentActivity() {
         val title = intent.getStringExtra("title") ?: defaultTitle
         val message = intent.getStringExtra("message") ?: defaultMessage
         val notifId = intent.getIntExtra("notif_id", -1)
+
+        currentPrayerName = prayerName
+        currentNotifId = notifId
+        isEnglishLocale = isEnglish
 
         val soundManagerStartTime = PrayerSoundManager.alarmStartTimestampMillis.takeIf { it > 0 }
         val intentStartTime = intent.getLongExtra("alarm_start_time", 0L).takeIf { it > 0 }
@@ -168,6 +209,10 @@ class PrayerAlarmActivity : ComponentActivity() {
         val title = intent.getStringExtra("title") ?: defaultTitle
         val message = intent.getStringExtra("message") ?: defaultMessage
         val notifId = intent.getIntExtra("notif_id", -1)
+
+        currentPrayerName = prayerName
+        currentNotifId = notifId
+        isEnglishLocale = isEnglish
 
         val soundManagerStartTime = PrayerSoundManager.alarmStartTimestampMillis.takeIf { it > 0 }
         val intentStartTime = intent.getLongExtra("alarm_start_time", 0L).takeIf { it > 0 }
@@ -289,6 +334,9 @@ class PrayerAlarmActivity : ComponentActivity() {
         }
         try {
             unregisterReceiver(closeReceiver)
+        } catch (_: Exception) {}
+        try {
+            unregisterReceiver(screenOffReceiver)
         } catch (_: Exception) {}
         PrayerSoundManager.stopAll()
         super.onDestroy()
@@ -610,6 +658,16 @@ fun PrayerAlarmScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Physical button hint
+                Text(
+                    text = if (isEnglish) "💡 Press Volume to Snooze • Power to Dismiss" else "💡 ভলিউম বাটনে ১০ মি. স্নুজ • পাওয়ার বাটনে বন্ধ",
+                    color = Color.White.copy(alpha = 0.55f),
+                    fontSize = 11.5.sp,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
