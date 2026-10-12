@@ -345,7 +345,7 @@ object PrayerNotificationHelper {
         scheduleDailyMidnightRefresher(context, alarmManager, zoneId)
     }
 
-    private fun getSinglePrayerTime(
+    fun getSinglePrayerTime(
         schedule: com.example.data.model.DailyPrayerSchedule,
         date: LocalDate,
         zoneId: ZoneId,
@@ -642,10 +642,19 @@ object PrayerNotificationHelper {
         val requestCode = getRequestCodeForPrayer(prayerName) + 1000
         val snoozeMillis = System.currentTimeMillis() + (10 * 60 * 1000L)
 
+        val prayerRepo = PrayerTimesRepository.getInstance(context)
+        val district = prayerRepo.selectedDistrict.value
+        val config = getPrayerAlarmConfig(context, prayerName)
+
         val intent = Intent(context, PrayerNotificationReceiver::class.java).apply {
             action = "com.example.ACTION_PRAYER_NOTIFICATION"
             putExtra("prayer_name", prayerName.name)
             putExtra("is_snooze", true)
+            putExtra("district_name_bn", district.nameBn)
+            putExtra("district_name_en", district.nameEn)
+            putExtra("offset_minutes", config.offsetMinutes)
+            putExtra("sound_type", config.soundType.id)
+            putExtra("vibration_enabled", config.isVibrationEnabled)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(

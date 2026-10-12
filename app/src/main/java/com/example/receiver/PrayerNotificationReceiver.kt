@@ -14,6 +14,7 @@ import com.example.data.model.PrayerAlarmSoundType
 import com.example.data.model.PrayerName
 import com.example.utils.PrayerNotificationHelper
 import com.example.utils.PrayerSoundManager
+import kotlinx.coroutines.flow.first
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -34,6 +35,13 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(notifId)
             }
+            // Directly close active PrayerAlarmActivity instance if running
+            com.example.ui.screens.alarm.PrayerAlarmActivity.closeIfActive(notifId)
+            val closeIntent = Intent("com.example.ACTION_CLOSE_PRAYER_ALARM_ACTIVITY").apply {
+                setPackage(context.packageName)
+                putExtra("notif_id", notifId)
+            }
+            context.sendBroadcast(closeIntent)
             return
         }
 
@@ -50,6 +58,13 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(notifId)
             }
+            // Directly close active PrayerAlarmActivity instance so it doesn't stay open
+            com.example.ui.screens.alarm.PrayerAlarmActivity.closeIfActive(notifId)
+            val closeIntent = Intent("com.example.ACTION_CLOSE_PRAYER_ALARM_ACTIVITY").apply {
+                setPackage(context.packageName)
+                putExtra("notif_id", notifId)
+            }
+            context.sendBroadcast(closeIntent)
             PrayerNotificationHelper.snoozePrayerAlarm(context, prayerName)
             return
         }
@@ -96,9 +111,39 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             prefs.edit().putLong(lastNotifiedKey, nowTime).apply()
 
             var prayerRangeFormatted = intent.getStringExtra("prayer_range_formatted") ?: ""
-            val prayerTimeFormatted = intent.getStringExtra("prayer_time_formatted") ?: ""
-            val districtNameBn = intent.getStringExtra("district_name_bn") ?: "ঢাকা"
-            val districtNameEn = intent.getStringExtra("district_name_en") ?: ""
+            var prayerTimeFormatted = intent.getStringExtra("prayer_time_formatted") ?: ""
+
+            val prayerRepo = com.example.data.repository.PrayerTimesRepository.getInstance(context)
+            val currentDistrict = prayerRepo.selectedDistrict.value
+            val districtNameBn = intent.getStringExtra("district_name_bn")?.ifBlank { null } ?: currentDistrict.nameBn
+            val districtNameEn = intent.getStringExtra("district_name_en")?.ifBlank { null } ?: currentDistrict.nameEn
+
+            if (prayerTimeFormatted.isBlank() || prayerRangeFormatted.isBlank()) {
+                try {
+                    val isHanafi = prayerRepo.isHanafi.value
+                    val calculationMethod = prayerRepo.calculationMethod.value
+                    val settingsRepo = com.example.data.repository.SettingsRepository.getInstance(context)
+                    val sahriOffset = kotlinx.coroutines.runBlocking { settingsRepo.sahriOffsetFlow.first() }
+                    val iftarOffset = kotlinx.coroutines.runBlocking { settingsRepo.iftarOffsetFlow.first() }
+                    val zoneId = try { java.time.ZoneId.of(currentDistrict.timeZoneId) } catch (e: Exception) { java.time.ZoneId.of("Asia/Dhaka") }
+                    val today = java.time.LocalDate.now(zoneId)
+                    val schedule = com.example.utils.PrayerTimesCalculator.calculatePrayerSchedule(
+                        date = today,
+                        district = currentDistrict,
+                        isHanafi = isHanafi,
+                        calculationMethod = calculationMethod,
+                        sahriOffsetMinutes = sahriOffset,
+                        iftarOffsetMinutes = iftarOffset
+                    )
+                    val prayerInfo = PrayerNotificationHelper.getSinglePrayerTime(schedule, today, zoneId, prayerName, sahriOffset, iftarOffset)
+                    if (prayerInfo != null) {
+                        if (prayerTimeFormatted.isBlank()) prayerTimeFormatted = prayerInfo.timeFormatted
+                        if (prayerRangeFormatted.isBlank()) prayerRangeFormatted = prayerInfo.timeRangeFormatted
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
             val isEnglish = com.example.utils.NotificationLocalization.isEnglish(context)
 
             val isSoundEnabled = PrayerNotificationHelper.isSoundEnabled(context)
@@ -234,6 +279,7 @@ class PrayerNotificationReceiver : BroadcastReceiver() {
             if (isAlarm) {
                 builder.setOngoing(true)
                 builder.setAutoCancel(false)
+                builder.setDeleteIntent(stopPendingIntent)
                 // Full-Screen Alarm Intent for Locked / Unlocked screen
                 val fullScreenIntent = Intent(context, com.example.ui.screens.alarm.PrayerAlarmActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or

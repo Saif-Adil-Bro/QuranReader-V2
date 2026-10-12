@@ -76,8 +76,32 @@ import java.util.Locale
 
 class PrayerAlarmActivity : ComponentActivity() {
 
+    private var isAlarmDismissed = false
+
+    private val closeReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val action = intent?.action
+            if (action == "com.example.ACTION_STOP_PRAYER_ALARM" || action == ACTION_CLOSE_ALARM) {
+                isAlarmDismissed = true
+                val notifId = intent.getIntExtra("notif_id", -1)
+                handleStopAlarm(notifId, com.example.utils.NotificationLocalization.isEnglish(this@PrayerAlarmActivity))
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        activeInstance = this
+        val filter = android.content.IntentFilter().apply {
+            addAction("com.example.ACTION_STOP_PRAYER_ALARM")
+            addAction(ACTION_CLOSE_ALARM)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(closeReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(closeReceiver, filter)
+        }
 
         turnScreenOnAndShowWhenLocked()
 
@@ -201,7 +225,12 @@ class PrayerAlarmActivity : ComponentActivity() {
         )
     }
 
-    private fun handleStopAlarm(notifId: Int, isEnglish: Boolean = false) {
+    fun handleStopAlarm(notifId: Int, isEnglish: Boolean = false) {
+        if (isAlarmDismissed) {
+            finish()
+            return
+        }
+        isAlarmDismissed = true
         PrayerSoundManager.stopAll()
         if (notifId != -1) {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -212,6 +241,7 @@ class PrayerAlarmActivity : ComponentActivity() {
     }
 
     private fun handleSnoozeAlarm(prayerName: PrayerName, notifId: Int, isEnglish: Boolean = false) {
+        isAlarmDismissed = true
         PrayerSoundManager.stopAll()
         if (notifId != -1) {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -223,6 +253,10 @@ class PrayerAlarmActivity : ComponentActivity() {
     }
 
     private fun handleAutoDismiss(prayerName: PrayerName, notifId: Int, isEnglish: Boolean = false) {
+        if (isAlarmDismissed) {
+            finish()
+            return
+        }
         PrayerSoundManager.stopAll()
         if (notifId != -1) {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -234,6 +268,7 @@ class PrayerAlarmActivity : ComponentActivity() {
     }
 
     private fun handleOpenApp(notifId: Int) {
+        isAlarmDismissed = true
         PrayerSoundManager.stopAll()
         if (notifId != -1) {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -249,8 +284,29 @@ class PrayerAlarmActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        if (activeInstance === this) {
+            activeInstance = null
+        }
+        try {
+            unregisterReceiver(closeReceiver)
+        } catch (_: Exception) {}
         PrayerSoundManager.stopAll()
         super.onDestroy()
+    }
+
+    companion object {
+        const val ACTION_CLOSE_ALARM = "com.example.ACTION_CLOSE_PRAYER_ALARM_ACTIVITY"
+        @Volatile
+        var activeInstance: PrayerAlarmActivity? = null
+            private set
+
+        fun closeIfActive(notifId: Int = -1, isEnglish: Boolean = false) {
+            activeInstance?.let { activity ->
+                activity.runOnUiThread {
+                    activity.handleStopAlarm(notifId, isEnglish)
+                }
+            }
+        }
     }
 }
 
