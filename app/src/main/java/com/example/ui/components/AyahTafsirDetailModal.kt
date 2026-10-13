@@ -3,7 +3,7 @@ package com.example.ui.components
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -113,239 +113,384 @@ fun AyahTafsirDetailModal(
             decorFitsSystemWindows = false
         )
     ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = modalBgColor
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // ================= 1. Top Bar =================
+        val isPlayingState by viewModel.isPlaying.collectAsState()
+        val currentPlayingAyahNum by viewModel.currentPlayingAyahNumber.collectAsState()
+        val isThisAyahPlaying = isPlayingState && currentPlayingAyahNum == currentAyah.numberInSurah
+        val isCurrentBookmarked = isBookmarked(currentAyah)
+
+        Scaffold(
+            topBar = {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     color = headerBgColor,
-                shadowElevation = 4.dp
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .statusBarsPadding()
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        // Back Icon (<)
-                        IconButton(onClick = { onDismiss(pagerState.currentPage) }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "ফিরে যান",
-                                tint = primaryAccent
-                            )
-                        }
-
-                        // Center Title: তাফসীর ও অনুবাদ
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "তাফসীর ও অনুবাদ",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = textPrimary
-                            )
-                            val tafsirTitle = if (selectedTafsirNames.isNotEmpty()) {
-                                selectedTafsirNames.joinToString(", ")
-                            } else {
-                                "তাফসীর আল-মুয়াসসার"
+                    shadowElevation = 4.dp
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .statusBarsPadding()
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            // Back Icon (<)
+                            IconButton(onClick = { onDismiss(pagerState.currentPage) }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "ফিরে যান",
+                                    tint = primaryAccent
+                                )
                             }
-                            Text(
-                                text = tafsirTitle,
-                                fontSize = 12.sp,
-                                color = primaryAccent,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+
+                            // Center Title: তাফসীর ও অনুবাদ
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "তাফসীর ও অনুবাদ",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = textPrimary
+                                )
+                                val tafsirTitle = if (selectedTafsirNames.isNotEmpty()) {
+                                    selectedTafsirNames.joinToString(", ")
+                                } else {
+                                    "তাফসীর আল-মুয়াসসার"
+                                }
+                                Text(
+                                    text = tafsirTitle,
+                                    fontSize = 12.sp,
+                                    color = primaryAccent,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            // Right close or index button
+                            IconButton(onClick = { onDismiss(pagerState.currentPage) }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "বন্ধ করুন",
+                                    tint = textSecondary
+                                )
+                            }
                         }
 
-                        // Right close or index button
-                        IconButton(onClick = { onDismiss(pagerState.currentPage) }) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "বন্ধ করুন",
-                                tint = textSecondary
-                            )
-                        }
-                    }
+                        HorizontalDivider(
+                            color = cardBorderColor,
+                            thickness = 1.dp
+                        )
 
-                    HorizontalDivider(
-                        color = cardBorderColor,
-                        thickness = 1.dp
-                    )
-
-                    // ================= 2. Sub-Header (Prev, Dropdown Selector, Next) =================
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        // Previous Button (< আয়াত N-1)
-                        if (currentAyahIndex > 0) {
-                            TextButton(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(
-                                            page = currentAyahIndex - 1,
-                                            animationSpec = tween(280)
+                        // Sub-Header (Prev, Dropdown Selector, Next)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            // Previous Button (< আয়াত N-1)
+                            if (currentAyahIndex > 0) {
+                                TextButton(
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(
+                                                page = currentAyahIndex - 1,
+                                                animationSpec = tween(280)
+                                            )
+                                        }
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = "পূর্ববর্তী",
+                                            tint = primaryAccent,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        val prevAyahNum = ayahs[currentAyahIndex - 1].numberInSurah
+                                        Text(
+                                            text = "আয়াত ${DateUtil.toBengaliNumerals(prevAyahNum)}",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = primaryAccent
                                         )
                                     }
-                                },
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "পূর্ববর্তী",
-                                        tint = primaryAccent,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    val prevAyahNum = ayahs[currentAyahIndex - 1].numberInSurah
-                                    Text(
-                                        text = "আয়াত ${DateUtil.toBengaliNumerals(prevAyahNum)}",
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = primaryAccent
-                                    )
                                 }
+                            } else {
+                                Spacer(modifier = Modifier.width(72.dp))
                             }
-                        } else {
-                            Spacer(modifier = Modifier.width(72.dp))
-                        }
 
-                        // Center Dropdown Selector: সূরা ... - আয়াত X ⌄
-                        Box(contentAlignment = Alignment.Center) {
-                            Surface(
-                                shape = RoundedCornerShape(20.dp),
-                                color = primaryAccent.copy(alpha = 0.10f),
-                                border = BorderStroke(1.dp, primaryAccent.copy(alpha = 0.35f)),
-                                modifier = Modifier.clickable { showAyahDropdown = true }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                            // Center Dropdown Selector: সূরা ... - আয়াত X ⌄
+                            Box(contentAlignment = Alignment.Center) {
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = primaryAccent.copy(alpha = 0.10f),
+                                    border = BorderStroke(1.dp, primaryAccent.copy(alpha = 0.35f)),
+                                    modifier = Modifier.clickable { showAyahDropdown = true }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "সূরা $surahBanglaName • আয়াত ${DateUtil.toBengaliNumerals(currentAyah.numberInSurah)}",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = primaryAccent
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Icon(
+                                            imageVector = Icons.Default.ArrowDropDown,
+                                            contentDescription = "আয়াত বাছাই করুন",
+                                            tint = primaryAccent,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+
+                                // Ayah selection dropdown menu
+                                DropdownMenu(
+                                    expanded = showAyahDropdown,
+                                    onDismissRequest = { showAyahDropdown = false },
+                                    modifier = Modifier
+                                        .widthIn(min = 220.dp, max = 280.dp)
+                                        .heightIn(max = 360.dp)
+                                        .background(cardBgColor, RoundedCornerShape(16.dp))
+                                        .border(1.dp, cardBorderColor, RoundedCornerShape(16.dp))
                                 ) {
                                     Text(
-                                        text = "সূরা $surahBanglaName • আয়াত ${DateUtil.toBengaliNumerals(currentAyah.numberInSurah)}",
-                                        fontSize = 13.sp,
+                                        text = "আয়াতে জাম্প করুন (${DateUtil.toBengaliNumerals(ayahs.size)}টি আয়াত)",
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = primaryAccent
+                                        color = primaryAccent,
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Icon(
-                                        imageVector = Icons.Default.ArrowDropDown,
-                                        contentDescription = "আয়াত বাছাই করুন",
-                                        tint = primaryAccent,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-
-                            // Ayah selection dropdown menu
-                            DropdownMenu(
-                                expanded = showAyahDropdown,
-                                onDismissRequest = { showAyahDropdown = false },
-                                modifier = Modifier
-                                    .widthIn(min = 220.dp, max = 280.dp)
-                                    .heightIn(max = 360.dp)
-                                    .background(cardBgColor, RoundedCornerShape(16.dp))
-                                    .border(1.dp, cardBorderColor, RoundedCornerShape(16.dp))
-                            ) {
-                                Text(
-                                    text = "আয়াতে জাম্প করুন (${DateUtil.toBengaliNumerals(ayahs.size)}টি আয়াত)",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = primaryAccent,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                                )
-                                HorizontalDivider(color = cardBorderColor)
-                                ayahs.forEachIndexed { idx, item ->
-                                    val isSelected = idx == currentAyahIndex
-                                    DropdownMenuItem(
-                                        text = {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = "আয়াত ${DateUtil.toBengaliNumerals(item.numberInSurah)}",
-                                                    fontSize = 14.sp,
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                    color = if (isSelected) primaryAccent else textPrimary
-                                                )
-                                                if (isSelected) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Check,
-                                                        contentDescription = null,
-                                                        tint = primaryAccent,
-                                                        modifier = Modifier.size(16.dp)
+                                    HorizontalDivider(color = cardBorderColor)
+                                    ayahs.forEachIndexed { idx, item ->
+                                        val isSelected = idx == currentAyahIndex
+                                        DropdownMenuItem(
+                                            text = {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = "আয়াত ${DateUtil.toBengaliNumerals(item.numberInSurah)}",
+                                                        fontSize = 14.sp,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                        color = if (isSelected) primaryAccent else textPrimary
                                                     )
+                                                    if (isSelected) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Check,
+                                                            contentDescription = null,
+                                                            tint = primaryAccent,
+                                                            modifier = Modifier.size(16.dp)
+                                                        )
+                                                    }
+                                                }
+                                            },
+                                            onClick = {
+                                                showAyahDropdown = false
+                                                coroutineScope.launch {
+                                                    pagerState.scrollToPage(idx)
                                                 }
                                             }
-                                        },
-                                        onClick = {
-                                            showAyahDropdown = false
-                                            coroutineScope.launch {
-                                                pagerState.scrollToPage(idx)
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        // Next Button (আয়াত N+1 >)
-                        if (currentAyahIndex < ayahs.size - 1) {
-                            TextButton(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(
-                                            page = currentAyahIndex + 1,
-                                            animationSpec = tween(280)
                                         )
                                     }
-                                },
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    val nextAyahNum = ayahs[currentAyahIndex + 1].numberInSurah
-                                    Text(
-                                        text = "আয়াত ${DateUtil.toBengaliNumerals(nextAyahNum)}",
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = primaryAccent
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                        contentDescription = "পরবর্তী",
-                                        tint = primaryAccent,
-                                        modifier = Modifier.size(16.dp)
-                                    )
                                 }
                             }
-                        } else {
-                            Spacer(modifier = Modifier.width(72.dp))
+
+                            // Next Button (আয়াত N+1 >)
+                            if (currentAyahIndex < ayahs.size - 1) {
+                                TextButton(
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(
+                                                page = currentAyahIndex + 1,
+                                                animationSpec = tween(280)
+                                            )
+                                        }
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        val nextAyahNum = ayahs[currentAyahIndex + 1].numberInSurah
+                                        Text(
+                                            text = "আয়াত ${DateUtil.toBengaliNumerals(nextAyahNum)}",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = primaryAccent
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                            contentDescription = "পরবর্তী",
+                                            tint = primaryAccent,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            } else {
+                                Spacer(modifier = Modifier.width(72.dp))
+                            }
                         }
                     }
                 }
-            }
+            },
+            bottomBar = {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = headerBgColor,
+                    shadowElevation = 8.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.navigationBars)
+                            .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 36.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Play/Pause Audio Button
+                        Button(
+                            onClick = { viewModel.togglePlayPause(currentAyah, surahNumber) },
+                            colors = ButtonDefaults.buttonColors(containerColor = primaryAccent),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .weight(1.35f)
+                                .height(44.dp),
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (isThisAyahPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                    contentDescription = "অডিও প্লে",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = if (isThisAyahPlaying) "থামান" else "তিলাওয়াত শুনুন",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
 
-            // ================= 3. Horizontal Pager (Ayah Pages) =================
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Bookmark Button
+                        IconButton(
+                            onClick = { onToggleBookmark(currentAyah) },
+                            modifier = Modifier
+                                .size(42.dp)
+                                .background(
+                                    if (isCurrentBookmarked) primaryAccent.copy(alpha = 0.15f)
+                                    else cardBorderColor.copy(alpha = 0.5f),
+                                    CircleShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = if (isCurrentBookmarked) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
+                                contentDescription = "বুকমার্ক",
+                                tint = if (isCurrentBookmarked) primaryAccent else textSecondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(6.dp))
+
+                        // Copy Button
+                        IconButton(
+                            onClick = {
+                                val copyContent = buildString {
+                                    append(currentAyah.arabicText)
+                                    append("\n\n")
+                                    append(currentAyah.bengaliText)
+                                    if (!currentAyah.tafsirText.isNullOrBlank()) {
+                                        append("\n\nতাফসীর:\n")
+                                        append(
+                                            android.text.Html.fromHtml(
+                                                currentAyah.tafsirText,
+                                                android.text.Html.FROM_HTML_MODE_LEGACY
+                                            ).toString()
+                                        )
+                                    }
+                                    append("\n\n[সূরা $surahBanglaName : আয়াত ${currentAyah.numberInSurah}]")
+                                }
+                                clipboardManager.setText(AnnotatedString(copyContent))
+                                Toast.makeText(context, "আয়াত ও তাফসীর কপি করা হয়েছে", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier
+                                .size(42.dp)
+                                .background(cardBorderColor.copy(alpha = 0.5f), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "কপি",
+                                tint = primaryAccent,
+                                modifier = Modifier.size(19.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(6.dp))
+
+                        // Share Button
+                        IconButton(
+                            onClick = {
+                                val shareContent = buildString {
+                                    append(currentAyah.arabicText)
+                                    append("\n\n")
+                                    append(currentAyah.bengaliText)
+                                    if (!currentAyah.tafsirText.isNullOrBlank()) {
+                                        append("\n\nতাফসীর:\n")
+                                        append(
+                                            android.text.Html.fromHtml(
+                                                currentAyah.tafsirText,
+                                                android.text.Html.FROM_HTML_MODE_LEGACY
+                                            ).toString()
+                                        )
+                                    }
+                                    append("\n\n[সূরা $surahBanglaName : আয়াত ${currentAyah.numberInSurah}]")
+                                }
+                                val intent = Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    putExtra(Intent.EXTRA_TEXT, shareContent)
+                                    type = "text/plain"
+                                }
+                                context.startActivity(Intent.createChooser(intent, "আয়াত ও তাফসীর শেয়ার করুন"))
+                            },
+                            modifier = Modifier
+                                .size(42.dp)
+                                .background(cardBorderColor.copy(alpha = 0.5f), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "শেয়ার",
+                                tint = primaryAccent,
+                                modifier = Modifier.size(19.dp)
+                            )
+                        }
+                    }
+                }
+            },
+            containerColor = modalBgColor
+        ) { paddingValues ->
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
+                    .fillMaxSize()
+                    .padding(paddingValues),
                 verticalAlignment = Alignment.Top
             ) { page ->
                 val ayah = ayahs[page]
@@ -369,164 +514,195 @@ fun AyahTafsirDetailModal(
                     onOpenPhotoCard = { showPhotoCardDialog = true }
                 )
             }
+        }
 
-            // ================= 4. Bottom Sticky Action & Audio Bar =================
-            val isPlayingState by viewModel.isPlaying.collectAsState()
-            val currentPlayingAyahNum by viewModel.currentPlayingAyahNumber.collectAsState()
-            val isThisAyahPlaying = isPlayingState && currentPlayingAyahNum == currentAyah.numberInSurah
-            val isCurrentBookmarked = isBookmarked(currentAyah)
+        if (showPhotoCardDialog) {
+            val quickCardPost = remember(currentAyah, surahBanglaName) {
+                com.example.utils.PhotoCardBridge.fromAyah(currentAyah, surahBanglaName).toShortPost()
+            }
+            com.example.ui.screens.PhotoCardCustomizerDialog(
+                post = quickCardPost,
+                onDismiss = { showPhotoCardDialog = false }
+            )
+        }
+    }
+}
 
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = headerBgColor,
-                shadowElevation = 8.dp
+private fun parseTafsirSections(rawText: String?, defaultNames: List<String>): List<Pair<String, String>> {
+    if (rawText.isNullOrBlank()) return emptyList()
+
+    val boldPattern = Regex("<b>(.*?)</b><br>(.*?)(?=(<b>.*?</b><br>|$))", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
+    val matches = boldPattern.findAll(rawText).toList()
+
+    if (matches.isNotEmpty()) {
+        return matches.map { match ->
+            val title = match.groupValues[1].trim()
+            val body = match.groupValues[2].trim()
+            Pair(title, body)
+        }
+    }
+
+    val primaryTitle = if (defaultNames.isNotEmpty()) defaultNames.first() else "তাফসীর আল-মুয়াসসার"
+    return listOf(Pair(primaryTitle, rawText))
+}
+
+@Composable
+private fun CollapsibleTafsirCard(
+    tafsirTitle: String,
+    rawContent: String?,
+    isResolving: Boolean,
+    tafsirResult: QuranRepository.TafsirResult?,
+    cardBgColor: Color,
+    cardBorderColor: Color,
+    primaryAccent: Color,
+    textPrimary: Color,
+    textSecondary: Color,
+    bengaliFontSize: Float,
+    bengaliFont: androidx.compose.ui.text.font.FontFamily?,
+    onRetry: () -> Unit,
+    onOpenPhotoCard: () -> Unit,
+    initiallyExpanded: Boolean = true
+) {
+    var isExpanded by remember { mutableStateOf(initiallyExpanded) }
+    val parsedAnnotated = remember(rawContent, primaryAccent) {
+        rawContent?.parseHtmlToAnnotatedString(primaryAccent)
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(2.dp, RoundedCornerShape(18.dp)),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = cardBgColor),
+        border = BorderStroke(1.dp, cardBorderColor)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Header Row (Accordion Clickable)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { isExpanded = !isExpanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
                 ) {
-                    // Play/Pause Audio Button
-                    Button(
-                        onClick = { viewModel.togglePlayPause(currentAyah, surahNumber) },
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryAccent),
-                        shape = RoundedCornerShape(14.dp),
+                    Box(
                         modifier = Modifier
-                            .weight(1.3f)
-                            .height(48.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp)
+                            .size(6.dp, 18.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(Color(0xFF059669))
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = tafsirTitle,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = primaryAccent,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = if (isExpanded) "সংক্ষিপ্ত করুন" else "বিস্তারিত দেখুন",
+                        fontSize = 11.sp,
+                        color = textSecondary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (isExpanded) "সংক্ষিপ্ত করুন" else "বিস্তারিত দেখুন",
+                        tint = primaryAccent,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+                    HorizontalDivider(color = cardBorderColor.copy(alpha = 0.6f))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (parsedAnnotated != null && parsedAnnotated.isNotEmpty()) {
+                        Text(
+                            text = parsedAnnotated,
+                            fontSize = bengaliFontSize.sp,
+                            lineHeight = (bengaliFontSize * 1.65f).sp,
+                            fontFamily = bengaliFont,
+                            color = textPrimary,
+                            textAlign = TextAlign.Justify,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else if (isResolving) {
+                        MinimalTafsirLoadingIndicator(
+                            text = "তাফসীর লোড হচ্ছে...",
+                            subText = "অনলাইন বা সংরক্ষিত ক্যাশ থেকে তাফসীর সংগ্রহ করা হচ্ছে..."
+                        )
+                    } else {
+                        when (tafsirResult) {
+                            is QuranRepository.TafsirResult.NoInternet -> {
+                                MinimalTafsirFallbackCard(
+                                    type = TafsirFallbackType.NO_INTERNET,
+                                    onAction = onRetry
+                                )
+                            }
+                            is QuranRepository.TafsirResult.NoTafsirSelected -> {
+                                MinimalTafsirFallbackCard(
+                                    type = TafsirFallbackType.NO_TAFSIR_SELECTED
+                                )
+                            }
+                            else -> {
+                                MinimalTafsirFallbackCard(
+                                    type = TafsirFallbackType.NOT_FOUND,
+                                    onAction = onRetry
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    OutlinedButton(
+                        onClick = onOpenPhotoCard,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, primaryAccent.copy(alpha = 0.5f))
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Icon(
-                                imageVector = if (isThisAyahPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = "অডিও প্লে",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                                imageVector = Icons.Default.Palette,
+                                contentDescription = "ফটো কার্ড তৈরি করুন",
+                                tint = primaryAccent,
+                                modifier = Modifier.size(18.dp)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (isThisAyahPlaying) "থামান" else "তিলাওয়াত শুনুন",
+                                text = "এই আয়াতের ফটো কার্ড তৈরি করুন",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = primaryAccent
                             )
                         }
-                    }
-
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    // Bookmark Button
-                    IconButton(
-                        onClick = { onToggleBookmark(currentAyah) },
-                        modifier = Modifier
-                            .size(46.dp)
-                            .background(
-                                if (isCurrentBookmarked) primaryAccent.copy(alpha = 0.15f)
-                                else cardBorderColor.copy(alpha = 0.5f),
-                                CircleShape
-                            )
-                    ) {
-                        Icon(
-                            imageVector = if (isCurrentBookmarked) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
-                            contentDescription = "বুকমার্ক",
-                            tint = if (isCurrentBookmarked) primaryAccent else textSecondary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    // Copy Button
-                    IconButton(
-                        onClick = {
-                            val copyContent = buildString {
-                                append(currentAyah.arabicText)
-                                append("\n\n")
-                                append(currentAyah.bengaliText)
-                                if (!currentAyah.tafsirText.isNullOrBlank()) {
-                                    append("\n\nতাফসীর:\n")
-                                    append(
-                                        android.text.Html.fromHtml(
-                                            currentAyah.tafsirText,
-                                            android.text.Html.FROM_HTML_MODE_LEGACY
-                                        ).toString()
-                                    )
-                                }
-                                append("\n\n[সূরা $surahBanglaName : আয়াত ${currentAyah.numberInSurah}]")
-                            }
-                            clipboardManager.setText(AnnotatedString(copyContent))
-                            Toast.makeText(context, "আয়াত ও তাফসীর কপি করা হয়েছে", Toast.LENGTH_SHORT).show()
-                        },
-                        modifier = Modifier
-                            .size(46.dp)
-                            .background(cardBorderColor.copy(alpha = 0.5f), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ContentCopy,
-                            contentDescription = "কপি",
-                            tint = primaryAccent,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    // Share Button
-                    IconButton(
-                        onClick = {
-                            val shareContent = buildString {
-                                append(currentAyah.arabicText)
-                                append("\n\n")
-                                append(currentAyah.bengaliText)
-                                if (!currentAyah.tafsirText.isNullOrBlank()) {
-                                    append("\n\nতাফসীর:\n")
-                                    append(
-                                        android.text.Html.fromHtml(
-                                            currentAyah.tafsirText,
-                                            android.text.Html.FROM_HTML_MODE_LEGACY
-                                        ).toString()
-                                    )
-                                }
-                                append("\n\n[সূরা $surahBanglaName : আয়াত ${currentAyah.numberInSurah}]")
-                            }
-                            val intent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_TEXT, shareContent)
-                                type = "text/plain"
-                            }
-                            context.startActivity(Intent.createChooser(intent, "আয়াত ও তাফসীর শেয়ার করুন"))
-                        },
-                        modifier = Modifier
-                            .size(46.dp)
-                            .background(cardBorderColor.copy(alpha = 0.5f), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "শেয়ার",
-                            tint = primaryAccent,
-                            modifier = Modifier.size(20.dp)
-                        )
                     }
                 }
             }
         }
-    }
-}
-
-    if (showPhotoCardDialog) {
-        val quickCardPost = remember(currentAyah, surahBanglaName) {
-            com.example.utils.PhotoCardBridge.fromAyah(currentAyah, surahBanglaName).toShortPost()
-        }
-        com.example.ui.screens.PhotoCardCustomizerDialog(
-            post = quickCardPost,
-            onDismiss = { showPhotoCardDialog = false }
-        )
     }
 }
 
@@ -575,10 +751,6 @@ private fun AyahTafsirPageContent(
     val activeTafsirRaw = (tafsirResult as? QuranRepository.TafsirResult.Success)?.tafsirText
         ?: ayah.tafsirText
 
-    val parsedTafsir = remember(activeTafsirRaw) {
-        activeTafsirRaw?.parseHtmlToAnnotatedString(primaryAccent)
-    }
-
     val arabicFont = com.example.ui.theme.getArabicFont(arabicFontName)
     val bengaliFont = com.example.ui.theme.getBengaliFont(bengaliFontName)
 
@@ -590,28 +762,31 @@ private fun AyahTafsirPageContent(
         }
     }
 
+    val tafsirSections = remember(activeTafsirRaw, selectedTafsirNames) {
+        parseTafsirSections(activeTafsirRaw, selectedTafsirNames)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 10.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // ================= Card 1: সম্পূর্ণ আরবি আয়াত =================
+        // ================= Card 1: সম্পূর্ণ আরবি আয়াত (100% Width) =================
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .shadow(2.dp, RoundedCornerShape(20.dp)),
-            shape = RoundedCornerShape(20.dp),
+                .shadow(2.dp, RoundedCornerShape(18.dp)),
+            shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = cardBgColor),
             border = BorderStroke(1.dp, cardBorderColor)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
+                    .padding(16.dp)
             ) {
-                // Header badge of Arabic Ayah
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -648,9 +823,8 @@ private fun AyahTafsirPageContent(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                // Full Arabic Verse
                 val formattedArabic = remember(ayah.arabicText, showTajweed, arabicFontName, arabicFontSize) {
                     if (showTajweed) {
                         IndoPakTajweedParser.parseIndoPakTajweed(
@@ -684,19 +858,19 @@ private fun AyahTafsirPageContent(
             }
         }
 
-        // ================= Card 2: বাংলা অনুবাদ =================
+        // ================= Card 2: বাংলা অনুবাদ (100% Width) =================
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .shadow(2.dp, RoundedCornerShape(20.dp)),
-            shape = RoundedCornerShape(20.dp),
+                .shadow(2.dp, RoundedCornerShape(18.dp)),
+            shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = cardBgColor),
             border = BorderStroke(1.dp, cardBorderColor)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
+                    .padding(16.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -755,142 +929,46 @@ private fun AyahTafsirPageContent(
             }
         }
 
-        // ================= Card 3: বিস্তারিত তাফসীর =================
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(2.dp, RoundedCornerShape(20.dp)),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = cardBgColor),
-            border = BorderStroke(1.dp, cardBorderColor)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
-            ) {
-                // Tafsir Title Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp, 18.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(Color(0xFF059669))
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "তাফসীর",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            color = PrimaryGreen
-                        )
-                    }
-
-                    if (selectedTafsirNames.isNotEmpty()) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = PrimaryGreen.copy(alpha = 0.1f)
-                        ) {
-                            Text(
-                                text = selectedTafsirNames.firstOrNull() ?: "",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = PrimaryGreen,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Tafsir content
-                if (parsedTafsir != null && parsedTafsir.isNotEmpty()) {
-                    Text(
-                        text = parsedTafsir,
-                        fontSize = (bengaliFontSize).sp,
-                        lineHeight = (bengaliFontSize * 1.65f).sp,
-                        color = textPrimary,
-                        textAlign = TextAlign.Justify,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                } else if (isTafsirResolving) {
-                    MinimalTafsirLoadingIndicator(
-                        text = "তাফসীর লোড হচ্ছে...",
-                        subText = "অনলাইন বা সংরক্ষিত ক্যাশ থেকে তাফসীর সংগ্রহ করা হচ্ছে..."
-                    )
-                } else {
-                    when (tafsirResult) {
-                        is QuranRepository.TafsirResult.NoInternet -> {
-                            MinimalTafsirFallbackCard(
-                                type = TafsirFallbackType.NO_INTERNET,
-                                onAction = { retryTrigger++ }
-                            )
-                        }
-                        is QuranRepository.TafsirResult.NoTafsirSelected -> {
-                            MinimalTafsirFallbackCard(
-                                type = TafsirFallbackType.NO_TAFSIR_SELECTED
-                            )
-                        }
-                        is QuranRepository.TafsirResult.NotFound -> {
-                            MinimalTafsirFallbackCard(
-                                type = TafsirFallbackType.NOT_FOUND,
-                                onAction = { retryTrigger++ }
-                            )
-                        }
-                        is QuranRepository.TafsirResult.Error -> {
-                            val err = (tafsirResult as QuranRepository.TafsirResult.Error).message
-                            MinimalTafsirFallbackCard(
-                                type = TafsirFallbackType.ERROR,
-                                message = err,
-                                onAction = { retryTrigger++ }
-                            )
-                        }
-                        else -> {
-                            MinimalTafsirFallbackCard(
-                                type = TafsirFallbackType.NOT_FOUND,
-                                onAction = { retryTrigger++ }
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Photo Card Shortcut button inside Tafsir section
-                OutlinedButton(
-                    onClick = onOpenPhotoCard,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, primaryAccent.copy(alpha = 0.5f))
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Palette,
-                            contentDescription = "ফটো কার্ড তৈরি করুন",
-                            tint = primaryAccent,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "এই আয়াতের ফটো কার্ড তৈরি করুন",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = primaryAccent
-                        )
-                    }
-                }
+        // ================= Card 3+: বিস্তারিত কলাপ্সিবল তাফসীরসমূহ (100% Width) =================
+        if (tafsirSections.isNotEmpty()) {
+            tafsirSections.forEachIndexed { idx, pair ->
+                CollapsibleTafsirCard(
+                    tafsirTitle = pair.first,
+                    rawContent = pair.second,
+                    isResolving = isTafsirResolving,
+                    tafsirResult = tafsirResult,
+                    cardBgColor = cardBgColor,
+                    cardBorderColor = cardBorderColor,
+                    primaryAccent = primaryAccent,
+                    textPrimary = textPrimary,
+                    textSecondary = textSecondary,
+                    bengaliFontSize = bengaliFontSize,
+                    bengaliFont = bengaliFont,
+                    onRetry = { retryTrigger++ },
+                    onOpenPhotoCard = onOpenPhotoCard,
+                    initiallyExpanded = (idx == 0)
+                )
             }
+        } else {
+            val primaryTitle = if (selectedTafsirNames.isNotEmpty()) selectedTafsirNames.first() else "তাফসীর আল-মুয়াসসার"
+            CollapsibleTafsirCard(
+                tafsirTitle = primaryTitle,
+                rawContent = activeTafsirRaw,
+                isResolving = isTafsirResolving,
+                tafsirResult = tafsirResult,
+                cardBgColor = cardBgColor,
+                cardBorderColor = cardBorderColor,
+                primaryAccent = primaryAccent,
+                textPrimary = textPrimary,
+                textSecondary = textSecondary,
+                bengaliFontSize = bengaliFontSize,
+                bengaliFont = bengaliFont,
+                onRetry = { retryTrigger++ },
+                onOpenPhotoCard = onOpenPhotoCard,
+                initiallyExpanded = true
+            )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

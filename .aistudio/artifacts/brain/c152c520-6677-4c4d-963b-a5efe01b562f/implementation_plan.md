@@ -1,27 +1,42 @@
-# Implementation Plan - Ayah Detail Modal Fullscreen & Padding Fix
+# Implementation Plan - Ayah Detail Modal UI Fixes, Full-Width Cards, Collapsible Tafsirs & Multiple Tafsirs
 
-Fix the top margin/padding and hide background elements in the newly created Ayah Detail Modal, as well as hiding the bottom audio player layer while the modal is open.
+Address the bottom action bar clipping issue, expand cards to 100% full width, implement collapsible accordion Tafsir cards, and render all selected Tafsirs sequentially for the active Ayah.
 
-## User Requirements & Decisions
-1. **Top Area:** Fullscreen display that completely covers the main app bar ("কুরআন রিডার") and extends cleanly across the status bar area without extra top margin/padding.
-2. **Bottom Area:** Remove extra footer padding and hide the bottom floating audio player layer whenever the detail modal is visible.
-
----
+## User Requirements
+1. **Fix Bottom Action Bar Clipping:**
+   - Ensure "তিলাওয়াত শুনুন", Bookmark, Copy, Share, and Photo Card buttons are completely visible and well-padded above the system navigation/gesture bar without clipping or extending off-screen.
+2. **Full-Width Cards (100% Width):**
+   - Stretch the Ayah Header Card, Bengali Translation Card, and Tafsir Cards to 100% container width (`fillMaxWidth()`) with clean edge alignment.
+3. **Collapsible Accordion Tafsir Cards:**
+   - Display each Tafsir in its own collapsible accordion card with an expand/collapse toggle header ("তাফসীর [নাম]", arrow indicator, character count or preview).
+4. **Multiple Selected Tafsirs Support:**
+   - Retrieve and render all user-selected Tafsirs sequentially for the current Ayah so users can read multiple commentary sources side-by-side.
 
 ## Proposed Changes
 
-### 1. `app/src/main/java/com/example/ui/components/AyahTafsirDetailModal.kt`
-- Configure `DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)` so the modal window covers 100% of the screen.
-- Set the top-level container background to full opaque surface color so the underlying main screen top bar does not show through.
-- Remove redundant top status bar padding / margin in the top navigation row (`Surah` & `Ayah` selector header bar).
-- Clean up bottom navigation bar inset and footer padding.
+### 1. `AyahTafsirDetailModal.kt` - Layout & Inset Fix
+- Update `Column` structure inside `Dialog`:
+  - `Column(modifier = Modifier.fillMaxSize().navigationBarsPadding().imePadding())`
+  - Ensure `HorizontalPager` uses `Modifier.weight(1f).fillMaxWidth()`.
+  - Fix bottom action bar `Surface`: apply `navigationBarsPadding()` on the container surface and reduce button height slightly (e.g., 44.dp - 46.dp) with `contentPadding` to prevent text truncation ("তিলাওয়াত শুনুন").
 
-### 2. `app/src/main/java/com/example/ui/screens/SurahDetailScreen.kt`
-- Condition the rendering/visibility of the bottom floating audio player (`FloatingAudioPlayer`) so that it is hidden when `selectedAyahDetailIndex != null` (modal is open).
+### 2. `AyahTafsirDetailModal.kt` - Full Width & Accordion Cards
+- Modify `AyahTafsirPageContent`:
+  - Update card padding to use `fillMaxWidth()` with consistent screen margins (e.g., `padding(horizontal = 12.dp)`).
+  - Create `CollapsibleTafsirCard` composable:
+    - Displays Tafsir Title (e.g., "তাফসীর আল-মুয়াসসার", "তাফসীর ইবনে কাসীর").
+    - Includes expand/collapse state (`var isExpanded by remember { mutableStateOf(true) }`).
+    - Header row with expand icon (`KeyboardArrowUp` / `KeyboardArrowDown`).
+    - Smooth `AnimatedVisibility` for expanding/collapsing Tafsir body text.
 
----
+### 3. Multiple Tafsirs Integration (`SurahDetailViewModel.kt` / `AyahTafsirDetailModal.kt`)
+- Pass all selected Tafsir IDs / names into `AyahTafsirDetailModal`.
+- Load Tafsir content for each selected Tafsir ID asynchronously or from cache/database.
+- Loop over all selected Tafsir items to render a stack of `CollapsibleTafsirCard` components for the active Ayah.
 
 ## Verification Plan
-1. Run `compile_applet` to ensure zero compilation or build errors.
-2. Verify that opening the Ayah detail modal covers the top bar completely and removes unnecessary padding at top and bottom.
-3. Confirm that the bottom audio player is hidden when the detail modal is open.
+1. Open Ayah Detail Modal from any Ayah card.
+2. Verify bottom action bar ("তিলাওয়াত শুনুন", Bookmark, Copy, Share) is fully visible above system navigation bar without cutoff.
+3. Verify cards take full width (100%).
+4. Verify each Tafsir card collapses and expands smoothly when clicked.
+5. Select multiple Tafsirs in Settings and verify all selected Tafsirs render sequentially in individual collapsible accordion cards.

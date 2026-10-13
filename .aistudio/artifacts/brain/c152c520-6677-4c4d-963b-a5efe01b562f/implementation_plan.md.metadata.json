@@ -1,6 +1,6 @@
 {
-  "summary": "Implementation plan for removing extra top/bottom padding and hiding the bottom audio player in the Ayah Tafsir Detail Modal.",
-  "updatedAt": "2026-10-13T05:25:53.002016292Z",
+  "summary": "Implementation plan to fix bottom action bar clipping, make cards full-width (100%), add collapsible accordion Tafsir cards, and support displaying all selected Tafsirs sequentially.",
+  "updatedAt": "2026-10-13T10:22:18.373299098Z",
   "requestFeedback": true,
   "userFacing": true
 }
