@@ -496,6 +496,10 @@ class SurahDetailViewModel(
         }
     }
 
+    suspend fun resolveAyahTafsir(surahNumber: Int, ayahNumberInSurah: Int): com.example.data.repository.QuranRepository.TafsirResult {
+        return repository.getAyahTafsirResult(surahNumber, ayahNumberInSurah)
+    }
+
     fun updateLastReadAyah(ayahNumber: Int) {
         lastVisibleAyahNumber = ayahNumber
     }

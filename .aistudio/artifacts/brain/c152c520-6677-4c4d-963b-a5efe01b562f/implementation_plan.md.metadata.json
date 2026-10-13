@@ -1,6 +1,6 @@
 {
-  "summary":  "Implementation plan to calibrate Bangladesh base Hijri calendar calculation so that 0 (স্বাভাবিক) displays today's real date (২৯ রবিউস সানী) across the app and popup dialog.",
-  "updatedAt":  "2026-10-12T03:34:39.873524339Z",
-  "requestFeedback":  true,
-  "userFacing":  true
+  "summary": "আয়াত কার্ডে ক্লিক করলে ডানে-বামে সোয়াইপযোগ্য সম্পূর্ণ আরবি আয়াত, বাংলা অনুবাদ এবং বিস্তারিত তাফসীর সম্বলিত ফুল-স্ক্রিন মডাল পেজের বাস্তবায়ন পরিকল্পনা।",
+  "updatedAt": "2026-10-13T01:57:54.697403285Z",
+  "requestFeedback": true,
+  "userFacing": true
 }

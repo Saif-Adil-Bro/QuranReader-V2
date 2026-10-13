@@ -346,6 +346,7 @@ fun SurahDetailScreen(
                     val coroutineScope = rememberCoroutineScope()
                     var searchQuery by remember { mutableStateOf("") }
                     var highlightedAyahNumber by remember { mutableStateOf<Int?>(null) }
+                    var selectedAyahDetailIndex by remember { mutableStateOf<Int?>(null) }
                     
                     val effectiveInitialAyah = remember(surahNumber, isJuz, initialAyah) {
                         if (initialAyah > 0) {
@@ -605,6 +606,7 @@ fun SurahDetailScreen(
                             ) { ayah ->
                                 val isAyahPlaying = isPlaying && currentPlayingAyahNumber == ayah.numberInSurah
                                 val isBookmarked = bookmarkList.any { it.type == "AYAH" && it.referenceId == ayah.number }
+                                val ayahItemIndex = displayedData.indexOf(ayah)
                                 AyahCard(
                                     ayah = ayah,
                                     viewMode = pageViewMode,
@@ -626,7 +628,10 @@ fun SurahDetailScreen(
                                     arabicLineSpacing = arabicLineSpacing,
                                     selectedTafsirNames = selectedTafsirNames,
                                     isTafsirLoading = isTafsirSyncing,
-                                    onRetryTafsir = { viewModel.retrySyncTafsir(activeSurahNumber) }
+                                    onRetryTafsir = { viewModel.retrySyncTafsir(activeSurahNumber) },
+                                    onCardClick = {
+                                        selectedAyahDetailIndex = if (ayahItemIndex >= 0) ayahItemIndex else 0
+                                    }
                                 )
                             }
                         }
@@ -742,16 +747,39 @@ fun SurahDetailScreen(
                                 ViewModeToggle(stringResource(R.string.tab_tafsir), Icons.Outlined.Info, currentMode == ViewMode.TAFSIR) { 
                                     coroutineScope.launch { pagerState.animateScrollToPage(pageOrder.indexOf(ViewMode.TAFSIR)) } 
                                 }
-                                ViewModeToggle(stringResource(R.string.tab_mushaf), Icons.Outlined.MenuBook, currentMode == ViewMode.MUSHAF) { 
-                                    coroutineScope.launch { pagerState.animateScrollToPage(pageOrder.indexOf(ViewMode.MUSHAF)) } 
+
+                    // Ayah Tafsir & Translation Full-Screen Detail Modal
+                    val currentModalAyahIndex = selectedAyahDetailIndex
+                    if (currentModalAyahIndex != null) {
+                        com.example.ui.components.AyahTafsirDetailModal(
+                            ayahs = displayedData,
+                            initialAyahIndex = currentModalAyahIndex,
+                            surahNumber = activeSurahNumber,
+                            viewModel = viewModel,
+                            showTajweed = showTajweed,
+                            arabicFontSize = arabicFontSize,
+                            bengaliFontSize = bengaliFontSize,
+                            arabicFontName = arabicFontName,
+                            bengaliFontName = bengaliFontName,
+                            selectedTafsirNames = selectedTafsirNames,
+                            isBookmarked = { item -> bookmarkList.any { it.type == "AYAH" && it.referenceId == item.number } },
+                            onToggleBookmark = { item -> viewModel.toggleBookmark(item, activeSurahNumber) },
+                            onDismiss = { lastPageIndex ->
+                                selectedAyahDetailIndex = null
+                                val headerCount = if (activeSurahNumber != 1 && activeSurahNumber != 9 && !isStandalone) 2 else 1
+                                coroutineScope.launch {
+                                    currentListState.animateScrollToItem((lastPageIndex + headerCount).coerceAtLeast(0))
                                 }
                             }
-                        }
+                        )
+                    }
                 }
             }
         }
         
         }
+
+
         if (showPlayerBottomSheet) {
             ModalBottomSheet(
                 onDismissRequest = { showPlayerBottomSheet = false },
@@ -1090,7 +1118,8 @@ fun AyahCard(
     arabicLineSpacing: Float = 2.0f,
     selectedTafsirNames: List<String> = emptyList(),
     isTafsirLoading: Boolean = false,
-    onRetryTafsir: () -> Unit = {}
+    onRetryTafsir: () -> Unit = {},
+    onCardClick: () -> Unit = {}
 ) {
     var showTafsirDialog by remember { mutableStateOf(false) }
     var showMoreMenu by remember { mutableStateOf(false) }
@@ -1201,6 +1230,7 @@ fun AyahCard(
             .shadow(2.dp, RoundedCornerShape(20.dp))
             .background(if (isCardHighlighted) PrimaryGreen.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface, RoundedCornerShape(20.dp))
             .border(if (isCardHighlighted) 1.5.dp else 0.dp, if (isCardHighlighted) PrimaryGreen else MaterialTheme.colorScheme.surface, RoundedCornerShape(20.dp))
+            .clickable { onCardClick() }
             .padding(20.dp)
     ) {
         Column {

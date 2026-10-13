@@ -1,82 +1,118 @@
-# Implementation Plan: Bangladesh Real Hijri Date Alignment for Default (0) Offset
+# সম্পূর্ণ তাফসীর ও অনুবাদ ডিটেইলস ফুল মডাল পেজ
 
-Calibrate the core Hijri calendar calculation in `HijriCalendarUtil` so that the default zero offset (`০ দিন স্বাভাবিক`) accurately displays Bangladesh's real Islamic lunar date (**২৯ রবিউস সানী ১৪৪৮**) instead of the astronomical ICU civil calendar's lagging date (**২৮ রবিউস সানী**).
+তাফসীর ও অনুবাদ পেজে (সূরা ডিটেইল স্ক্রিন) যেকোনো আয়াত কার্ডে ক্লিক করলে একটি আধুনিক, আধ্যাত্মিক ও মার্জিত ফুল-স্ক্রিন মডাল পেজ ওপেন হবে—যেখানে ব্যবহারকারী ডানে-বামে মসৃণ সোয়াইপ (HorizontalPager) এবং শীর্ষ নেভিগেশন বারের মাধ্যমে যেকোনো আয়াতের আরবি টেক্সট, বাংলা অনুবাদ এবং বিস্তারিত তাফসীর পূর্ণাঙ্গভাবে অধ্যয়ন করতে পারবেন।
 
 ---
 
-### User Review & Critical Decisions
+## User Review & Critical Decisions
 
 > [!IMPORTANT]
-> The user confirmed the following requirements:
-> 1. **স্বাভাবিক (০) অফসেটের তারিখ:** বাংলাদেশের বর্তমান বাস্তব তারিখ **২৯ রবিউস সানী** হতে হবে।
-> 2. **পপআপ ডায়ালগের ডিফল্ট নির্বাচন:** পপআপ ডায়ালগ খোলার সময় সবসময় **স্বাভাবিক (০)** অফসেট নির্বাচিত থাকবে এবং এটি শুরুতেই রিয়েল তারিখ (২৯ রবিউস সানী) প্রদর্শন করবে।
-
-- **Confirmed Decision 1**: Calibrate the base Hijri calendar calculation in `HijriCalendarUtil.kt` by applying Bangladesh's standard local lunar alignment (`+1` day base offset against ICU's astronomical civil computation).
-- **Confirmed Decision 2**: Ensure that when offset is `0` (স্বাভাবিক), the date is **২৯ রবিউস সানী ১৪৪৮**, giving users the accurate date out-of-the-box without requiring manual adjustments.
-- **Confirmed Decision 3**: Retain full manual adjustment range (`-2, -1, 0, +1, +2`) in `ModernHijriAdjustmentDialog` and Settings so users can still adapt to any local crescent sighting variations.
+> ব্যবহারকারীর সাথে প্রশ্নোত্তর পর্বে নিশ্চিত হওয়া সিদ্ধান্তসমূহ:
+> 1. **আয়াতের মূল বিষয়বস্তু:** শব্দে শব্দে আলাদা করার পরিবর্তে ব্যবহারকারীর অনুরোধ অনুযায়ী **সম্পূর্ণ আরবি আয়াত**, তার নিচে **বাংলা অনুবাদ** এবং এর নিচে **পূর্ণাঙ্গ তাফসীর সেকশন** প্রদর্শিত হবে।
+> 2. **ট্রিগার ইন্টারঅ্যাকশন:** আয়াত কার্ডের যেকোনো অংশে ক্লিক করলেই সংশ্লিষ্ট আয়াতের জন্য এই ফুল মডাল স্ক্রিন ওপেন হবে।
+> 3. **নেভিগেশন ব্যবস্থা:** স্ক্রিনে ডানে-বামে অঙ্গুলির স্পর্শে মসৃণ সোয়াইপ (Swipe Gesture)-এর পাশাপাশি শীর্ষ হেডারে পূর্ববর্তী ও পরবর্তী বাটন (`< আয়াত ২`, `আয়াত ৪ >`) এবং মাঝে সূরা ও আয়াত ড্রপডাউন/সিলেক্টর (`সূরা আল ফাতিহা - আয়াত ৩ ⌄`) বিদ্যমান থাকবে।
 
 ---
 
-### 1. Overview & Root Cause Analysis
+## 1. Overview & Core Concept
 
-- **Why was 'স্বাভাবিক (০)' showing ২৮ রবিউস সানী?**
-  - Android's `android.icu.util.IslamicCalendar()` computes dates using astronomical civil moon conjunctions (Umm al-Qura / astronomical standard).
-  - In Bangladesh and the Indian Subcontinent, the Islamic calendar is strictly established by Islamic Foundation Bangladesh (জাতীয় চাঁদ দেখা কমিটি) via physical crescent sighting, which occurs approximately 1 day later than astronomical conjunction.
-  - Consequently, raw ICU calculation without regional calibration produced **২৮ রবিউস সানী** on Sunday, 11 October 2026, while the real date in Bangladesh was **২৯ রবিউস সানী**.
-  - Users previously had to manually apply a `+1` offset in Settings just to see the real date.
-- **The Solution**:
-  - Introduce `BASE_BANGLADESH_OFFSET = 1` into `HijriCalendarUtil.calculateHijriDate`.
-  - When `offsetDays = 0` (স্বাভাবিক), the effective offset is aligned to Bangladesh's calendar, yielding **২৯ রবিউস সানী**.
-  - The dialog opens with `০ দিন (স্বাভাবিক)` selected, immediately showing **২৯ রবিউস সানী ১৪৪৮ হিজরী**.
+- **মূল উদ্দেশ্য:** কোরআন পাঠকদের জন্য প্রতিটি আয়াতের তাফসীর ও অনুবাদ অত্যন্ত গভীরভাবে, কোনো প্রকার বিভ্রান্তি ছাড়া এক নজরে পড়া ও অধ্যয়ন করার একটি প্রিমিয়াম "আয়াত ডিটেইলস ও তাফসীর রিডার" অভিজ্ঞতা প্রদান করা।
+- **রেফারেন্স ডিজাইন:** ব্যবহারকারীর সরবরাহকৃত স্ক্রিনশটের আদলে উপরে স্টিকি নেভিগেশন বার, মাঝে স্পষ্ট উসমানি আরবি টেক্সট ও প্রাঞ্জল বাংলা অনুবাদ, এবং নিচে কার্ড আকারে গোছানো তাফসীর সেকশন (যেমন: তাফসীর আহসানুল বয়ান, তাফসীর আবু বকর যাকারিয়া, ইত্যাদি)।
+- **মূল সুবিধা:**
+  - ডানে-বামে সোয়াইপ করলেই স্বয়ংক্রিয়ভাবে পরবর্তী বা পূর্ববর্তী আয়াতের তাফসীর লোড হবে।
+  - একাধিক তাফসীর থাকলে তাফসীর ড্রপডাউন/সিলেকশন থেকে তাফসীর পরিবর্তন করার সুবিধা।
+  - আয়াতের অডিও সরাসরি ডিটেইল পেজ থেকেও শোনার ব্যবস্থা।
 
 ---
 
-### 2. User Experience & Visual Design
+## 2. User Experience & Visual Design
 
-- **ModernHijriAdjustmentDialog Preview at 0 Offset**:
-  - *Gregorian Date*: `রবিবার, ১১ অক্টোবর ২০২৬`
-  - *Hijri Date Display*: `২৯ রবিউস সানী ১৪৪৮ হিজরী` (Arabic: `29 ربيع الثاني 1448 هـ`)
-  - *Selected Pill*: `স্বাভাবিক (০)`
-  - *Stepper Display*: `০ দিন (স্বাভাবিক)`
-- **Interactive Adjustments**:
-  - If user selects `-১ দিন`: shows `২৮ রবিউস সানী`
-  - If user selects `০ দিন (স্বাভাবিক)`: shows `২৯ রবিউস সানী` (Real current date)
-  - If user selects `+১ দিন`: shows `৩০ রবিউস সানী`
-- **Application-wide Consistency**:
-  - Home screen hero waqt card, top bar calendar indicator, prayer times sheet, and monthly grid will all show the real Bangladesh date by default.
+### User Flow
+1. **প্রবেশ:** ব্যবহারকারী সূরা ডিটেইল পেজে স্ক্রোল করার সময় যেকোনো আয়াত কার্ডে ক্লিক করবেন।
+2. **ওপেন:** সাথে সাথে নিচ থেকে একটি স্মুথ ট্রানজিশন সহ "তাফসীর ও অনুবাদ ডিটেইলস পেজ" ওপেন হবে।
+3. **অধ্যয়ন:** 
+   - স্ক্রিনের কেন্দ্রে সুন্দর ব্যাকগ্রাউন্ড ও কার্ভড বর্ডারের মধ্যে আরবি আয়াত এবং বাংলা অনুবাদ ভেসে উঠবে।
+   - নিচে তাফসীর কার্ডে বিস্তৃত ব্যাখ্যা ও হাদিসের রেফারেন্স সহজে পড়া যাবে।
+4. **নেভিগেশন:**
+   - ডানে বা বামে সোয়াইপ করলে পেজার অ্যানিমেশনের মাধ্যমে পরবর্তী আয়াতে চলে যাবে।
+   - শীর্ষ বারের ড্রপডাউন বোতামে ট্যাপ করে নির্দিষ্ট আয়াতে জাম্প করা যাবে।
+   - বামের ব্যাক আইকন (`<`) ট্যাপ করলে মূল পেজে ফিরে আসবে এবং সেখানেও সেই আয়াতটি স্ক্রিনের ফোকাসে থাকবে।
+
+### Visual Identity & Theme
+- **থিম ও রঙের বিন্যাস:**
+  - ডার্ক থিম: কালচে সবুজ ও কালো গ্রাডিয়েন্ট ব্যাকগ্রাউন্ড (`#0B1512` / `#05100C`), সোনালি ও পান্না সবুজ অ্যাকসেন্ট (`PrimaryGreen = #10B981` / `#059669`)।
+  - লাইট থিম: প্রশান্তিময় মিন্ট হোয়াইট ও সফট সেপিয়া সারফেস।
+- **টাইপোগ্রাফি:**
+  - আরবি: KFGQPC হাফস / মে কোরআন / আমীরী ফন্ট (উপযুক্ত লাইন-হাইট ও কার্নিং সহ)।
+  - বাংলা: সোলায়মান লিপি / কালপুরুষ (উচ্চ পঠনযোগ্যতা ও অপ্টিমাইজড ফন্ট সাইজ)।
+- **স্পেসিং ও লেআউট:** এজ-টু-এজ সাপোর্ট (`WindowInsets.safeDrawing`), নচ বা স্ট্যাটাস বারে কোনো টেক্সট কাটবে না।
 
 ---
 
-### 3. Key Technical Decisions & Data Strategy
+## 3. Key Product Decisions & Trade-Offs
+
+| সিদ্ধান্ত | নির্বাচিত পদ্ধতি | কারণ ও সুবিধা |
+| :--- | :--- | :--- |
+| **পেজিং প্রযুক্তি** | `HorizontalPager` (Foundation Pager) | অ্যান্ড্রয়েডের সর্বাধুনিক রিকম্পোজিশন-অপ্টিমাইজড কম্পোনেন্ট, ডানে-বামে সোয়াইপে শূন্য ল্যাগ। |
+| **ডাটা প্রোভাইডার** | `SurahDetailViewModel` + বর্তমান সুরার `ayahs` তালিকা | কোনো অতিরিক্ত নেটওয়ার্ক রিকোয়েস্ট ছাড়াই তাৎক্ষণিক মেমোরি থেকে আয়াত ও অনুবাদ পাওয়া যাবে। |
+| **তাফসীর লোডিং** | ক্যাশড তাফসীর优先, প্রয়োজনে ব্যাকগ্রাউন্ডে অ্যাসিনক্রোনাস ফেচ | অফলাইনে থাকলে সংরক্ষিত তাফসীর দেখাবে এবং নেটওয়ার্ক থাকলে নিরবচ্ছিন্নভাবে লোড করবে। |
+| **আয়াত ট্র্যাকিং** | বাই-ডিরেকশনাল স্টেট সিঙ্ক | মডাল পেজে সোয়াইপ করে ৫ নম্বর আয়াতে গেলে মডাল বন্ধের সময় মূল লিস্টও ৫ নম্বর আয়াতে স্ক্রোল হবে। |
+
+---
+
+## 4. Technical Architecture & Component Structure
+
+### Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      HijriCalendarUtil                      │
-│                                                             │
-│   LocalDate (e.g. 2026-10-11) + User Offset (0 / +/-)       │
-│                             │                               │
-│                             ▼                               │
-│   Total Offset = User Offset + BASE_BANGLADESH_OFFSET (1)   │
-│                             │                               │
-│                             ▼                               │
-│        Output: 29 Rabi us-Sani 1448 AH (Real Date)          │
-└─────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│                  SurahDetailScreen                     │
+│  (LazyColumn containing AyahCard list items)           │
+└───────────────────────────┬────────────────────────────┘
+                            │ On AyahCard clicked
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│             AyahTafsirDetailModalScreen                │
+│                                                        │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ TopBar: Back (<) | "তাফসীর" | "সূচিপত্র"          │  │
+│  ├──────────────────────────────────────────────────┤  │
+│  │ SubHeader: < আয়াত ১ | সূরা আল ফাতিহা - আয়াত ২ ⌄ | >│  │
+│  ├──────────────────────────────────────────────────┤  │
+│  │ HorizontalPager (pageCount = ayahs.size)         │  │
+│  │  ┌────────────────────────────────────────────┐  │  │
+│  │  │ Page [Current Ayah]:                       │  │  │
+│  │  │  • Arabic Ayah Text (Uthmani)              │  │  │
+│  │  │  • Bengali Translation Text                │  │  │
+│  │  │  • Tafsir Selector & Accordion Card        │  │  │
+│  │  │  • Full Tafsir Text with HTML formatting   │  │  │
+│  │  │  • Audio Play / Bookmark / Copy Actions    │  │  │
+│  │  └────────────────────────────────────────────┘  │  │
+│  └──────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────┘
 ```
 
-- **File to Modify**: `app/src/main/java/com/example/utils/HijriCalendarUtil.kt`
-  - In `calculateHijriDate(date: LocalDate, offsetDays: Int)`:
-    - Apply `val totalOffset = offsetDays + BASE_BANGLADESH_OFFSET` (where `BASE_BANGLADESH_OFFSET = 1`).
-    - Pass `totalOffset` to both `IslamicCalendar` and fallback `HijrahDate`.
-- **Dialog & Settings**:
-  - `ModernHijriAdjustmentDialog.kt` automatically reflects the calibrated date preview when `selectedOffset == 0`.
-  - Settings screen item shows the calibrated date accurately when offset is reset to 0.
+### প্রধান ফাইল ও কম্পোনেন্টসমূহ:
+1. **`app/src/main/java/com/example/ui/components/AyahTafsirDetailModal.kt` (নতুন কম্পোনেন্ট):**
+   - সম্পূর্ণ স্ক্রিন জুড়ে একটি ডেডিকেটেড মডাল কম্পোজেবল।
+   - `rememberPagerState` দিয়ে ডানে-বামে স্মুথ সোয়াইপ।
+   - শীর্ষ বার: ব্যাক বোতাম, তাফসীর টাইটেল, সূচিপত্র বাটন।
+   - সাব-হেডার: পূর্ববর্তী/পরবর্তী বোতাম ও আয়াত সিলেক্টর মেনু।
+   - বডি: স্ক্রোলযোগ্য কলামে আরবি আয়াত, বাংলা অনুবাদ এবং তাফসীর কার্ড।
+   - অ্যাকশন বাটন: প্লে/পজ, বুকমার্ক, কপি, শেয়ার।
+
+2. **`app/src/main/java/com/example/ui/screens/SurahDetailScreen.kt` আপডেট:**
+   - `AyahCard`-এ সম্পূর্ণ কার্ড ক্লিকেবল করা (`onCardClick = { openDetailModal(ayahIndex) }`)।
+   - স্টেট ভ্যারিয়েবল: `selectedAyahDetailIndex` (`Int?`) যা সিলেক্ট হলে `AyahTafsirDetailModal` রেন্ডার করবে।
+   - মডাল ক্লোজ হলে মূল তালিকার স্ক্রোল পজিশন আপডেট রাখা।
 
 ---
 
-### Verification Plan
+## 5. Verification Plan
 
-1. **Compilation Check**:
-   - Run `compile_applet` to ensure error-free compilation.
-2. **Date Verification**:
-   - Verify that for `offsetDays = 0`, `HijriCalendarUtil.getHijriDate(LocalDate.of(2026, 10, 11), 0)` outputs `hijriDay == 29`, `hijriMonth == 4` (রবিউস সানী), `hijriYear == 1448`.
-   - Verify that `ModernHijriAdjustmentDialog` shows "২৯ রবিউস সানী ১৪৪৮ হিজরী" when `০ দিন (স্বাভাবিক)` is selected.
+- **ম্যানুয়াল ও অটোমেটেড কম্পাইলেশন ভেরিফিকেশন:** `compile_applet` চালিয়ে কোনো প্রকার বিল্ড বা টাইপ মিসম্যাচ নেই তা নিশ্চিত করা।
+- **জেসচার ও পেজিং টেস্ট:** 
+  - ১ম আয়াতে ক্লিক করে মডাল খোলা এবং পরবর্তী আয়াতগুলোতে মসৃণভাবে সোয়াইপ করা।
+  - ড্রপডাউন সিলেক্টর থেকে সরাসরি দূরবর্তী আয়াতে জাম্প করা।
+  - তাফসীর এক্সপ্যান্ড/কলাপ্স ও স্ক্রোল টেস্ট।
+- **থিমিং ও ডিসপ্লে টেস্ট:** ডার্ক ও লাইট থিমে টেক্সট কন্ট্রাস্ট এবং ফন্ট সাইজ সামঞ্জস্য নিশ্চিত করা।
