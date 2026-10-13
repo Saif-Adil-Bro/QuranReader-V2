@@ -6,6 +6,10 @@ import com.example.data.model.DailyPrayerSchedule
 import com.example.data.model.DistrictInfo
 import com.example.data.model.PrayerCalculationMethod
 import com.example.utils.PrayerTimesCalculator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,8 +27,42 @@ class PrayerTimesRepository(val context: Context) {
     private val _calculationMethod = MutableStateFlow(loadCalculationMethod())
     val calculationMethod: StateFlow<PrayerCalculationMethod> = _calculationMethod.asStateFlow()
 
+    private val _sahriOffset = MutableStateFlow(loadSahriOffset())
+    val sahriOffset: StateFlow<Int> = _sahriOffset.asStateFlow()
+
+    private val _iftarOffset = MutableStateFlow(loadIftarOffset())
+    val iftarOffset: StateFlow<Int> = _iftarOffset.asStateFlow()
+
     private val _todaySchedule = MutableStateFlow(calculateCurrentSchedule())
     val todaySchedule: StateFlow<DailyPrayerSchedule> = _todaySchedule.asStateFlow()
+
+    init {
+        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+            try {
+                val settingsRepo = SettingsRepository.getInstance(context)
+                launch {
+                    settingsRepo.sahriOffsetFlow.collect { offset ->
+                        if (_sahriOffset.value != offset) {
+                            prefs.edit().putInt("sahri_offset", offset).apply()
+                            _sahriOffset.value = offset
+                            refreshSchedule()
+                        }
+                    }
+                }
+                launch {
+                    settingsRepo.iftarOffsetFlow.collect { offset ->
+                        if (_iftarOffset.value != offset) {
+                            prefs.edit().putInt("iftar_offset", offset).apply()
+                            _iftarOffset.value = offset
+                            refreshSchedule()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     private fun loadSelectedDistrict(): DistrictInfo {
         val districtId = prefs.getString("selected_district_id", "dhaka") ?: "dhaka"
@@ -34,6 +72,14 @@ class PrayerTimesRepository(val context: Context) {
     private fun loadCalculationMethod(): PrayerCalculationMethod {
         val methodId = prefs.getString("calculation_method_id", PrayerCalculationMethod.KARACHI.id)
         return PrayerCalculationMethod.fromId(methodId)
+    }
+
+    private fun loadSahriOffset(): Int {
+        return prefs.getInt("sahri_offset", -3)
+    }
+
+    private fun loadIftarOffset(): Int {
+        return prefs.getInt("iftar_offset", 0)
     }
 
     fun setDistrict(district: DistrictInfo) {
@@ -69,6 +115,28 @@ class PrayerTimesRepository(val context: Context) {
         }
     }
 
+    fun setSahriOffset(offset: Int) {
+        prefs.edit().putInt("sahri_offset", offset).apply()
+        _sahriOffset.value = offset
+        refreshSchedule()
+        try {
+            com.example.utils.PrayerNotificationHelper.scheduleNextPrayerAlarms(context)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun setIftarOffset(offset: Int) {
+        prefs.edit().putInt("iftar_offset", offset).apply()
+        _iftarOffset.value = offset
+        refreshSchedule()
+        try {
+            com.example.utils.PrayerNotificationHelper.scheduleNextPrayerAlarms(context)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun refreshSchedule(date: LocalDate? = null) {
         val district = _selectedDistrict.value
         val zoneId = try { java.time.ZoneId.of(district.timeZoneId) } catch (e: Exception) { java.time.ZoneId.of("Asia/Dhaka") }
@@ -77,7 +145,9 @@ class PrayerTimesRepository(val context: Context) {
             date = targetDate,
             district = district,
             isHanafi = _isHanafi.value,
-            calculationMethod = _calculationMethod.value
+            calculationMethod = _calculationMethod.value,
+            sahriOffsetMinutes = _sahriOffset.value,
+            iftarOffsetMinutes = _iftarOffset.value
         )
     }
 
@@ -88,7 +158,9 @@ class PrayerTimesRepository(val context: Context) {
             date = LocalDate.now(zoneId),
             district = district,
             isHanafi = prefs.getBoolean("is_hanafi", true),
-            calculationMethod = loadCalculationMethod()
+            calculationMethod = loadCalculationMethod(),
+            sahriOffsetMinutes = loadSahriOffset(),
+            iftarOffsetMinutes = loadIftarOffset()
         )
     }
 

@@ -402,6 +402,11 @@ class SettingsRepository(val context: Context) {
 
     suspend fun setSahriOffset(offsetMinutes: Int) {
         context.dataStore.edit { preferences -> preferences[SAHRI_OFFSET_KEY] = offsetMinutes }
+        try {
+            PrayerTimesRepository.getInstance(context).setSahriOffset(offsetMinutes)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     suspend fun setAppLanguage(languageCode: String) {
@@ -411,6 +416,11 @@ class SettingsRepository(val context: Context) {
 
     suspend fun setIftarOffset(offsetMinutes: Int) {
         context.dataStore.edit { preferences -> preferences[IFTAR_OFFSET_KEY] = offsetMinutes }
+        try {
+            PrayerTimesRepository.getInstance(context).setIftarOffset(offsetMinutes)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun getMushafOffset(mushafId: String): Flow<Int?> {

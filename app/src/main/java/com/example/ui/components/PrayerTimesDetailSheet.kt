@@ -1457,11 +1457,13 @@ fun PrayerTimesDetailSheet(
             isNotifIftar = isNotifIftar,
             isEnglish = effectiveIsEnglish,
             onUpdateSahriOffset = { newOffset ->
+                prayerRepo.setSahriOffset(newOffset)
                 coroutineScope.launch {
                     settingsRepo.setSahriOffset(newOffset)
                 }
             },
             onUpdateIftarOffset = { newOffset ->
+                prayerRepo.setIftarOffset(newOffset)
                 coroutineScope.launch {
                     settingsRepo.setIftarOffset(newOffset)
                 }

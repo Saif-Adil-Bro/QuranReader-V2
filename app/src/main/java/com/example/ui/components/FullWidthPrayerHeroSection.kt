@@ -1493,8 +1493,8 @@ private fun RamadanSehriIftarCard(
         parseTimeToMillis(today, sahriDigits, isPm = false, zoneId = zoneId)
     }
     val todayIftarMillis = remember(today, iftarDigits, maghribStart, zoneId) {
-        if (maghribStart > 0L) maghribStart
-        else parseTimeToMillis(today, iftarDigits, isPm = true, zoneId = zoneId)
+        val parsed = parseTimeToMillis(today, iftarDigits, isPm = true, zoneId = zoneId)
+        if (parsed > 0L) parsed else maghribStart
     }
     val tomorrowSahriMillis = remember(today, sahriDigits, zoneId) {
         parseTimeToMillis(today.plusDays(1), sahriDigits, isPm = false, zoneId = zoneId)
