@@ -747,36 +747,38 @@ fun SurahDetailScreen(
                                 ViewModeToggle(stringResource(R.string.tab_tafsir), Icons.Outlined.Info, currentMode == ViewMode.TAFSIR) { 
                                     coroutineScope.launch { pagerState.animateScrollToPage(pageOrder.indexOf(ViewMode.TAFSIR)) } 
                                 }
-
-                    // Ayah Tafsir & Translation Full-Screen Detail Modal
-                    val currentModalAyahIndex = selectedAyahDetailIndex
-                    if (currentModalAyahIndex != null) {
-                        com.example.ui.components.AyahTafsirDetailModal(
-                            ayahs = displayedData,
-                            initialAyahIndex = currentModalAyahIndex,
-                            surahNumber = activeSurahNumber,
-                            viewModel = viewModel,
-                            showTajweed = showTajweed,
-                            arabicFontSize = arabicFontSize,
-                            bengaliFontSize = bengaliFontSize,
-                            arabicFontName = arabicFontName,
-                            bengaliFontName = bengaliFontName,
-                            selectedTafsirNames = selectedTafsirNames,
-                            isBookmarked = { item -> bookmarkList.any { it.type == "AYAH" && it.referenceId == item.number } },
-                            onToggleBookmark = { item -> viewModel.toggleBookmark(item, activeSurahNumber) },
-                            onDismiss = { lastPageIndex ->
-                                selectedAyahDetailIndex = null
-                                val headerCount = if (activeSurahNumber != 1 && activeSurahNumber != 9 && !isStandalone) 2 else 1
-                                coroutineScope.launch {
-                                    currentListState.animateScrollToItem((lastPageIndex + headerCount).coerceAtLeast(0))
                                 }
                             }
-                        )
+                        }
+
+                        // Ayah Tafsir & Translation Full-Screen Detail Modal
+                        val currentModalAyahIndex = selectedAyahDetailIndex
+                        if (currentModalAyahIndex != null) {
+                            com.example.ui.components.AyahTafsirDetailModal(
+                                ayahs = displayedData,
+                                initialAyahIndex = currentModalAyahIndex,
+                                surahNumber = activeSurahNumber,
+                                viewModel = viewModel,
+                                showTajweed = showTajweed,
+                                arabicFontSize = arabicFontSize,
+                                bengaliFontSize = bengaliFontSize,
+                                arabicFontName = arabicFontName,
+                                bengaliFontName = bengaliFontName,
+                                selectedTafsirNames = selectedTafsirNames,
+                                isBookmarked = { item -> bookmarkList.any { it.type == "AYAH" && it.referenceId == item.number } },
+                                onToggleBookmark = { item -> viewModel.toggleBookmark(item, activeSurahNumber) },
+                                onDismiss = { lastPageIndex ->
+                                    selectedAyahDetailIndex = null
+                                    val headerCount = if (activeSurahNumber != 1 && activeSurahNumber != 9 && !isStandalone) 2 else 1
+                                    coroutineScope.launch {
+                                        currentListState.animateScrollToItem((lastPageIndex + headerCount).coerceAtLeast(0))
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             }
-        }
-        
         }
 
 
@@ -841,7 +843,6 @@ fun SurahDetailScreen(
             }
         }
     }
-}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

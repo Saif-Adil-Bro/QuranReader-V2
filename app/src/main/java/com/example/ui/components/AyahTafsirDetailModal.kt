@@ -40,7 +40,7 @@ import com.example.data.QuranData
 import com.example.data.model.CombinedAyah
 import com.example.data.model.appendStyledWaqfText
 import com.example.data.repository.QuranRepository
-import com.example.ui.theme.IndoPakTajweedParser
+import com.example.utils.IndoPakTajweedParser
 import com.example.ui.theme.PrimaryGreen
 import com.example.ui.viewmodels.SurahDetailViewModel
 import com.example.utils.DateUtil

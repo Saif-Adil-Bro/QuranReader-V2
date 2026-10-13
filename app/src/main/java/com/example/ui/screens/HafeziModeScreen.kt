@@ -1041,13 +1041,13 @@ fun HafeziPageContent(
                                             arabicFontName = arabicFontName
                                         )
                                         append(tajweedParsed)
-                                        val numInSurahStr = ayah.numberInSurah.toArabicNumerals()
+                                        val numInSurahStr = com.example.data.QuranData.toArabicNumerals(ayah.numberInSurah)
                                         withStyle(androidx.compose.ui.text.SpanStyle(fontFamily = com.example.ui.theme.amiriFont)) {
                                             append(" ﴿$numInSurahStr﴾ ")
                                         }
                                     } else {
                                         appendStyledWaqfText(textToDisplay, arabicFontSize, showWaqfSigns, arabicFontName)
-                                        val numInSurahStr = ayah.numberInSurah.toArabicNumerals()
+                                        val numInSurahStr = com.example.data.QuranData.toArabicNumerals(ayah.numberInSurah)
                                         withStyle(androidx.compose.ui.text.SpanStyle(fontFamily = com.example.ui.theme.amiriFont)) {
                                             append(" ﴿$numInSurahStr﴾ ")
                                         }
