@@ -42,6 +42,8 @@ import com.example.data.model.appendStyledWaqfText
 import com.example.data.repository.QuranRepository
 import com.example.utils.IndoPakTajweedParser
 import com.example.ui.theme.PrimaryGreen
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.ui.viewmodels.SurahDetailViewModel
 import com.example.utils.DateUtil
 import kotlinx.coroutines.launch
@@ -104,15 +106,22 @@ fun AyahTafsirDetailModal(
     // Full photo card customizer dialog state
     var showPhotoCardDialog by remember { mutableStateOf(false) }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = modalBgColor
+    Dialog(
+        onDismissRequest = { onDismiss(pagerState.currentPage) },
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // ================= 1. Top Bar =================
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = headerBgColor,
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = modalBgColor
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // ================= 1. Top Bar =================
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = headerBgColor,
                 shadowElevation = 4.dp
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -508,6 +517,7 @@ fun AyahTafsirDetailModal(
             }
         }
     }
+}
 
     if (showPhotoCardDialog) {
         val quickCardPost = remember(currentAyah, surahBanglaName) {

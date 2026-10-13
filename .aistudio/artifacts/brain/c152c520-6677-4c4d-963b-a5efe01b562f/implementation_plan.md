@@ -1,118 +1,27 @@
-# সম্পূর্ণ তাফসীর ও অনুবাদ ডিটেইলস ফুল মডাল পেজ
+# Implementation Plan - Ayah Detail Modal Fullscreen & Padding Fix
 
-তাফসীর ও অনুবাদ পেজে (সূরা ডিটেইল স্ক্রিন) যেকোনো আয়াত কার্ডে ক্লিক করলে একটি আধুনিক, আধ্যাত্মিক ও মার্জিত ফুল-স্ক্রিন মডাল পেজ ওপেন হবে—যেখানে ব্যবহারকারী ডানে-বামে মসৃণ সোয়াইপ (HorizontalPager) এবং শীর্ষ নেভিগেশন বারের মাধ্যমে যেকোনো আয়াতের আরবি টেক্সট, বাংলা অনুবাদ এবং বিস্তারিত তাফসীর পূর্ণাঙ্গভাবে অধ্যয়ন করতে পারবেন।
+Fix the top margin/padding and hide background elements in the newly created Ayah Detail Modal, as well as hiding the bottom audio player layer while the modal is open.
 
----
-
-## User Review & Critical Decisions
-
-> [!IMPORTANT]
-> ব্যবহারকারীর সাথে প্রশ্নোত্তর পর্বে নিশ্চিত হওয়া সিদ্ধান্তসমূহ:
-> 1. **আয়াতের মূল বিষয়বস্তু:** শব্দে শব্দে আলাদা করার পরিবর্তে ব্যবহারকারীর অনুরোধ অনুযায়ী **সম্পূর্ণ আরবি আয়াত**, তার নিচে **বাংলা অনুবাদ** এবং এর নিচে **পূর্ণাঙ্গ তাফসীর সেকশন** প্রদর্শিত হবে।
-> 2. **ট্রিগার ইন্টারঅ্যাকশন:** আয়াত কার্ডের যেকোনো অংশে ক্লিক করলেই সংশ্লিষ্ট আয়াতের জন্য এই ফুল মডাল স্ক্রিন ওপেন হবে।
-> 3. **নেভিগেশন ব্যবস্থা:** স্ক্রিনে ডানে-বামে অঙ্গুলির স্পর্শে মসৃণ সোয়াইপ (Swipe Gesture)-এর পাশাপাশি শীর্ষ হেডারে পূর্ববর্তী ও পরবর্তী বাটন (`< আয়াত ২`, `আয়াত ৪ >`) এবং মাঝে সূরা ও আয়াত ড্রপডাউন/সিলেক্টর (`সূরা আল ফাতিহা - আয়াত ৩ ⌄`) বিদ্যমান থাকবে।
+## User Requirements & Decisions
+1. **Top Area:** Fullscreen display that completely covers the main app bar ("কুরআন রিডার") and extends cleanly across the status bar area without extra top margin/padding.
+2. **Bottom Area:** Remove extra footer padding and hide the bottom floating audio player layer whenever the detail modal is visible.
 
 ---
 
-## 1. Overview & Core Concept
+## Proposed Changes
 
-- **মূল উদ্দেশ্য:** কোরআন পাঠকদের জন্য প্রতিটি আয়াতের তাফসীর ও অনুবাদ অত্যন্ত গভীরভাবে, কোনো প্রকার বিভ্রান্তি ছাড়া এক নজরে পড়া ও অধ্যয়ন করার একটি প্রিমিয়াম "আয়াত ডিটেইলস ও তাফসীর রিডার" অভিজ্ঞতা প্রদান করা।
-- **রেফারেন্স ডিজাইন:** ব্যবহারকারীর সরবরাহকৃত স্ক্রিনশটের আদলে উপরে স্টিকি নেভিগেশন বার, মাঝে স্পষ্ট উসমানি আরবি টেক্সট ও প্রাঞ্জল বাংলা অনুবাদ, এবং নিচে কার্ড আকারে গোছানো তাফসীর সেকশন (যেমন: তাফসীর আহসানুল বয়ান, তাফসীর আবু বকর যাকারিয়া, ইত্যাদি)।
-- **মূল সুবিধা:**
-  - ডানে-বামে সোয়াইপ করলেই স্বয়ংক্রিয়ভাবে পরবর্তী বা পূর্ববর্তী আয়াতের তাফসীর লোড হবে।
-  - একাধিক তাফসীর থাকলে তাফসীর ড্রপডাউন/সিলেকশন থেকে তাফসীর পরিবর্তন করার সুবিধা।
-  - আয়াতের অডিও সরাসরি ডিটেইল পেজ থেকেও শোনার ব্যবস্থা।
+### 1. `app/src/main/java/com/example/ui/components/AyahTafsirDetailModal.kt`
+- Configure `DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)` so the modal window covers 100% of the screen.
+- Set the top-level container background to full opaque surface color so the underlying main screen top bar does not show through.
+- Remove redundant top status bar padding / margin in the top navigation row (`Surah` & `Ayah` selector header bar).
+- Clean up bottom navigation bar inset and footer padding.
 
----
-
-## 2. User Experience & Visual Design
-
-### User Flow
-1. **প্রবেশ:** ব্যবহারকারী সূরা ডিটেইল পেজে স্ক্রোল করার সময় যেকোনো আয়াত কার্ডে ক্লিক করবেন।
-2. **ওপেন:** সাথে সাথে নিচ থেকে একটি স্মুথ ট্রানজিশন সহ "তাফসীর ও অনুবাদ ডিটেইলস পেজ" ওপেন হবে।
-3. **অধ্যয়ন:** 
-   - স্ক্রিনের কেন্দ্রে সুন্দর ব্যাকগ্রাউন্ড ও কার্ভড বর্ডারের মধ্যে আরবি আয়াত এবং বাংলা অনুবাদ ভেসে উঠবে।
-   - নিচে তাফসীর কার্ডে বিস্তৃত ব্যাখ্যা ও হাদিসের রেফারেন্স সহজে পড়া যাবে।
-4. **নেভিগেশন:**
-   - ডানে বা বামে সোয়াইপ করলে পেজার অ্যানিমেশনের মাধ্যমে পরবর্তী আয়াতে চলে যাবে।
-   - শীর্ষ বারের ড্রপডাউন বোতামে ট্যাপ করে নির্দিষ্ট আয়াতে জাম্প করা যাবে।
-   - বামের ব্যাক আইকন (`<`) ট্যাপ করলে মূল পেজে ফিরে আসবে এবং সেখানেও সেই আয়াতটি স্ক্রিনের ফোকাসে থাকবে।
-
-### Visual Identity & Theme
-- **থিম ও রঙের বিন্যাস:**
-  - ডার্ক থিম: কালচে সবুজ ও কালো গ্রাডিয়েন্ট ব্যাকগ্রাউন্ড (`#0B1512` / `#05100C`), সোনালি ও পান্না সবুজ অ্যাকসেন্ট (`PrimaryGreen = #10B981` / `#059669`)।
-  - লাইট থিম: প্রশান্তিময় মিন্ট হোয়াইট ও সফট সেপিয়া সারফেস।
-- **টাইপোগ্রাফি:**
-  - আরবি: KFGQPC হাফস / মে কোরআন / আমীরী ফন্ট (উপযুক্ত লাইন-হাইট ও কার্নিং সহ)।
-  - বাংলা: সোলায়মান লিপি / কালপুরুষ (উচ্চ পঠনযোগ্যতা ও অপ্টিমাইজড ফন্ট সাইজ)।
-- **স্পেসিং ও লেআউট:** এজ-টু-এজ সাপোর্ট (`WindowInsets.safeDrawing`), নচ বা স্ট্যাটাস বারে কোনো টেক্সট কাটবে না।
+### 2. `app/src/main/java/com/example/ui/screens/SurahDetailScreen.kt`
+- Condition the rendering/visibility of the bottom floating audio player (`FloatingAudioPlayer`) so that it is hidden when `selectedAyahDetailIndex != null` (modal is open).
 
 ---
 
-## 3. Key Product Decisions & Trade-Offs
-
-| সিদ্ধান্ত | নির্বাচিত পদ্ধতি | কারণ ও সুবিধা |
-| :--- | :--- | :--- |
-| **পেজিং প্রযুক্তি** | `HorizontalPager` (Foundation Pager) | অ্যান্ড্রয়েডের সর্বাধুনিক রিকম্পোজিশন-অপ্টিমাইজড কম্পোনেন্ট, ডানে-বামে সোয়াইপে শূন্য ল্যাগ। |
-| **ডাটা প্রোভাইডার** | `SurahDetailViewModel` + বর্তমান সুরার `ayahs` তালিকা | কোনো অতিরিক্ত নেটওয়ার্ক রিকোয়েস্ট ছাড়াই তাৎক্ষণিক মেমোরি থেকে আয়াত ও অনুবাদ পাওয়া যাবে। |
-| **তাফসীর লোডিং** | ক্যাশড তাফসীর优先, প্রয়োজনে ব্যাকগ্রাউন্ডে অ্যাসিনক্রোনাস ফেচ | অফলাইনে থাকলে সংরক্ষিত তাফসীর দেখাবে এবং নেটওয়ার্ক থাকলে নিরবচ্ছিন্নভাবে লোড করবে। |
-| **আয়াত ট্র্যাকিং** | বাই-ডিরেকশনাল স্টেট সিঙ্ক | মডাল পেজে সোয়াইপ করে ৫ নম্বর আয়াতে গেলে মডাল বন্ধের সময় মূল লিস্টও ৫ নম্বর আয়াতে স্ক্রোল হবে। |
-
----
-
-## 4. Technical Architecture & Component Structure
-
-### Architecture Diagram
-
-```
-┌────────────────────────────────────────────────────────┐
-│                  SurahDetailScreen                     │
-│  (LazyColumn containing AyahCard list items)           │
-└───────────────────────────┬────────────────────────────┘
-                            │ On AyahCard clicked
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│             AyahTafsirDetailModalScreen                │
-│                                                        │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │ TopBar: Back (<) | "তাফসীর" | "সূচিপত্র"          │  │
-│  ├──────────────────────────────────────────────────┤  │
-│  │ SubHeader: < আয়াত ১ | সূরা আল ফাতিহা - আয়াত ২ ⌄ | >│  │
-│  ├──────────────────────────────────────────────────┤  │
-│  │ HorizontalPager (pageCount = ayahs.size)         │  │
-│  │  ┌────────────────────────────────────────────┐  │  │
-│  │  │ Page [Current Ayah]:                       │  │  │
-│  │  │  • Arabic Ayah Text (Uthmani)              │  │  │
-│  │  │  • Bengali Translation Text                │  │  │
-│  │  │  • Tafsir Selector & Accordion Card        │  │  │
-│  │  │  • Full Tafsir Text with HTML formatting   │  │  │
-│  │  │  • Audio Play / Bookmark / Copy Actions    │  │  │
-│  │  └────────────────────────────────────────────┘  │  │
-│  └──────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────┘
-```
-
-### প্রধান ফাইল ও কম্পোনেন্টসমূহ:
-1. **`app/src/main/java/com/example/ui/components/AyahTafsirDetailModal.kt` (নতুন কম্পোনেন্ট):**
-   - সম্পূর্ণ স্ক্রিন জুড়ে একটি ডেডিকেটেড মডাল কম্পোজেবল।
-   - `rememberPagerState` দিয়ে ডানে-বামে স্মুথ সোয়াইপ।
-   - শীর্ষ বার: ব্যাক বোতাম, তাফসীর টাইটেল, সূচিপত্র বাটন।
-   - সাব-হেডার: পূর্ববর্তী/পরবর্তী বোতাম ও আয়াত সিলেক্টর মেনু।
-   - বডি: স্ক্রোলযোগ্য কলামে আরবি আয়াত, বাংলা অনুবাদ এবং তাফসীর কার্ড।
-   - অ্যাকশন বাটন: প্লে/পজ, বুকমার্ক, কপি, শেয়ার।
-
-2. **`app/src/main/java/com/example/ui/screens/SurahDetailScreen.kt` আপডেট:**
-   - `AyahCard`-এ সম্পূর্ণ কার্ড ক্লিকেবল করা (`onCardClick = { openDetailModal(ayahIndex) }`)।
-   - স্টেট ভ্যারিয়েবল: `selectedAyahDetailIndex` (`Int?`) যা সিলেক্ট হলে `AyahTafsirDetailModal` রেন্ডার করবে।
-   - মডাল ক্লোজ হলে মূল তালিকার স্ক্রোল পজিশন আপডেট রাখা।
-
----
-
-## 5. Verification Plan
-
-- **ম্যানুয়াল ও অটোমেটেড কম্পাইলেশন ভেরিফিকেশন:** `compile_applet` চালিয়ে কোনো প্রকার বিল্ড বা টাইপ মিসম্যাচ নেই তা নিশ্চিত করা।
-- **জেসচার ও পেজিং টেস্ট:** 
-  - ১ম আয়াতে ক্লিক করে মডাল খোলা এবং পরবর্তী আয়াতগুলোতে মসৃণভাবে সোয়াইপ করা।
-  - ড্রপডাউন সিলেক্টর থেকে সরাসরি দূরবর্তী আয়াতে জাম্প করা।
-  - তাফসীর এক্সপ্যান্ড/কলাপ্স ও স্ক্রোল টেস্ট।
-- **থিমিং ও ডিসপ্লে টেস্ট:** ডার্ক ও লাইট থিমে টেক্সট কন্ট্রাস্ট এবং ফন্ট সাইজ সামঞ্জস্য নিশ্চিত করা।
+## Verification Plan
+1. Run `compile_applet` to ensure zero compilation or build errors.
+2. Verify that opening the Ayah detail modal covers the top bar completely and removes unnecessary padding at top and bottom.
+3. Confirm that the bottom audio player is hidden when the detail modal is open.

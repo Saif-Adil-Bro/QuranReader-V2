@@ -232,6 +232,7 @@ fun SurahDetailScreen(
         }
     }
 
+    var selectedAyahDetailIndex by remember { mutableStateOf<Int?>(null) }
     var showPlayerBottomSheet by remember { mutableStateOf(false) }
     var showSettingsBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -280,35 +281,37 @@ fun SurahDetailScreen(
             )
         },
         bottomBar = {
-            FloatingAudioPlayer(
-                isPlaying = isPlaying,
-                currentPlayingAyahNum = currentPlayingAyahNumber,
-                playbackMode = playbackMode,
-                onPlayPauseClick = {
-                    val currentAyah = currentPlayingAyah ?: (uiState as? UiState.Success)?.data?.firstOrNull()
-                    viewModel.togglePlayPause(currentAyah, surahNumber)
-                },
-                onPreviousClick = {
-                    val currentAyah = currentPlayingAyah ?: (uiState as? UiState.Success)?.data?.firstOrNull()
-                    viewModel.playPrevious(currentAyah, surahNumber)
-                },
-                onNextClick = {
-                    val currentAyah = currentPlayingAyah ?: (uiState as? UiState.Success)?.data?.firstOrNull()
-                    viewModel.playNext(currentAyah, surahNumber)
-                },
-                onModeToggleClick = {
-                    viewModel.setPlaybackMode(
-                        if (playbackMode == PlaybackMode.SURAH) PlaybackMode.AYAH else PlaybackMode.SURAH
-                    )
-                },
-                onPlayerTabClick = {
-                    showPlayerBottomSheet = true
-                },
-                onBackClick = {
-                    viewModel.saveLastReadPosition()
-                    onNavigateBack()
-                }
-            )
+            if (selectedAyahDetailIndex == null) {
+                FloatingAudioPlayer(
+                    isPlaying = isPlaying,
+                    currentPlayingAyahNum = currentPlayingAyahNumber,
+                    playbackMode = playbackMode,
+                    onPlayPauseClick = {
+                        val currentAyah = currentPlayingAyah ?: (uiState as? UiState.Success)?.data?.firstOrNull()
+                        viewModel.togglePlayPause(currentAyah, surahNumber)
+                    },
+                    onPreviousClick = {
+                        val currentAyah = currentPlayingAyah ?: (uiState as? UiState.Success)?.data?.firstOrNull()
+                        viewModel.playPrevious(currentAyah, surahNumber)
+                    },
+                    onNextClick = {
+                        val currentAyah = currentPlayingAyah ?: (uiState as? UiState.Success)?.data?.firstOrNull()
+                        viewModel.playNext(currentAyah, surahNumber)
+                    },
+                    onModeToggleClick = {
+                        viewModel.setPlaybackMode(
+                            if (playbackMode == PlaybackMode.SURAH) PlaybackMode.AYAH else PlaybackMode.SURAH
+                        )
+                    },
+                    onPlayerTabClick = {
+                        showPlayerBottomSheet = true
+                    },
+                    onBackClick = {
+                        viewModel.saveLastReadPosition()
+                        onNavigateBack()
+                    }
+                )
+            }
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
@@ -346,7 +349,6 @@ fun SurahDetailScreen(
                     val coroutineScope = rememberCoroutineScope()
                     var searchQuery by remember { mutableStateOf("") }
                     var highlightedAyahNumber by remember { mutableStateOf<Int?>(null) }
-                    var selectedAyahDetailIndex by remember { mutableStateOf<Int?>(null) }
                     
                     val effectiveInitialAyah = remember(surahNumber, isJuz, initialAyah) {
                         if (initialAyah > 0) {
@@ -721,7 +723,7 @@ fun SurahDetailScreen(
 
                         // Floating Menu
                         androidx.compose.animation.AnimatedVisibility(
-                            visible = showFloatingMenu,
+                            visible = showFloatingMenu && selectedAyahDetailIndex == null,
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
                                 .padding(top = 16.dp, start = 16.dp, end = 16.dp),

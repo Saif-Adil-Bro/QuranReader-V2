@@ -1,6 +1,6 @@
 {
-  "summary": "আয়াত কার্ডে ক্লিক করলে ডানে-বামে সোয়াইপযোগ্য সম্পূর্ণ আরবি আয়াত, বাংলা অনুবাদ এবং বিস্তারিত তাফসীর সম্বলিত ফুল-স্ক্রিন মডাল পেজের বাস্তবায়ন পরিকল্পনা।",
-  "updatedAt": "2026-10-13T01:57:54.697403285Z",
+  "summary": "Implementation plan for removing extra top/bottom padding and hiding the bottom audio player in the Ayah Tafsir Detail Modal.",
+  "updatedAt": "2026-10-13T05:25:53.002016292Z",
   "requestFeedback": true,
   "userFacing": true
 }
