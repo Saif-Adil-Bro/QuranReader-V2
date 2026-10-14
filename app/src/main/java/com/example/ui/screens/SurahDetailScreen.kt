@@ -749,6 +749,8 @@ fun SurahDetailScreen(
                                 ViewModeToggle(stringResource(R.string.tab_tafsir), Icons.Outlined.Info, currentMode == ViewMode.TAFSIR) { 
                                     coroutineScope.launch { pagerState.animateScrollToPage(pageOrder.indexOf(ViewMode.TAFSIR)) } 
                                 }
+                                ViewModeToggle(stringResource(R.string.tab_mushaf), Icons.Outlined.MenuBook, currentMode == ViewMode.MUSHAF) { 
+                                    coroutineScope.launch { pagerState.animateScrollToPage(pageOrder.indexOf(ViewMode.MUSHAF)) } 
                                 }
                             }
                         }
@@ -845,6 +847,7 @@ fun SurahDetailScreen(
             }
         }
     }
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -1290,13 +1293,21 @@ fun AyahCard(
                                     text = { Text("শেয়ার করুন", color = MaterialTheme.colorScheme.onSurface) },
                                     onClick = {
                                         showMoreMenu = false
-                                        val sendIntent: Intent = Intent().apply {
-                                            action = Intent.ACTION_SEND
-                                            putExtra(Intent.EXTRA_TEXT, shareText)
-                                            type = "text/plain"
+                                        try {
+                                            val sendIntent: Intent = Intent().apply {
+                                                action = Intent.ACTION_SEND
+                                                putExtra(Intent.EXTRA_TEXT, shareText)
+                                                type = "text/plain"
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            }
+                                            val shareIntent = Intent.createChooser(sendIntent, "আয়াত শেয়ার করুন").apply {
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            }
+                                            context.startActivity(shareIntent)
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                            Toast.makeText(context, "শেয়ার করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
                                         }
-                                        val shareIntent = Intent.createChooser(sendIntent, null)
-                                        context.startActivity(shareIntent)
                                     },
                                     leadingIcon = { Icon(Icons.Default.Share, contentDescription = null, tint = PrimaryGreen) }
                                 )
@@ -1360,13 +1371,21 @@ fun AyahCard(
                                     text = { Text("শেয়ার করুন", color = MaterialTheme.colorScheme.onSurface) },
                                     onClick = {
                                         showMoreMenu = false
-                                        val sendIntent: Intent = Intent().apply {
-                                            action = Intent.ACTION_SEND
-                                            putExtra(Intent.EXTRA_TEXT, shareText)
-                                            type = "text/plain"
+                                        try {
+                                            val sendIntent: Intent = Intent().apply {
+                                                action = Intent.ACTION_SEND
+                                                putExtra(Intent.EXTRA_TEXT, shareText)
+                                                type = "text/plain"
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            }
+                                            val shareIntent = Intent.createChooser(sendIntent, "আয়াত শেয়ার করুন").apply {
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            }
+                                            context.startActivity(shareIntent)
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                            Toast.makeText(context, "শেয়ার করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
                                         }
-                                        val shareIntent = Intent.createChooser(sendIntent, null)
-                                        context.startActivity(shareIntent)
                                     },
                                     leadingIcon = { Icon(Icons.Default.Share, contentDescription = null, tint = PrimaryGreen) }
                                 )

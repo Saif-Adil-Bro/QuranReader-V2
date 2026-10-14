@@ -862,12 +862,20 @@ fun BlogPostDetailScreen(
                     }
                     IconButton(
                         onClick = {
-                            val shareText = "✨ $fullPostTitle \n\n$displayContent\n\n— $fullPostAuthor\n\n📱 ❝কুরআন রিডার❞ অ্যাপ থেকে"
-                            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                            try {
+                                val shareText = "✨ $fullPostTitle \n\n$displayContent\n\n— $fullPostAuthor\n\n📱 ❝কুরআন রিডার❞ অ্যাপ থেকে"
+                                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                val chooser = android.content.Intent.createChooser(intent, "ব্লগ পোস্ট শেয়ার করুন").apply {
+                                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(chooser)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
                             }
-                            context.startActivity(android.content.Intent.createChooser(intent, "ব্লগ পোস্ট শেয়ার করুন"))
                         }
                     ) {
                         Icon(Icons.Default.Share, contentDescription = "শেয়ার", tint = PrimaryGreen)

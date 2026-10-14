@@ -463,12 +463,21 @@ fun AyahTafsirDetailModal(
                                     }
                                     append("\n\n[সূরা $surahBanglaName : আয়াত ${currentAyah.numberInSurah}]")
                                 }
-                                val intent = Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    putExtra(Intent.EXTRA_TEXT, shareContent)
-                                    type = "text/plain"
+                                try {
+                                    val intent = Intent().apply {
+                                        action = Intent.ACTION_SEND
+                                        putExtra(Intent.EXTRA_TEXT, shareContent)
+                                        type = "text/plain"
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    val chooser = Intent.createChooser(intent, "আয়াত ও তাফসীর শেয়ার করুন").apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    context.startActivity(chooser)
+                                } catch (e: Exception) {
+                                    android.util.Log.e("AyahModal", "Error sharing ayah", e)
+                                    Toast.makeText(context, "শেয়ার করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
                                 }
-                                context.startActivity(Intent.createChooser(intent, "আয়াত ও তাফসীর শেয়ার করুন"))
                             },
                             modifier = Modifier
                                 .size(42.dp)

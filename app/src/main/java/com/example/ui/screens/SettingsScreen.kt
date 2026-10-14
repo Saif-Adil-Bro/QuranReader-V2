@@ -3719,8 +3719,12 @@ fun shareBitmap(context: android.content.Context, bitmap: android.graphics.Bitma
             type = "image/png"
             putExtra(android.content.Intent.EXTRA_STREAM, uri)
             addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        context.startActivity(android.content.Intent.createChooser(intent, "ফলাফল কার্ড শেয়ার করুন"))
+        val chooser = android.content.Intent.createChooser(intent, "ফলাফল কার্ড শেয়ার করুন").apply {
+            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(chooser)
     } catch (e: Exception) {
         android.widget.Toast.makeText(context, "শেয়ার করতে সমস্যা হয়েছে: ${e.localizedMessage}", android.widget.Toast.LENGTH_LONG).show()
         e.printStackTrace()

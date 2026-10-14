@@ -420,13 +420,22 @@ fun AyahOptionsBottomSheet(
                 // Share
                 OutlinedButton(
                     onClick = {
-                        val textToShare = "${ayah.arabicText}\n\n${ayah.bengaliText}\n\n($surahName: ${ayah.numberInSurah})"
-                        val sendIntent = Intent().apply {
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_TEXT, textToShare)
-                            type = "text/plain"
+                        try {
+                            val textToShare = "${ayah.arabicText}\n\n${ayah.bengaliText}\n\n($surahName: ${ayah.numberInSurah})"
+                            val sendIntent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, textToShare)
+                                type = "text/plain"
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            val chooser = Intent.createChooser(sendIntent, "আয়াত শেয়ার করুন").apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(chooser)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            Toast.makeText(context, "শেয়ার করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
                         }
-                        context.startActivity(Intent.createChooser(sendIntent, "আয়াত শেয়ার করুন"))
                     },
                     modifier = Modifier.weight(1f).height(52.dp),
                     shape = RoundedCornerShape(12.dp),

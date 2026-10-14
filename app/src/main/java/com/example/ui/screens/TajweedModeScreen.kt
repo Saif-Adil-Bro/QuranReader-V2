@@ -1157,12 +1157,12 @@ fun TajweedPageContent(
                                         )
                                         append(tajweedParsed)
                                         withStyle(androidx.compose.ui.text.SpanStyle(fontFamily = com.example.ui.theme.amiriFont)) {
-                                            append(" ﴿${ayah.numberInSurah.toArabicNumerals()}﴾ ")
+                                            append(" ﴿${com.example.data.QuranData.toArabicNumerals(ayah.numberInSurah)}﴾ ")
                                         }
                                     } else {
                                         appendStyledWaqfText(textToDisplay, arabicFontSize, showWaqfSigns, arabicFontName)
                                         withStyle(androidx.compose.ui.text.SpanStyle(fontFamily = com.example.ui.theme.amiriFont)) {
-                                            append(" ﴿${ayah.numberInSurah.toArabicNumerals()}﴾ ")
+                                            append(" ﴿${com.example.data.QuranData.toArabicNumerals(ayah.numberInSurah)}﴾ ")
                                         }
                                     }
                                     

@@ -2230,9 +2230,17 @@ private fun shareMosque(context: Context, mosque: Mosque) {
         📱 ❝কুরআন রিডার❞ অ্যাপ থেকে শেয়ার করা হয়েছে।
     """.trimIndent()
 
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, shareText)
+    try {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, shareText)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        val chooser = Intent.createChooser(intent, "মসজিদের তথ্য শেয়ার করুন").apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(chooser)
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
-    context.startActivity(Intent.createChooser(intent, "মসজিদের তথ্য শেয়ার করুন"))
 }

@@ -1,6 +1,6 @@
 {
-  "summary": "Implementation plan to fix bottom action bar clipping, make cards full-width (100%), add collapsible accordion Tafsir cards, and support displaying all selected Tafsirs sequentially.",
-  "updatedAt": "2026-10-13T10:22:18.373299098Z",
+  "summary": "Implementation plan for fixing the Share button crash and restoring the missing Mushaf tab in the floating menu.",
+  "updatedAt": "2026-10-14T07:23:20.572631432Z",
   "requestFeedback": true,
   "userFacing": true
 }

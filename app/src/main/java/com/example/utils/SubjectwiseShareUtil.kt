@@ -43,12 +43,21 @@ object SubjectwiseShareUtil {
     }
 
     fun shareAsText(context: Context, verse: SubjectwiseVerse, categoryName: String) {
-        val shareText = buildVerseShareText(verse, categoryName)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, shareText)
+        try {
+            val shareText = buildVerseShareText(verse, categoryName)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, shareText)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            val chooser = Intent.createChooser(intent, "আয়াত শেয়ার করুন (টেক্সট)").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(chooser)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, "শেয়ার করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
         }
-        context.startActivity(Intent.createChooser(intent, "আয়াত শেয়ার করুন (টেক্সট)"))
     }
 
     fun createPhotoCardPayload(verse: SubjectwiseVerse, categoryName: String): PhotoCardBridge.QuickCardPayload {
@@ -295,8 +304,12 @@ object SubjectwiseShareUtil {
                 type = "image/png"
                 putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(Intent.createChooser(intent, "আয়াত শেয়ার করুন (ছবি)"))
+            val chooser = Intent.createChooser(intent, "আয়াত শেয়ার করুন (ছবি)").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(chooser)
 
         } catch (e: Exception) {
             e.printStackTrace()

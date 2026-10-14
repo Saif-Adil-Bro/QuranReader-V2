@@ -2141,13 +2141,22 @@ fun AyahSelectionSheetContent(
 
                         OutlinedButton(
                             onClick = {
-                                val textToShare = "${currentAyah.arabicText}\n\n${currentAyah.bengaliText}\n\n($surahName: ${currentAyah.numberInSurah})"
-                                val sendIntent = Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    putExtra(Intent.EXTRA_TEXT, textToShare)
-                                    type = "text/plain"
+                                try {
+                                    val textToShare = "${currentAyah.arabicText}\n\n${currentAyah.bengaliText}\n\n($surahName: ${currentAyah.numberInSurah})"
+                                    val sendIntent = Intent().apply {
+                                        action = Intent.ACTION_SEND
+                                        putExtra(Intent.EXTRA_TEXT, textToShare)
+                                        type = "text/plain"
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    val chooser = Intent.createChooser(sendIntent, "শেয়ার করুন").apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    context.startActivity(chooser)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    Toast.makeText(context, "শেয়ার করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
                                 }
-                                context.startActivity(Intent.createChooser(sendIntent, "শেয়ার করুন"))
                             },
                             modifier = Modifier.weight(1f),
                             border = BorderStroke(1.dp, primaryGreen)

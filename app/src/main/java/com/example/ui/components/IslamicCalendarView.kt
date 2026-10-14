@@ -664,13 +664,21 @@ fun IslamicCalendarView(
 
                     Button(
                         onClick = {
-                            val fullText = "${currentGuidance.first}\n\n${currentGuidance.second}"
-                            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(android.content.Intent.EXTRA_SUBJECT, currentGuidance.first)
-                                putExtra(android.content.Intent.EXTRA_TEXT, fullText)
+                            try {
+                                val fullText = "${currentGuidance.first}\n\n${currentGuidance.second}"
+                                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(android.content.Intent.EXTRA_SUBJECT, currentGuidance.first)
+                                    putExtra(android.content.Intent.EXTRA_TEXT, fullText)
+                                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                val chooser = android.content.Intent.createChooser(shareIntent, "শেয়ার করুন").apply {
+                                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(chooser)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
                             }
-                            context.startActivity(android.content.Intent.createChooser(shareIntent, "শেয়ার করুন"))
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),

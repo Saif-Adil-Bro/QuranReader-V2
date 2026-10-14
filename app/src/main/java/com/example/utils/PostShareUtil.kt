@@ -264,12 +264,21 @@ object PostShareUtil {
     }
 
     fun shareAsText(context: Context, post: ShortPost) {
-        val shareText = buildShareText(post)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, shareText)
+        try {
+            val shareText = buildShareText(post)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, shareText)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            val chooser = Intent.createChooser(intent, "পোস্ট শেয়ার করুন (টেক্সট)").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(chooser)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, "শেয়ার করতে সমস্যা হয়েছে", Toast.LENGTH_SHORT).show()
         }
-        context.startActivity(Intent.createChooser(intent, "পোস্ট শেয়ার করুন (টেক্সট)"))
     }
     suspend fun generateCardBitmap(
         context: Context,
@@ -630,8 +639,12 @@ object PostShareUtil {
                 type = "image/png"
                 putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(Intent.createChooser(intent, "ফটো কার্ড শেয়ার করুন"))
+            val chooser = Intent.createChooser(intent, "ফটো কার্ড শেয়ার করুন").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(chooser)
         } catch (e: Exception) {
             e.printStackTrace()
             withContext(Dispatchers.Main) {
@@ -714,8 +727,12 @@ object PostShareUtil {
                 type = "image/png"
                 putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(Intent.createChooser(intent, "ফটো কার্ড শেয়ার করুন"))
+            val chooser = Intent.createChooser(intent, "ফটো কার্ড শেয়ার করুন").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(chooser)
         } catch (e: Exception) {
             e.printStackTrace()
             withContext(Dispatchers.Main) {

@@ -3239,12 +3239,20 @@ fun DailyDuaFeaturedSection(
                                 if (reference.isNotEmpty() && reference != "null") append("— ").append(reference).append("\n\n")
                                 append(if (isEnglish) "Al-Quran & Islamic App" else "আল-কুরআন ও ইসলামিক অ্যাপ")
                             }
-                            val sendIntent = android.content.Intent().apply {
-                                action = android.content.Intent.ACTION_SEND
-                                putExtra(android.content.Intent.EXTRA_TEXT, shareText)
-                                type = "text/plain"
+                            try {
+                                val sendIntent = android.content.Intent().apply {
+                                    action = android.content.Intent.ACTION_SEND
+                                    putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                                    type = "text/plain"
+                                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                val chooser = android.content.Intent.createChooser(sendIntent, if (isEnglish) "Share Dua" else "দুআটি শেয়ার করুন").apply {
+                                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(chooser)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
                             }
-                            context.startActivity(android.content.Intent.createChooser(sendIntent, if (isEnglish) "Share Dua" else "দুআটি শেয়ার করুন"))
                         },
                         modifier = Modifier
                             .size(36.dp)
