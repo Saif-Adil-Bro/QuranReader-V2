@@ -6,6 +6,7 @@ import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import com.example.di.AppContainer
+import kotlinx.coroutines.launch
 
 class QuranApplication : Application(), ImageLoaderFactory {
 
@@ -69,6 +70,14 @@ class QuranApplication : Application(), ImageLoaderFactory {
         }
 
         try {
+            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    val db = com.example.data.local.NotificationDatabase.getDatabase(this@QuranApplication)
+                    db.localNotificationDao().cleanupDuplicateNotifications()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
             com.example.receiver.IslamicEventReceiver.scheduleNextAlarm(this)
             com.example.utils.PrayerNotificationHelper.scheduleNextPrayerAlarms(this)
             val sharedPrefs = getSharedPreferences("quran_menu_prefs", android.content.Context.MODE_PRIVATE)

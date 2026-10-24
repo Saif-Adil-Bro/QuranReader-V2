@@ -25,6 +25,21 @@ class DailyMessageReceiver : BroadcastReceiver() {
             return
         }
 
+        val sharedPrefs = context.getSharedPreferences("quran_menu_prefs", Context.MODE_PRIVATE)
+        if (!sharedPrefs.getBoolean("daily_message_enabled", true)) {
+            return
+        }
+
+        val todayStr = java.time.LocalDate.now().toString()
+        synchronized(dedupLock) {
+            val lastNotifiedDate = sharedPrefs.getString("last_daily_dua_notified_date", null)
+            if (lastNotifiedDate == todayStr) {
+                scheduleNextAlarm(context)
+                return
+            }
+            sharedPrefs.edit().putString("last_daily_dua_notified_date", todayStr).commit()
+        }
+
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "daily_islamic_message"
         val isEnglish = com.example.utils.NotificationLocalization.isEnglish(context)
@@ -98,7 +113,8 @@ class DailyMessageReceiver : BroadcastReceiver() {
                 timestamp = System.currentTimeMillis()
             )
             kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                db.localNotificationDao().insertNotification(entity)
+                db.localNotificationDao().insertNotificationDeduped(entity)
+                db.localNotificationDao().cleanupDuplicateNotifications()
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -120,6 +136,7 @@ class DailyMessageReceiver : BroadcastReceiver() {
     }
 
     companion object {
+        private val dedupLock = Any()
         fun scheduleNextAlarm(context: Context) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
             val intent = Intent(context, DailyMessageReceiver::class.java)

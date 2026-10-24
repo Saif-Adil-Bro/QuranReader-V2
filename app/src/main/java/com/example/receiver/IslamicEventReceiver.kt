@@ -65,77 +65,82 @@ class IslamicEventReceiver : BroadcastReceiver() {
             e.printStackTrace()
         }
 
-        // 5. Islamic Event / Sunnah Fast reminder for upcoming days
-        val isEnglish = com.example.utils.NotificationLocalization.isEnglish(context)
-        val today = LocalDate.now()
-        val eventInfo = IslamicEventGuidanceHelper.checkNotificationForDate(today, hijriOffset, isEnglish)
+        // 5. Islamic Event / Sunnah Fast reminder for upcoming days (Only in the afternoon/evening at 4:00 PM or later, once per event)
+        val isMorningAlarm = intent.action == "com.example.ACTION_ISLAMIC_ALARM_$REQUEST_CODE_MORNING"
+        val currentHour = java.time.LocalTime.now().hour
+        if (!isMorningAlarm && currentHour >= 15) {
+            val isEnglish = com.example.utils.NotificationLocalization.isEnglish(context)
+            val today = LocalDate.now()
+            val eventInfo = IslamicEventGuidanceHelper.checkNotificationForDate(today, hijriOffset, isEnglish)
 
-        if (eventInfo != null) {
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val channelId = "islamic_events_reminder"
+            if (eventInfo != null && shouldNotifyAndMark(context, eventInfo.id)) {
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                val channelId = "islamic_events_reminder"
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val channel = NotificationChannel(
-                    channelId,
-                    if (isEnglish) "Islamic Events & Sunnah Fasts" else "ইসলামিক দিবস ও রোজা রিমাইন্ডার",
-                    NotificationManager.IMPORTANCE_HIGH
-                ).apply {
-                    description = if (isEnglish) "Reminders for Monday/Thursday Sunnah fasts, Ayyam al-Bidh, and Islamic events" else "সোম-বৃহস্পতিবারের সুন্নাত রোজা, আইয়ামে বীজ ও ইসলামিক দিবসের নোটিফিকেশন"
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val channel = NotificationChannel(
+                        channelId,
+                        if (isEnglish) "Islamic Events & Sunnah Fasts" else "ইসলামিক দিবস ও রোজা রিমাইন্ডার",
+                        NotificationManager.IMPORTANCE_HIGH
+                    ).apply {
+                        description = if (isEnglish) "Reminders for Monday/Thursday Sunnah fasts, Ayyam al-Bidh, and Islamic events" else "সোম-বৃহস্পতিবারের সুন্নাত রোজা, আইয়ামে বীজ ও ইসলামিক দিবসের নোটিফিকেশন"
+                    }
+                    notificationManager.createNotificationChannel(channel)
                 }
-                notificationManager.createNotificationChannel(channel)
-            }
 
-            // Insert into local database so it shows on NotificationScreen & Home badge
-            val timestamp = System.currentTimeMillis()
-            try {
-                val db = com.example.data.local.NotificationDatabase.getDatabase(context)
-                val entity = com.example.data.local.entity.LocalNotificationEntity(
-                    title = eventInfo.title,
-                    content = eventInfo.fullGuidanceContent,
-                    category = eventInfo.category,
-                    author = eventInfo.author,
-                    timestamp = timestamp
+                // Insert into local database (deduplicated) so it shows on NotificationScreen & Home badge
+                val timestamp = System.currentTimeMillis()
+                try {
+                    val db = com.example.data.local.NotificationDatabase.getDatabase(context)
+                    val entity = com.example.data.local.entity.LocalNotificationEntity(
+                        title = eventInfo.title,
+                        content = eventInfo.fullGuidanceContent,
+                        category = eventInfo.category,
+                        author = eventInfo.author,
+                        timestamp = timestamp
+                    )
+                    GlobalScope.launch(Dispatchers.IO) {
+                        db.localNotificationDao().insertNotificationDeduped(entity)
+                        db.localNotificationDao().cleanupDuplicateNotifications()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
+                // Intent to open directly to the detailed Sharia guidance screen
+                val openIntent = Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra("navigate_to", "notifications")
+                    putExtra("target_screen", "notifications")
+                    putExtra("open_blog_post_detail", true)
+                    putExtra("blog_post_id", eventInfo.id)
+                    putExtra("blog_post_title", eventInfo.title)
+                    putExtra("blog_post_content", eventInfo.fullGuidanceContent)
+                    putExtra("blog_post_category", eventInfo.category)
+                    putExtra("blog_post_author", eventInfo.author)
+                    putExtra("blog_post_timestamp", timestamp)
+                }
+
+                val pendingIntent = PendingIntent.getActivity(
+                    context,
+                    eventInfo.id.hashCode(),
+                    openIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-                GlobalScope.launch(Dispatchers.IO) {
-                    db.localNotificationDao().insertNotification(entity)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
+
+                val iconRes = com.example.R.mipmap.ic_launcher
+                val notification = NotificationCompat.Builder(context, channelId)
+                    .setSmallIcon(iconRes)
+                    .setContentTitle(eventInfo.title)
+                    .setContentText(eventInfo.shortSubtitle)
+                    .setStyle(NotificationCompat.BigTextStyle().bigText("${eventInfo.shortSubtitle}\n\n${eventInfo.fullGuidanceContent}"))
+                    .setAutoCancel(true)
+                    .setContentIntent(pendingIntent)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .build()
+
+                notificationManager.notify(eventInfo.id.hashCode(), notification)
             }
-
-            // Intent to open directly to the detailed Sharia guidance screen
-            val openIntent = Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                putExtra("navigate_to", "notifications")
-                putExtra("target_screen", "notifications")
-                putExtra("open_blog_post_detail", true)
-                putExtra("blog_post_id", eventInfo.id)
-                putExtra("blog_post_title", eventInfo.title)
-                putExtra("blog_post_content", eventInfo.fullGuidanceContent)
-                putExtra("blog_post_category", eventInfo.category)
-                putExtra("blog_post_author", eventInfo.author)
-                putExtra("blog_post_timestamp", timestamp)
-            }
-
-            val pendingIntent = PendingIntent.getActivity(
-                context,
-                eventInfo.id.hashCode(),
-                openIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-
-            val iconRes = com.example.R.mipmap.ic_launcher
-            val notification = NotificationCompat.Builder(context, channelId)
-                .setSmallIcon(iconRes)
-                .setContentTitle(eventInfo.title)
-                .setContentText(eventInfo.shortSubtitle)
-                .setStyle(NotificationCompat.BigTextStyle().bigText("${eventInfo.shortSubtitle}\n\n${eventInfo.fullGuidanceContent}"))
-                .setAutoCancel(true)
-                .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .build()
-
-            notificationManager.notify(eventInfo.id.hashCode(), notification)
         }
 
         // Schedule next alarms for tomorrow
@@ -145,9 +150,52 @@ class IslamicEventReceiver : BroadcastReceiver() {
     companion object {
         private const val REQUEST_CODE_AFTERNOON = 3001 // 16:00 (4:00 PM) for 29th moon sighting & events
         private const val REQUEST_CODE_MORNING = 3002   // 06:00 (6:00 AM) for 30th date adjustment & new month
+        private const val PREFS_NOTIFIED_EVENTS = "islamic_event_notified_prefs"
+        private const val KEY_LAST_NOTIFIED_EVENT_ID = "last_notified_event_id"
+        private const val KEY_NOTIFIED_EVENT_SET = "notified_event_ids"
+        private val dedupLock = Any()
+
+        private fun shouldNotifyAndMark(context: Context, eventId: String): Boolean {
+            if (eventId.isBlank()) return false
+            synchronized(dedupLock) {
+                val prefs = context.getSharedPreferences(PREFS_NOTIFIED_EVENTS, Context.MODE_PRIVATE)
+                val lastId = prefs.getString(KEY_LAST_NOTIFIED_EVENT_ID, null)
+                val notifiedSet = prefs.getStringSet(KEY_NOTIFIED_EVENT_SET, emptySet()) ?: emptySet()
+                if (lastId == eventId || notifiedSet.contains(eventId)) {
+                    return false
+                }
+                val updatedSet = notifiedSet.toMutableSet()
+                updatedSet.add(eventId)
+                // Commit synchronously so concurrent alarms firing at the exact same millisecond cannot duplicate
+                prefs.edit()
+                    .putString(KEY_LAST_NOTIFIED_EVENT_ID, eventId)
+                    .putStringSet(KEY_NOTIFIED_EVENT_SET, updatedSet)
+                    .commit()
+                return true
+            }
+        }
+
+        private fun cancelLegacyActionlessAlarms(context: Context, alarmManager: AlarmManager) {
+            for (code in listOf(REQUEST_CODE_AFTERNOON, REQUEST_CODE_MORNING)) {
+                val legacyIntent = Intent(context, IslamicEventReceiver::class.java)
+                val legacyPendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    code,
+                    legacyIntent,
+                    PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+                )
+                if (legacyPendingIntent != null) {
+                    alarmManager.cancel(legacyPendingIntent)
+                    legacyPendingIntent.cancel()
+                }
+            }
+        }
 
         fun scheduleNextAlarm(context: Context) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+            // Cancel any legacy action-less PendingIntents that could fire simultaneously
+            cancelLegacyActionlessAlarms(context, alarmManager)
 
             // 1. Schedule Morning Alarm at 6:00 AM (06:00)
             scheduleDailyAlarm(
@@ -222,6 +270,7 @@ class IslamicEventReceiver : BroadcastReceiver() {
 
         fun cancelAlarm(context: Context) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            cancelLegacyActionlessAlarms(context, alarmManager)
             for (code in listOf(REQUEST_CODE_AFTERNOON, REQUEST_CODE_MORNING)) {
                 val intent = Intent(context, IslamicEventReceiver::class.java).apply {
                     action = "com.example.ACTION_ISLAMIC_ALARM_$code"

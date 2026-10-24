@@ -62,6 +62,7 @@ fun NotificationScreen(
         val db = com.example.data.local.NotificationDatabase.getDatabase(context)
         try {
             db.localNotificationDao().cleanupDummyNotifications()
+            db.localNotificationDao().cleanupDuplicateNotifications()
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -115,7 +116,19 @@ fun NotificationScreen(
             !hiddenIds.contains(it.id) &&
             (it.timestamp >= appFirstInstallTime)
         }
-        (firestoreNotifs + localNotifs).sortedByDescending { it.timestamp }
+        val sorted = (firestoreNotifs + localNotifs).sortedByDescending { it.timestamp }
+        val deduplicated = mutableListOf<BlogPost>()
+        for (item in sorted) {
+            val isDuplicate = deduplicated.any { existing ->
+                existing.title == item.title &&
+                existing.author == item.author &&
+                kotlin.math.abs(existing.timestamp - item.timestamp) < 129_600_000L
+            }
+            if (!isDuplicate) {
+                deduplicated.add(item)
+            }
+        }
+        deduplicated
     }
 
     val filteredNotificationPosts = remember(notificationPosts, selectedTab, readIds) {

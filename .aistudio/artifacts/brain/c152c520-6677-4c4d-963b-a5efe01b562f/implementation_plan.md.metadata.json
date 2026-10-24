@@ -1,6 +1,6 @@
 {
-  "summary": "Implementation plan for fixing the Share button crash and restoring the missing Mushaf tab in the floating menu.",
-  "updatedAt": "2026-10-14T07:23:20.572631432Z",
-  "requestFeedback": true,
-  "userFacing": true
+  "summary":  "হোম স্ক্রিনের টপ হেডারে নোটিফিকেশন বেল আইকনটিকে একেবারে ডান পাশে (সবার শেষে/ডান প্রান্তে) সরিয়ে আনার ইমপ্লিমেন্টেশন প্ল্যান।",
+  "updatedAt":  "2026-10-23T11:05:51.927034751Z",
+  "requestFeedback":  true,
+  "userFacing":  true
 }

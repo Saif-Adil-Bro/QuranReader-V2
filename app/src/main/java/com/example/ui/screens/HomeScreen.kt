@@ -775,6 +775,20 @@ fun HomeScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onNavigateToSearch) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = if (isEnglish) "Search" else "অনুসন্ধান",
+                            tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                        )
+                    }
+                    IconButton(onClick = { viewModel.toggleTheme() }) {
+                        Icon(
+                            imageVector = if (isDark) Icons.Filled.LightMode else Icons.Outlined.DarkMode,
+                            contentDescription = if (isDark) "Light Mode" else "Dark Mode",
+                            tint = if (isDark) OrangeAccent else GrayText
+                        )
+                    }
                     IconButton(onClick = onNavigateToNotifications) {
                         if (unreadNotificationCount > 0) {
                             BadgedBox(
@@ -802,20 +816,6 @@ fun HomeScreen(
                                 tint = Color(0xFF10B981)
                             )
                         }
-                    }
-                    IconButton(onClick = onNavigateToSearch) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = if (isEnglish) "Search" else "অনুসন্ধান",
-                            tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
-                        )
-                    }
-                    IconButton(onClick = { viewModel.toggleTheme() }) {
-                        Icon(
-                            imageVector = if (isDark) Icons.Filled.LightMode else Icons.Outlined.DarkMode,
-                            contentDescription = if (isDark) "Light Mode" else "Dark Mode",
-                            tint = if (isDark) OrangeAccent else GrayText
-                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

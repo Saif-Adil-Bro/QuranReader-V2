@@ -1,93 +1,22 @@
-# Fix Ayah Share Crash & Restore Floating Mushaf Tab
+# হেডারের নোটিফিকেশন বেল আইকন ডান পাশে স্থানান্তর (Implementation Plan)
 
-## Title & Summary
-This plan resolves two targeted issues:
-1. Fixes an application crash when clicking the "Share" button inside the Ayah Tafsir Detail Modal by safely launching `ACTION_SEND` with `FLAG_ACTIVITY_NEW_TASK`.
-2. Restores the missing "মুসহাফ" (Mushaf) tab to the floating navigation toggle bar that appears while scrolling in `SurahDetailScreen`.
+## ১. পরিবর্তনের বিবরণ (Overview)
+হোম স্ক্রিনের হিরো সেকশনের উপরের টপ হেডারে (`TopAppBar`-এর `actions` সেকশনে) বর্তমানে আইকনগুলোর ক্রম বাম থেকে ডানে রয়েছে:
+১. **নোটিফিকেশন বেল আইকন** (Notification Center)
+২. **সার্চ আইকন** (Search)
+৩. **থিম টগল আইকন** (Light/Dark Mode)
 
----
-
-## User Review & Critical Decisions
-
-> [!IMPORTANT]
-> Both reported issues have clear, non-breaking solutions identified directly from the code and crash log:
-> - **Share Crash Resolution**: The crash is an `AndroidRuntimeException` caused by calling `startActivity` without `Intent.FLAG_ACTIVITY_NEW_TASK` from a Dialog context. Adding `FLAG_ACTIVITY_NEW_TASK` to the chooser intent immediately resolves the crash.
-> - **Floating Menu Tab Restoration**: The sticky floating toggle bar in `SurahDetailScreen` previously had 3 tabs (`লিস্ট`, `শব্দার্থ`, `তাফসির`), missing the 4th tab `মুসহাফ` (`ViewMode.MUSHAF`), whereas the top static bar had all 4 tabs. We will add the Mushaf toggle button to the floating bar and link it to scroll to `ViewMode.MUSHAF`.
+আপনার নির্দেশনা অনুযায়ী **নোটিফিকেশন বেল আইকনটিকে একেবারে ডান সাইডে (ডান প্রান্তে সবার প্রথমে)** নিয়ে আসা হবে, যাতে ডান প্রান্ত থেকে প্রথম আইকনটিই হয় নোটিফিকেশন বেল আইকন।
 
 ---
 
-## 1. Overview & Core Concept
-- **Ayah Share Intent**: Users can seamlessly share an Ayah with its Arabic script, Bengali translation, Tafsir text, Surah name, and Ayah number to any messaging or social app without triggering runtime crashes.
-- **Continuous Reading Mode Navigation**: When scrolling down through long Surahs, users maintain quick one-tap access to all 4 reading modes (`লিস্ট`, `শব্দার্থ`, `তাফসির`, `মুসহাফ`) via the floating pill menu.
+## ২. প্রস্তাবিত পরিবর্তন (`HomeScreen.kt`)
+- `HomeScreen.kt`-এর `TopAppBar`-এর `actions` ব্লকে আইকনগুলোর ক্রম পরিবর্তন করে নিচের মতো সাজানো হবে (বাম থেকে ডানে):
+  1. **সার্চ আইকন (`Search`)**
+  2. **থিম পরিবর্তন আইকন (`LightMode / DarkMode`)**
+  3. **নোটিফিকেশন বেল আইকন (`Notifications` সহ আনরিড ব্যাজ)** — একেবারে ডান প্রান্তে।
 
 ---
 
-## 2. User Experience & Visual Design
-
-### Floating Mode Switcher (Scroll State)
-The pill-shaped floating bar at the top of `SurahDetailScreen` will contain all four modes with their icons and localized labels:
-1. **লিস্ট (List)** (`Icons.Default.List`)
-2. **শব্দার্থ (Word-by-word)** (`Icons.Outlined.Book`)
-3. **তাফসির (Tafsir)** (`Icons.Outlined.Info`)
-4. **মুসহাফ (Mushaf)** (`Icons.Outlined.MenuBook`)
-
-Selecting any tab triggers smooth animated scrolling to the corresponding view mode page.
-
-### Share Button Interaction
-- Tapping the share icon (bottom right in `AyahTafsirDetailModal`) builds formatted text containing:
-  - Arabic verse text
-  - Bengali translation
-  - Tafsir text (HTML tags cleaned)
-  - Reference: `[সূরা <Surah Name> : আয়াত <Ayah No>]`
-- Opens the native Android share sheet with `Intent.FLAG_ACTIVITY_NEW_TASK` safely handled within a `try/catch` guard.
-
----
-
-## 3. Key Product Decisions & Trade-Offs
-
-| Decision | Chosen Approach | Rationale |
-|---|---|---|
-| **Share Intent Context Safety** | `chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)` + `try/catch` | Resolves `AndroidRuntimeException` when `startActivity` is invoked from a Dialog/wrapped context. |
-| **Floating Menu Layout** | 4-item pill `Row` with `Arrangement.SpaceBetween` | Matches the static header bar layout and ensures consistent UX across scrolled and non-scrolled states. |
-| **Paging Synchronization** | `pagerState.animateScrollToPage(pageOrder.indexOf(ViewMode.MUSHAF))` | Maintains identical swipe & tap synchronization with the horizontal pager. |
-
----
-
-## 4. Technical Architecture & Data Strategy
-
-```
-┌────────────────────────────────────────────────────────┐
-│                   SurahDetailScreen                    │
-├──────────────────────────┬─────────────────────────────┤
-│ Top Static Bar (4 tabs)  │ Sticky Floating Bar (4 tabs)│
-│  [List][Words][Tafsir]   │  [List][Words][Tafsir]      │
-│  [Mushaf]                │  [Mushaf] <── Restored!     │
-└─────────────┬────────────┴───────────────┬─────────────┘
-              ▼                            ▼
-┌────────────────────────────────────────────────────────┐
-│                 HorizontalPager State                  │
-│       (List / Reading / Tafsir / Mushaf Pages)         │
-└────────────────────────────────────────────────────────┘
-
-┌────────────────────────────────────────────────────────┐
-│               AyahTafsirDetailModal                    │
-├────────────────────────────────────────────────────────┤
-│ Bottom Action Bar: [Play] [Bookmark] [Copy] [Share]    │
-│                                               │        │
-│                                               ▼        │
-│                                 Share Intent Chooser   │
-│                             + FLAG_ACTIVITY_NEW_TASK   │
-│                               (Crash-free invocation)  │
-└────────────────────────────────────────────────────────┘
-```
-
-### Proposed Changes:
-
-1. **`app/src/main/java/com/example/ui/components/AyahTafsirDetailModal.kt`**:
-   - In the `Share` `IconButton` `onClick` handler (around line 471):
-   - Add `addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)` to the `Intent.createChooser(intent, ...)` intent.
-   - Wrap the `context.startActivity(...)` invocation in a `try/catch` block for defensive robustness.
-
-2. **`app/src/main/java/com/example/ui/screens/SurahDetailScreen.kt`**:
-   - In the floating bar `Row` (around lines 740–753):
-   - Add `ViewModeToggle(stringResource(R.string.tab_mushaf), Icons.Outlined.MenuBook, currentMode == ViewMode.MUSHAF)` with click handler `coroutineScope.launch { pagerState.animateScrollToPage(pageOrder.indexOf(ViewMode.MUSHAF)) }`.
+## ৩. অপরিবর্তিত অংশ
+- নোটিফিকেশন ব্যাজ কাউন্ট, ক্লিক অ্যাকশন বা অ্যাপের অন্য কোনো সেটিং ও ফাংশনে কোনো পরিবর্তন করা হবে না।
