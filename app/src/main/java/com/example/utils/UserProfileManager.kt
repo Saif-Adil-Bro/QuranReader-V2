@@ -221,6 +221,15 @@ object UserProfileManager {
             putInt("khatam_completed_pages", newCompletedPages)
         }.apply()
 
+        // Auto-sync reading progress with Khatam Tracker
+        if (pageNumber != null) {
+            try {
+                com.example.utils.KhatamTrackerManager.onPageReadFromReader(context, pageNumber)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         // Sync legacy reading time
         try {
             val quranMenuPrefs = context.getSharedPreferences("quran_menu_prefs", Context.MODE_PRIVATE)

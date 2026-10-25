@@ -53,6 +53,8 @@ class QuranApplication : Application(), ImageLoaderFactory {
         com.example.data.DuaData.initialize(this)
         com.example.sync.NetworkSyncManager.initialize(this)
         com.example.utils.UserProfileManager.init(this)
+        com.example.utils.HifzTrackerManager.initialize(this)
+        com.example.utils.KhatamTrackerManager.initialize(this)
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             val notificationManager = getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager

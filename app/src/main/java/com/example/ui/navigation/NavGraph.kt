@@ -235,7 +235,7 @@ fun AppNavGraph(
                     navController.navigate("settings?subScreen=manzil")
                 },
                 onNavigateToPlanner = {
-                    navController.navigate("settings?subScreen=planner")
+                    navController.navigate("khatam_tracker")
                 },
                 onNavigateToSubjectwise = { categoryName ->
                     if (!categoryName.isNullOrEmpty()) {
@@ -285,7 +285,7 @@ fun AppNavGraph(
                     }
                 },
                 onNavigateToPlanner = {
-                    navController.navigate("settings?subScreen=planner") {
+                    navController.navigate("khatam_tracker") {
                         launchSingleTop = true
                     }
                 },
@@ -575,6 +575,12 @@ fun AppNavGraph(
                 onNavigateToMushafPage = { mushafId, page ->
                     navController.navigate("mushaf/viewer/$mushafId?page=$page")
                 },
+                onNavigateToPlanner = {
+                    navController.navigate("khatam_tracker")
+                },
+                onNavigateToHifz = {
+                    navController.navigate("hifz_tracker")
+                },
                 initialSubScreen = subScreen,
                 initialDuaId = if (duaIdVal != -1) duaIdVal else null,
                 highlightHijriAdjustment = highlightHijriVal,
@@ -630,6 +636,27 @@ fun AppNavGraph(
         composable("umrah_tracker") {
             com.example.ui.umrah.UmrahTrackerScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("khatam_tracker") {
+            com.example.ui.screens.KhatamTrackerScreen(
+                onBackClick = { navController.popBackStack() },
+                onNavigateToHifz = { navController.navigate("hifz_tracker") },
+                onNavigateToReader = {
+                    val lastRead = com.example.utils.UserProfileManager.profileFlow.value.lastReadPage.coerceAtLeast(1)
+                    navController.navigate("mushaf/viewer/madani?page=$lastRead")
+                }
+            )
+        }
+
+        composable("hifz_tracker") {
+            com.example.ui.screens.HifzTrackerScreen(
+                onBackClick = { navController.popBackStack() },
+                onNavigateToKhatam = { navController.navigate("khatam_tracker") },
+                onNavigateToSurah = { surahNumber ->
+                    navController.navigate("detail/$surahNumber")
+                }
             )
         }
     }

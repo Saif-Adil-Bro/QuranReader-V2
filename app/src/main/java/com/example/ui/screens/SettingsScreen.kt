@@ -95,6 +95,8 @@ fun SettingsScreen(
     onNavigateToPosts: () -> Unit = {},
     onNavigateToUmrah: () -> Unit = {},
     onNavigateToMushafPage: (String, Int) -> Unit = { _, _ -> },
+    onNavigateToPlanner: (() -> Unit)? = null,
+    onNavigateToHifz: (() -> Unit)? = null,
     initialSubScreen: String? = null,
     initialDuaId: Int? = null,
     highlightHijriAdjustment: Boolean = false,
@@ -527,6 +529,10 @@ fun SettingsScreen(
                                             onNavigateToPlayer()
                                         } else if (item.id == "umrah") {
                                             onNavigateToUmrah()
+                                        } else if (item.id == "planner") {
+                                            if (onNavigateToPlanner != null) onNavigateToPlanner() else activeDialog = "planner"
+                                        } else if (item.id == "hifz") {
+                                            if (onNavigateToHifz != null) onNavigateToHifz() else activeDialog = "hifz"
                                         } else {
                                             activeDialog = item.id
                                         }
@@ -1201,7 +1207,8 @@ fun SettingsScreen(
             onNavigateToAyah = onNavigateToAyah,
             onNavigateToMushafPage = onNavigateToMushafPage,
             initialDuaId = if (activeDialog == "dua" || activeDialog == "morning_evening_dua") initialDuaId else null,
-            initialCategoryName = if (activeDialog == "subjectwise") initialCategoryName else null
+            initialCategoryName = if (activeDialog == "subjectwise") initialCategoryName else null,
+            onChangeType = { activeDialog = it }
         )
     }
 }
@@ -1217,7 +1224,8 @@ fun MenuDetailDialog(
     onNavigateToAyah: (Int, Int) -> Unit = { _, _ -> },
     onNavigateToMushafPage: (String, Int) -> Unit = { _, _ -> },
     initialDuaId: Int? = null,
-    initialCategoryName: String? = null
+    initialCategoryName: String? = null,
+    onChangeType: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -1400,7 +1408,15 @@ fun MenuDetailDialog(
                             }
                         )
                         "note" -> NotepadDialogContent(viewModel)
-                        "planner" -> PlannerDialogContent(viewModel)
+                        "planner" -> KhatamTrackerScreen(
+                            onBackClick = onDismiss,
+                            onNavigateToHifz = { onChangeType("hifz") },
+                            onNavigateToReader = {
+                                onDismiss()
+                                val lastRead = com.example.utils.UserProfileManager.profileFlow.value.lastReadPage.coerceAtLeast(1)
+                                onNavigateToPage(lastRead)
+                            }
+                        )
                         "subjectwise" -> SubjectwiseDialogContent(
                             viewModel = viewModel,
                             initialCategoryName = initialCategoryName,
@@ -1430,7 +1446,14 @@ fun MenuDetailDialog(
                         )
                         "game" -> GameDialogContent(viewModel)
                         "player" -> PlayerDialogContent(viewModel)
-                        "hifz" -> HifzDialogContent(viewModel)
+                        "hifz" -> HifzTrackerScreen(
+                            onBackClick = onDismiss,
+                            onNavigateToKhatam = { onChangeType("planner") },
+                            onNavigateToSurah = { surahNumber ->
+                                onDismiss()
+                                onNavigateToSurah(surahNumber)
+                            }
+                        )
                         "learn" -> LearnDialogContent(viewModel)
                         "video" -> QuranVideoCreatorScreen(
                             onNavigateBack = { onDismiss() }
