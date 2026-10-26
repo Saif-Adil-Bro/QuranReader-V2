@@ -643,9 +643,24 @@ fun AppNavGraph(
             com.example.ui.screens.KhatamTrackerScreen(
                 onBackClick = { navController.popBackStack() },
                 onNavigateToHifz = { navController.navigate("hifz_tracker") },
-                onNavigateToReader = {
-                    val lastRead = com.example.utils.UserProfileManager.profileFlow.value.lastReadPage.coerceAtLeast(1)
-                    navController.navigate("mushaf/viewer/madani?page=$lastRead")
+                onNavigateToReader = { targetPage, mode ->
+                    val safePage = targetPage.coerceIn(1, 604)
+                    when (mode) {
+                        "TAJWEED" -> navController.navigate("tajweed/$safePage")
+                        "SURAH" -> {
+                            val startPages = com.example.data.QuranData.surahStartPages
+                            var surahNum = 1
+                            for (i in startPages.indices) {
+                                if (startPages[i] <= safePage) {
+                                    surahNum = i + 1
+                                } else {
+                                    break
+                                }
+                            }
+                            navController.navigate("detail/$surahNum")
+                        }
+                        else -> navController.navigate("hafezi/$safePage")
+                    }
                 }
             )
         }
@@ -654,8 +669,8 @@ fun AppNavGraph(
             com.example.ui.screens.HifzTrackerScreen(
                 onBackClick = { navController.popBackStack() },
                 onNavigateToKhatam = { navController.navigate("khatam_tracker") },
-                onNavigateToSurah = { surahNumber ->
-                    navController.navigate("detail/$surahNumber")
+                onNavigateToSurah = { surahNumber, initialAyah ->
+                    navController.navigate("detail/$surahNumber?viewMode=LIST&initialAyah=$initialAyah")
                 }
             )
         }

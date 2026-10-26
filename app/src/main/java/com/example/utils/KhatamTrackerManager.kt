@@ -6,15 +6,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONObject
+import java.text.SimpleDateFormat
 import java.time.LocalDate
+import java.util.Date
+import java.util.Locale
 
 data class KhatamPlan(
     val id: String = "primary_khatam",
-    val title: String = "পবিত্র কুরআন খতম",
+    val title: String = "৩০ দিনে খতম (রমজান/দ্রুত)",
     val targetDays: Int = 30,
     val totalPages: Int = 604,
     var pagesRead: Int = 0,
     val startDate: Long = System.currentTimeMillis(),
+    val targetEndDate: Long = System.currentTimeMillis() + (30L * 24 * 60 * 60 * 1000L),
+    val isCustomDateRange: Boolean = false,
+    val preferredReaderMode: String = "HAFEZI", // "HAFEZI", "TAJWEED", "SURAH"
     var lastReadDate: String = "",
     var streak: Int = 0,
     var autoSyncEnabled: Boolean = true,
@@ -42,6 +48,7 @@ object KhatamTrackerManager {
     private const val KEY_PLAN_DATA = "active_khatam_plan"
     private const val KEY_WAQT_DONE_PREFIX = "waqt_done_"
     private const val KEY_DAILY_LOG_PREFIX = "daily_pages_"
+    private const val DAY_MILLIS = 24L * 60 * 60 * 1000L
 
     private val _planFlow = MutableStateFlow(KhatamPlan())
     val planFlow: StateFlow<KhatamPlan> = _planFlow.asStateFlow()
@@ -92,6 +99,7 @@ object KhatamTrackerManager {
                 targetDays = days,
                 pagesRead = legacyPages,
                 startDate = legacyStart,
+                targetEndDate = legacyStart + (days * DAY_MILLIS),
                 streak = legacyStreak,
                 autoSyncEnabled = true
             )
@@ -105,13 +113,19 @@ object KhatamTrackerManager {
     private fun parsePlan(jsonStr: String): KhatamPlan {
         return try {
             val obj = JSONObject(jsonStr)
+            val start = obj.optLong("startDate", System.currentTimeMillis())
+            val days = obj.optInt("targetDays", 30).coerceAtLeast(1)
+            val end = obj.optLong("targetEndDate", start + (days * DAY_MILLIS))
             KhatamPlan(
                 id = obj.optString("id", "primary_khatam"),
                 title = obj.optString("title", "পবিত্র কুরআন খতম"),
-                targetDays = obj.optInt("targetDays", 30),
+                targetDays = days,
                 totalPages = obj.optInt("totalPages", 604),
                 pagesRead = obj.optInt("pagesRead", 0),
-                startDate = obj.optLong("startDate", System.currentTimeMillis()),
+                startDate = start,
+                targetEndDate = end,
+                isCustomDateRange = obj.optBoolean("isCustomDateRange", false),
+                preferredReaderMode = obj.optString("preferredReaderMode", "HAFEZI"),
                 lastReadDate = obj.optString("lastReadDate", ""),
                 streak = obj.optInt("streak", 0),
                 autoSyncEnabled = obj.optBoolean("autoSyncEnabled", true),
@@ -132,6 +146,9 @@ object KhatamTrackerManager {
             put("totalPages", plan.totalPages)
             put("pagesRead", plan.pagesRead)
             put("startDate", plan.startDate)
+            put("targetEndDate", plan.targetEndDate)
+            put("isCustomDateRange", plan.isCustomDateRange)
+            put("preferredReaderMode", plan.preferredReaderMode)
             put("lastReadDate", plan.lastReadDate)
             put("streak", plan.streak)
             put("autoSyncEnabled", plan.autoSyncEnabled)
@@ -143,7 +160,6 @@ object KhatamTrackerManager {
 
         // Also update legacy prefs for backward compatibility with settings
         try {
-            val legacyPrefs = prefs
             val quranPrefs = com.example.QuranApplication.instance.getSharedPreferences("quran_menu_prefs", Context.MODE_PRIVATE)
             quranPrefs.edit()
                 .putString("planner_target", plan.title)
@@ -155,21 +171,96 @@ object KhatamTrackerManager {
         }
     }
 
-    fun updatePlan(context: Context, newTargetDays: Int, customTitle: String = "") {
+    fun updatePlan(
+        context: Context,
+        newTargetDays: Int,
+        customTitle: String = "",
+        resetProgress: Boolean = false
+    ) {
+        val safeDays = newTargetDays.coerceIn(1, 3650)
         val current = _planFlow.value
-        val title = if (customTitle.isNotBlank()) customTitle else "$newTargetDays দিনে খতম"
+        val now = System.currentTimeMillis()
+        val title = if (customTitle.isNotBlank()) customTitle else "${DateUtil.toBengaliNumerals(safeDays)} দিনে খতম"
         val updated = current.copy(
             title = title,
-            targetDays = newTargetDays,
-            startDate = System.currentTimeMillis(),
-            pagesRead = 0,
-            isCompleted = false,
-            completedDate = 0L
+            targetDays = safeDays,
+            startDate = if (resetProgress) now else current.startDate,
+            targetEndDate = (if (resetProgress) now else current.startDate) + (safeDays * DAY_MILLIS),
+            isCustomDateRange = false,
+            pagesRead = if (resetProgress) 0 else current.pagesRead,
+            highestPageReached = if (resetProgress) 0 else current.highestPageReached,
+            isCompleted = if (resetProgress) false else (current.pagesRead >= current.totalPages),
+            completedDate = if (resetProgress) 0L else current.completedDate
         )
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         savePlanInternal(prefs, updated)
         _planFlow.value = updated
         updateWaqtPacing(context, updated)
+    }
+
+    fun updateCustomDateRangePlan(
+        context: Context,
+        startDateMillis: Long,
+        endDateMillis: Long,
+        resetProgress: Boolean = false
+    ) {
+        val safeStart = minOf(startDateMillis, endDateMillis)
+        val safeEnd = maxOf(startDateMillis, endDateMillis)
+        val diffDays = (((safeEnd - safeStart) / DAY_MILLIS).toInt() + 1).coerceAtLeast(1)
+
+        val formatter = SimpleDateFormat("d MMM", Locale("bn"))
+        val startFormatted = formatter.format(Date(safeStart))
+        val endFormatted = formatter.format(Date(safeEnd))
+        val title = "$startFormatted - $endFormatted (${DateUtil.toBengaliNumerals(diffDays)} দিন)"
+
+        val current = _planFlow.value
+        val updated = current.copy(
+            title = title,
+            targetDays = diffDays,
+            startDate = safeStart,
+            targetEndDate = safeEnd,
+            isCustomDateRange = true,
+            pagesRead = if (resetProgress) 0 else current.pagesRead,
+            highestPageReached = if (resetProgress) 0 else current.highestPageReached,
+            isCompleted = if (resetProgress) false else (current.pagesRead >= current.totalPages),
+            completedDate = if (resetProgress) 0L else current.completedDate
+        )
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        savePlanInternal(prefs, updated)
+        _planFlow.value = updated
+        updateWaqtPacing(context, updated)
+    }
+
+    fun resetCurrentPlanProgress(context: Context) {
+        val current = _planFlow.value
+        val now = System.currentTimeMillis()
+        val updated = current.copy(
+            pagesRead = 0,
+            highestPageReached = 0,
+            startDate = now,
+            targetEndDate = now + (current.targetDays * DAY_MILLIS),
+            isCompleted = false,
+            completedDate = 0L
+        )
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val todayStr = LocalDate.now().toString()
+        val editor = prefs.edit()
+        for (i in 0..4) {
+            editor.putBoolean("${KEY_WAQT_DONE_PREFIX}${i}_$todayStr", false)
+        }
+        editor.apply()
+
+        savePlanInternal(prefs, updated)
+        _planFlow.value = updated
+        updateWaqtPacing(context, updated)
+    }
+
+    fun setPreferredReaderMode(context: Context, mode: String) {
+        val current = _planFlow.value
+        val updated = current.copy(preferredReaderMode = mode)
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        savePlanInternal(prefs, updated)
+        _planFlow.value = updated
     }
 
     fun toggleAutoSync(context: Context, enabled: Boolean) {
@@ -273,7 +364,7 @@ object KhatamTrackerManager {
     }
 
     private fun updateWaqtPacing(context: Context, plan: KhatamPlan) {
-        val passedDays = maxOf(0, ((System.currentTimeMillis() - plan.startDate) / (1000 * 60 * 60 * 24)).toInt())
+        val passedDays = maxOf(0, ((System.currentTimeMillis() - plan.startDate) / DAY_MILLIS).toInt())
         val remainingDays = maxOf(1, plan.targetDays - passedDays)
         val remainingPages = maxOf(0, plan.totalPages - plan.pagesRead)
 

@@ -37,7 +37,7 @@ import java.util.*
 fun HifzTrackerScreen(
     onBackClick: () -> Unit,
     onNavigateToKhatam: () -> Unit,
-    onNavigateToSurah: (Int) -> Unit
+    onNavigateToSurah: (surahNumber: Int, initialAyah: Int) -> Unit
 ) {
     BackHandler { onBackClick() }
 
@@ -164,13 +164,13 @@ fun HifzTrackerScreen(
                     isDoneToday = isSabaqDoneToday,
                     onMarkDone = { HifzTrackerManager.markSabaqCompletedToday(context) },
                     onEditClick = { showEditSabaqDialog = true },
-                    onReadInQuran = { onNavigateToSurah(activeSabaqSurah) }
+                    onReadInQuran = { onNavigateToSurah(activeSabaqSurah, activeSabaqRange.first.coerceAtLeast(1)) }
                 )
                 1 -> SabqiTabContent(
                     items = items,
                     isDoneToday = isSabqiDoneToday,
                     onToggleDone = { HifzTrackerManager.toggleSabqiCompletedToday(context) },
-                    onSurahClick = { onNavigateToSurah(it) }
+                    onSurahClick = { onNavigateToSurah(it, 1) }
                 )
                 2 -> ManzilTabContent(
                     items = items,
@@ -178,7 +178,7 @@ fun HifzTrackerScreen(
                     onToggleDone = { HifzTrackerManager.toggleManzilCompletedToday(context) },
                     onMarkRevised = { HifzTrackerManager.markSurahRevised(context, it) },
                     onStrengthChange = { num, strength -> HifzTrackerManager.updateSurahStrength(context, num, strength) },
-                    onSurahClick = { onNavigateToSurah(it) }
+                    onSurahClick = { onNavigateToSurah(it, 1) }
                 )
                 3 -> AllSurahsTabContent(
                     items = items,
@@ -187,7 +187,7 @@ fun HifzTrackerScreen(
                     selectedFilter = selectedFilter,
                     onFilterChange = { selectedFilter = it },
                     onStatusChange = { num, status -> HifzTrackerManager.updateSurahStatus(context, num, status) },
-                    onSurahClick = { onNavigateToSurah(it) }
+                    onSurahClick = { onNavigateToSurah(it, 1) }
                 )
             }
         }

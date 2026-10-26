@@ -1411,10 +1411,23 @@ fun MenuDetailDialog(
                         "planner" -> KhatamTrackerScreen(
                             onBackClick = onDismiss,
                             onNavigateToHifz = { onChangeType("hifz") },
-                            onNavigateToReader = {
-                                onDismiss()
-                                val lastRead = com.example.utils.UserProfileManager.profileFlow.value.lastReadPage.coerceAtLeast(1)
-                                onNavigateToPage(lastRead)
+                            onNavigateToReader = { targetPage, mode ->
+                                val safePage = targetPage.coerceIn(1, 604)
+                                when (mode) {
+                                    "SURAH" -> {
+                                        val startPages = com.example.data.QuranData.surahStartPages
+                                        var surahNum = 1
+                                        for (i in startPages.indices) {
+                                            if (startPages[i] <= safePage) {
+                                                surahNum = i + 1
+                                            } else {
+                                                break
+                                            }
+                                        }
+                                        onNavigateToSurah(surahNum)
+                                    }
+                                    else -> onNavigateToPage(safePage)
+                                }
                             }
                         )
                         "subjectwise" -> SubjectwiseDialogContent(
@@ -1449,9 +1462,8 @@ fun MenuDetailDialog(
                         "hifz" -> HifzTrackerScreen(
                             onBackClick = onDismiss,
                             onNavigateToKhatam = { onChangeType("planner") },
-                            onNavigateToSurah = { surahNumber ->
-                                onDismiss()
-                                onNavigateToSurah(surahNumber)
+                            onNavigateToSurah = { surahNumber, initialAyah ->
+                                onNavigateToAyah(surahNumber, initialAyah)
                             }
                         )
                         "learn" -> LearnDialogContent(viewModel)

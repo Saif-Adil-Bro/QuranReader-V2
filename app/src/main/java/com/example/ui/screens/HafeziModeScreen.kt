@@ -98,6 +98,10 @@ fun HafeziModeScreen(
     val repeatCount by viewModel.repeatCount.collectAsState()
     
     val currentPage by viewModel.currentPage.collectAsState()
+    val localContext = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(currentPage) {
+        com.example.utils.KhatamTrackerManager.onPageReadFromReader(localContext, currentPage)
+    }
     val arabicFontSize by viewModel.arabicFontSize.collectAsState()
     val arabicFontName by viewModel.arabicFontName.collectAsState()
     val themeRaw by viewModel.theme.collectAsState()

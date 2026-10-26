@@ -76,6 +76,10 @@ fun TajweedModeScreen(
 
     val uiState by viewModel.uiState.collectAsState()
     val currentPage by viewModel.currentPage.collectAsState()
+    val localContext = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(currentPage) {
+        com.example.utils.KhatamTrackerManager.onPageReadFromReader(localContext, currentPage)
+    }
     val isPageMemorized by viewModel.isPageMemorized.collectAsState()
     val isBookmarked by viewModel.isBookmarked.collectAsState()
 
