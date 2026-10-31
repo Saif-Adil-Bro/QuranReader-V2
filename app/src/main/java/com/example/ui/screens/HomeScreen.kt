@@ -1960,7 +1960,7 @@ private fun getJuzStartSurah(juz: Int): Int {
     }
 }
 
-@OptIn(androidx.compose.ExperimentalFoundationApi::class)
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun BookmarksAndLastReadSection(
     lastReadSurah: Int,
