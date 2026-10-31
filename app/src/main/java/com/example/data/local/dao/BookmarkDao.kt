@@ -21,7 +21,17 @@ interface BookmarkDao {
 
     @Delete
     suspend fun deleteBookmark(bookmark: BookmarkEntity)
-    
+
     @Query("DELETE FROM bookmarks WHERE type = :type AND referenceId = :referenceId")
     suspend fun deleteBookmarkByReference(type: String, referenceId: Int)
+
+    // --- Folder support ---
+    @Query("SELECT * FROM bookmarks WHERE folderId = :folderId ORDER BY timestamp DESC")
+    fun getBookmarksByFolder(folderId: Long): Flow<List<BookmarkEntity>>
+
+    @Query("SELECT * FROM bookmarks WHERE folderId IS NULL ORDER BY timestamp DESC")
+    fun getUnfiledBookmarks(): Flow<List<BookmarkEntity>>
+
+    @Query("UPDATE bookmarks SET folderId = :folderId WHERE id = :bookmarkId")
+    suspend fun moveBookmarkToFolder(bookmarkId: Int, folderId: Long?)
 }

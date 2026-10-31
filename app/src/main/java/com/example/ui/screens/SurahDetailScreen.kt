@@ -150,6 +150,7 @@ fun SurahDetailScreen(
     val availableTranslations by viewModel.availableTranslations.collectAsState()
     val showTajweed by viewModel.showTajweed.collectAsState()
     val bookmarkList by viewModel.bookmarks.collectAsState()
+    val ayahFolderList by viewModel.bookmarkFolders.collectAsState()
     val arabicFontSize by viewModel.arabicFontSize.collectAsState()
     val bengaliFontSize by viewModel.bengaliFontSize.collectAsState()
     val arabicFontName by viewModel.arabicFontName.collectAsState()
@@ -237,6 +238,23 @@ fun SurahDetailScreen(
     var showSettingsBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     val settingsSheetState = rememberModalBottomSheetState()
+
+    // --- Ayah bookmark folder picker state ---
+    // When bookmarking a NEW ayah, a folder picker is shown first
+    // (long-press an existing bookmark on Home to re-file it later).
+    var folderPickerAyah by remember { mutableStateOf<CombinedAyah?>(null) }
+    var showAyahFolderCreateDialog by remember { mutableStateOf(false) }
+    var ayahPendingNewFolder by remember { mutableStateOf<CombinedAyah?>(null) }
+
+    val handleAyahBookmarkToggle: (CombinedAyah) -> Unit = { ayah ->
+        val isAlreadyBookmarked = bookmarkList.any { it.type == "AYAH" && it.referenceId == ayah.number }
+        if (isAlreadyBookmarked) {
+            viewModel.toggleBookmark(ayah, activeSurahNumber)
+        } else {
+            folderPickerAyah = ayah
+        }
+    }
+
     
     val currentPlayingAyah = (uiState as? UiState.Success)?.data?.find { it.numberInSurah == currentPlayingAyahNumber }
 
@@ -626,7 +644,7 @@ fun SurahDetailScreen(
                                     bengaliFontName = bengaliFontName,
                                     currentPlayingWordUrl = currentPlayingWordUrl,
                                     isBookmarked = isBookmarked,
-                                    onToggleBookmark = { viewModel.toggleBookmark(ayah, activeSurahNumber) },
+                                    onToggleBookmark = { handleAyahBookmarkToggle(ayah) },
                                     arabicLineSpacing = arabicLineSpacing,
                                     selectedTafsirNames = selectedTafsirNames,
                                     isTafsirLoading = isTafsirSyncing,
@@ -770,7 +788,7 @@ fun SurahDetailScreen(
                                 bengaliFontName = bengaliFontName,
                                 selectedTafsirNames = selectedTafsirNames,
                                 isBookmarked = { item -> bookmarkList.any { it.type == "AYAH" && it.referenceId == item.number } },
-                                onToggleBookmark = { item -> viewModel.toggleBookmark(item, activeSurahNumber) },
+                                onToggleBookmark = { item -> handleAyahBookmarkToggle(item) },
                                 onDismiss = { lastPageIndex ->
                                     selectedAyahDetailIndex = null
                                     val headerCount = if (activeSurahNumber != 1 && activeSurahNumber != 9 && !isStandalone) 2 else 1
@@ -785,6 +803,46 @@ fun SurahDetailScreen(
             }
         }
 
+
+        // --- Ayah bookmark: folder picker at bookmark time ---
+        folderPickerAyah?.let { pickedAyah ->
+            val pickedSurahNum = if (pickedAyah.surahNumber > 0) pickedAyah.surahNumber else activeSurahNumber
+            val pickedSurahName = com.example.data.QuranData.surahNames.find { it.first == pickedSurahNum }?.second?.first
+                ?: "সুরা $pickedSurahNum"
+            com.example.ui.components.MoveBookmarkToFolderDialog(
+                bookmarkName = "$pickedSurahName: আয়াত ${pickedAyah.numberInSurah}",
+                folders = ayahFolderList.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
+                currentFolderId = null,
+                isNewBookmark = true,
+                onDismiss = { folderPickerAyah = null },
+                onMove = { folderId ->
+                    viewModel.addAyahBookmark(pickedAyah, activeSurahNumber, folderId)
+                    folderPickerAyah = null
+                },
+                onCreateFolder = {
+                    // Stash the ayah, dismiss the picker, then open the create dialog;
+                    // the new folder will receive this bookmark right after creation.
+                    ayahPendingNewFolder = pickedAyah
+                    folderPickerAyah = null
+                    showAyahFolderCreateDialog = true
+                }
+            )
+        }
+        if (showAyahFolderCreateDialog) {
+            val ayahToSave = ayahPendingNewFolder
+            com.example.ui.components.CreateBookmarkFolderDialog(
+                onDismiss = { showAyahFolderCreateDialog = false },
+                onConfirm = { name ->
+                    showAyahFolderCreateDialog = false
+                    ayahPendingNewFolder = null
+                    viewModel.createBookmarkFolder(name) { newFolderId ->
+                        if (ayahToSave != null) {
+                            viewModel.addAyahBookmark(ayahToSave, activeSurahNumber, newFolderId)
+                        }
+                    }
+                }
+            )
+        }
 
         if (showPlayerBottomSheet) {
             ModalBottomSheet(

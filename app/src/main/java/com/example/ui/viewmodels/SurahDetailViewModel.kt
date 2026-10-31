@@ -3,7 +3,9 @@ package com.example.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.dao.BookmarkDao
+import com.example.data.local.dao.BookmarkFolderDao
 import com.example.data.local.entity.BookmarkEntity
+import com.example.data.local.entity.BookmarkFolderEntity
 import com.example.data.model.CombinedAyah
 import com.example.data.repository.QuranRepository
 import com.example.data.repository.SettingsRepository
@@ -35,7 +37,8 @@ class SurahDetailViewModel(
     private val settingsRepository: SettingsRepository,
     private val aiRepository: AiRepository,
     val audioRepository: AudioRepository,
-    private val bookmarkDao: BookmarkDao
+    private val bookmarkDao: BookmarkDao,
+    private val bookmarkFolderDao: BookmarkFolderDao? = null
 ) : ViewModel() {
 
     private var currentSelectedQariId = "ar.alafasy"
@@ -278,6 +281,62 @@ class SurahDetailViewModel(
             started = SharingStarted.Lazily,
             initialValue = emptyList()
         )
+
+    val bookmarkFolders: StateFlow<List<BookmarkFolderEntity>> =
+        (bookmarkFolderDao?.getAllFolders() ?: kotlinx.coroutines.flow.flowOf(emptyList()))
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Lazily,
+                initialValue = emptyList()
+            )
+
+    /**
+     * Creates a new bookmark folder and reports the created folder's id
+     * so the caller can immediately file a bookmark into it.
+     */
+    fun createBookmarkFolder(name: String, onCreated: (Long) -> Unit = {}) {
+        val cleanName = name.trim()
+        if (cleanName.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                val newId = bookmarkFolderDao?.insertFolder(BookmarkFolderEntity(name = cleanName)) ?: return@launch
+                onCreated(newId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /**
+     * Bookmarks an ayah directly into the given folder (null = unfiled/general).
+     * Used by the folder picker shown at bookmark time.
+     */
+    fun addAyahBookmark(ayah: CombinedAyah, defaultSurahNumber: Int, folderId: Long?) {
+        viewModelScope.launch {
+            try {
+                val existing = bookmarkDao.getBookmark("AYAH", ayah.number)
+                if (existing != null) {
+                    // Already bookmarked: just move it to the chosen folder
+                    bookmarkDao.moveBookmarkToFolder(existing.id, folderId)
+                    return@launch
+                }
+                val sNum = if (ayah.surahNumber > 0) ayah.surahNumber else defaultSurahNumber
+                val surahPair = QuranData.surahNames.find { it.first == sNum }
+                val surahName = surahPair?.second?.first ?: "সুরা $sNum"
+                val bookmarkName = "$surahName: আয়াত ${ayah.numberInSurah}"
+                bookmarkDao.insertBookmark(
+                    BookmarkEntity(
+                        type = "AYAH",
+                        referenceId = ayah.number,
+                        name = bookmarkName,
+                        folderId = folderId
+                    )
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     fun toggleBookmark(ayah: CombinedAyah, defaultSurahNumber: Int) {
         viewModelScope.launch {

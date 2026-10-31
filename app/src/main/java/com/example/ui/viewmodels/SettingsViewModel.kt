@@ -4,7 +4,10 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.dao.BookmarkDao
+import com.example.data.local.dao.DuaBookmarkDao
 import com.example.data.local.entity.BookmarkEntity
+import com.example.data.local.entity.DuaBookmarkEntity
+import com.example.data.local.entity.DuaBookmarkFolderEntity
 import com.example.data.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,7 +58,8 @@ class SettingsViewModel(
     private val repository: SettingsRepository,
     private val bookmarkDao: BookmarkDao,
     val quranRepository: QuranRepository,
-    val audioRepository: AudioRepository
+    val audioRepository: AudioRepository,
+    private val duaBookmarkDao: DuaBookmarkDao? = null
 ) : ViewModel() {
 
     
@@ -586,6 +590,109 @@ class SettingsViewModel(
     fun removeBookmark(bookmark: BookmarkEntity) {
         viewModelScope.launch {
             bookmarkDao.deleteBookmark(bookmark)
+        }
+    }
+
+    // 1b. Separate DUA bookmark & folder system (Manzil, morning-evening & general duas)
+    val duaBookmarks: kotlinx.coroutines.flow.StateFlow<List<DuaBookmarkEntity>> =
+        (duaBookmarkDao?.getAllDuaBookmarks() ?: kotlinx.coroutines.flow.flowOf(emptyList()))
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Lazily,
+                initialValue = emptyList()
+            )
+
+    val duaBookmarkFolders: kotlinx.coroutines.flow.StateFlow<List<DuaBookmarkFolderEntity>> =
+        (duaBookmarkDao?.getAllDuaFolders() ?: kotlinx.coroutines.flow.flowOf(emptyList()))
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Lazily,
+                initialValue = emptyList()
+            )
+
+    /** Bookmarks a dua/manzil into the given folder (null = unfiled). */
+    fun addDuaBookmark(type: String, duaId: Int, title: String, folderId: Long? = null) {
+        val dao = duaBookmarkDao ?: return
+        viewModelScope.launch {
+            try {
+                val existing = dao.getDuaBookmark(type, duaId)
+                if (existing != null) {
+                    // Already bookmarked: just re-file it into the chosen folder
+                    dao.moveDuaBookmarkToFolder(existing.id, folderId)
+                    return@launch
+                }
+                dao.insertDuaBookmark(
+                    DuaBookmarkEntity(type = type, duaId = duaId, title = title, folderId = folderId)
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun removeDuaBookmark(type: String, duaId: Int) {
+        val dao = duaBookmarkDao ?: return
+        viewModelScope.launch {
+            try {
+                dao.deleteDuaBookmark(type, duaId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun moveDuaBookmark(bookmark: DuaBookmarkEntity, folderId: Long?) {
+        val dao = duaBookmarkDao ?: return
+        viewModelScope.launch {
+            try {
+                dao.moveDuaBookmarkToFolder(bookmark.id, folderId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /** Creates a dua folder and reports the new folder id via [onCreated]. */
+    fun createDuaBookmarkFolder(name: String, onCreated: (Long) -> Unit = {}) {
+        val dao = duaBookmarkDao ?: return
+        val cleanName = name.trim()
+        if (cleanName.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                val newId = dao.insertDuaFolder(DuaBookmarkFolderEntity(name = cleanName))
+                onCreated(newId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun renameDuaBookmarkFolder(folderId: Long, newName: String) {
+        val dao = duaBookmarkDao ?: return
+        val cleanName = newName.trim()
+        if (cleanName.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                dao.renameDuaFolder(folderId, cleanName)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /**
+     * Deletes a dua folder. Duas inside are NOT deleted —
+     * they move back to the unfiled list.
+     */
+    fun deleteDuaBookmarkFolder(folderId: Long) {
+        val dao = duaBookmarkDao ?: return
+        viewModelScope.launch {
+            try {
+                dao.detachDuaBookmarksOfFolder(folderId)
+                dao.deleteDuaFolder(folderId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

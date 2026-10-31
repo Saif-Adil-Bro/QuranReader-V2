@@ -2239,6 +2239,13 @@ fun SubjectwiseDialogContent(
     var showTranslation by remember { mutableStateOf(true) }
     var showManzilInfo by remember { mutableStateOf(false) }
 
+    // --- Manzil bookmark (separate dua bookmark & folder system) ---
+    val duaBookmarks = viewModel?.duaBookmarks?.collectAsState()?.value ?: emptyList()
+    val duaBookmarkFolders = viewModel?.duaBookmarkFolders?.collectAsState()?.value ?: emptyList()
+    var manzilPickerVisible by remember { mutableStateOf(false) }
+    var manzilPendingCreate by remember { mutableStateOf(false) }
+    val isManzilSaved = duaBookmarks.any { it.type == "MANZIL" && it.duaId == 0 }
+
     val handleInternalBack = {
         if (showManzilInfo) {
             showManzilInfo = false
@@ -2607,6 +2614,27 @@ fun SubjectwiseDialogContent(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
+                // Manzil bookmark toggle (separate dua bookmark system).
+                // Only for the real Manzil — not for deep-linked subjectwise categories
+                // (isManzilMode is also true for those).
+                if (category.categoryNameBn == "মানযিল") {
+                    Icon(
+                        imageVector = if (isManzilSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                        contentDescription = if (isEn) "Bookmark Manzil" else "মানযিল বুকমার্ক",
+                        tint = if (isManzilSaved) PrimaryGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clickable {
+                                if (isManzilSaved) {
+                                    viewModel?.removeDuaBookmark("MANZIL", 0)
+                                } else {
+                                    manzilPickerVisible = true
+                                }
+                            }
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                }
+
                 // Translation ON/OFF Toggle
                 Surface(
                     shape = RoundedCornerShape(20.dp),
@@ -2837,9 +2865,44 @@ fun SubjectwiseDialogContent(
             }
         }
     }
+
+    // --- Manzil bookmark dialogs (separate dua bookmark system) ---
+    if (manzilPickerVisible) {
+        val manzilTitle = if (isEn) "Manzil" else "মানযিল"
+        com.example.ui.components.MoveBookmarkToFolderDialog(
+            bookmarkName = manzilTitle,
+            folders = duaBookmarkFolders.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
+            currentFolderId = duaBookmarks.find { it.type == "MANZIL" && it.duaId == 0 }?.folderId,
+            isNewBookmark = true,
+            isEnglish = isEn,
+            onDismiss = { manzilPickerVisible = false },
+            onMove = { folderId ->
+                viewModel?.addDuaBookmark("MANZIL", 0, manzilTitle, folderId)
+                manzilPickerVisible = false
+            },
+            onCreateFolder = {
+                manzilPickerVisible = false
+                manzilPendingCreate = true
+            }
+        )
+    }
+    if (manzilPendingCreate) {
+        val manzilTitle = if (isEn) "Manzil" else "মানযিল"
+        com.example.ui.components.CreateBookmarkFolderDialog(
+            isEnglish = isEn,
+            onDismiss = { manzilPendingCreate = false },
+            onConfirm = { name ->
+                manzilPendingCreate = false
+                viewModel?.createDuaBookmarkFolder(name) { newFolderId ->
+                    viewModel?.addDuaBookmark("MANZIL", 0, manzilTitle, newFolderId)
+                }
+            }
+        )
+    }
 }
 
 // --- 6. DUA DIALOG ---
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun DuaDialogContent(
     viewModel: SettingsViewModel,
@@ -2854,6 +2917,17 @@ fun DuaDialogContent(
     val allDuas = if (isMorningEvening) com.example.data.DuaData.morningEveningDuas else com.example.data.DuaData.richDuas
     val duaListState = rememberLazyListState()
     var searchQuery by remember { mutableStateOf("") }
+
+    // --- Separate Dua bookmark & folder system (Manzil / morning-evening / general duas) ---
+    val duaBookmarks by viewModel.duaBookmarks.collectAsState()
+    val duaBookmarkFolders by viewModel.duaBookmarkFolders.collectAsState()
+    val duaType = if (isMorningEvening) "MORNING_EVENING_DUA" else "GENERAL_DUA"
+    var selectedDuaFolderId by remember { mutableStateOf<Long?>(null) }
+    var folderPickerDua by remember { mutableStateOf<com.example.data.DuaItem?>(null) }
+    var duaPendingNewFolder by remember { mutableStateOf<com.example.data.DuaItem?>(null) }
+    var showDuaFolderCreateDialog by remember { mutableStateOf(false) }
+    var renameDuaFolderTarget by remember { mutableStateOf<com.example.data.local.entity.DuaBookmarkFolderEntity?>(null) }
+    var deleteDuaFolderTarget by remember { mutableStateOf<com.example.data.local.entity.DuaBookmarkFolderEntity?>(null) }
     
     fun formatToBanglaNumber(num: Int): String {
         val banglaDigits = charArrayOf('০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯')
@@ -2862,7 +2936,7 @@ fun DuaDialogContent(
         }.joinToString("")
     }
 
-    val filteredDuas = remember(searchQuery, allDuas) {
+    val searchedDuas = remember(searchQuery, allDuas) {
         if (searchQuery.isBlank()) {
             allDuas
         } else {
@@ -2875,6 +2949,17 @@ fun DuaDialogContent(
                 }
             }
         }
+    }
+
+    // Folder filter: when a folder chip is selected, only duas bookmarked into that folder are shown
+    val filteredDuas = if (selectedDuaFolderId == null) {
+        searchedDuas
+    } else {
+        val idsInFolder = duaBookmarks
+            .filter { it.type == duaType && it.folderId == selectedDuaFolderId }
+            .map { it.duaId }
+            .toSet()
+        searchedDuas.filter { it.id in idsInFolder }
     }
 
     val isDetailMode = selectedDua != null
@@ -2916,6 +3001,100 @@ fun DuaDialogContent(
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true
                 )
+
+                // --- Dua folder chips (separate dua folder system) ---
+                if (duaBookmarkFolders.isNotEmpty()) {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 10.dp)
+                    ) {
+                        item(key = "dua_folder_all") {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (selectedDuaFolderId == null) PrimaryGreen else MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.clickable { selectedDuaFolderId = null }
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Bookmark,
+                                        contentDescription = null,
+                                        tint = if (selectedDuaFolderId == null) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = if (isEn) "All" else "সবগুলো",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (selectedDuaFolderId == null) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                        items(duaBookmarkFolders, key = { it.id }) { folder ->
+                            val folderCount = duaBookmarks.count { it.type == duaType && it.folderId == folder.id }
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (selectedDuaFolderId == folder.id) PrimaryGreen else MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.combinedClickable(
+                                    onClick = { selectedDuaFolderId = folder.id },
+                                    onLongClick = { renameDuaFolderTarget = folder }
+                                )
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Folder,
+                                        contentDescription = null,
+                                        tint = if (selectedDuaFolderId == folder.id) Color.White else PrimaryGreen,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = if (isEn) "${folder.name} ($folderCount)" else "${folder.name} (${formatToBanglaNumber(folderCount)})",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (selectedDuaFolderId == folder.id) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+                        item(key = "dua_folder_add") {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.clickable { showDuaFolderCreateDialog = true }
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CreateNewFolder,
+                                        contentDescription = null,
+                                        tint = PrimaryGreen,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = if (isEn) "Folder" else "ফোল্ডার",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = PrimaryGreen
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
 
                 if (filteredDuas.isEmpty()) {
                     Box(
@@ -3005,6 +3184,23 @@ fun DuaDialogContent(
                                         }
                                     }
                                     
+                                    val isRowSaved = duaBookmarks.any { it.type == duaType && it.duaId == dua.id }
+                                    Icon(
+                                        imageVector = if (isRowSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                        contentDescription = if (isEn) "Bookmark" else "বুকমার্ক",
+                                        tint = if (isRowSaved) PrimaryGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                            .clickable {
+                                                if (isRowSaved) {
+                                                    viewModel.removeDuaBookmark(duaType, dua.id)
+                                                } else {
+                                                    folderPickerDua = dua
+                                                }
+                                            }
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    
                                     Icon(
                                         imageVector = Icons.Default.KeyboardArrowRight,
                                         contentDescription = "Open",
@@ -3073,19 +3269,41 @@ fun DuaDialogContent(
                                 .padding(bottom = 16.dp)
                         ) {
                             val formattedIndex = if (isEn) (allDuas.indexOf(currentDua) + 1).toString() else formatToBanglaNumber(allDuas.indexOf(currentDua) + 1)
-                            
-                            // Title styled centered or structured beautifully like the screenshot
-                            Text(
-                                text = "[$formattedIndex] ${currentDua.title}",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                lineHeight = 26.sp,
-                                textAlign = TextAlign.Center,
+
+                            // Title with bookmark toggle (separate dua bookmark system)
+                            val isDetailSaved = duaBookmarks.any { it.type == duaType && it.duaId == currentDua.id }
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(bottom = 16.dp)
-                            )
+                            ) {
+                                Text(
+                                    text = "[$formattedIndex] ${currentDua.title}",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    lineHeight = 26.sp,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                IconButton(
+                                    onClick = {
+                                        if (isDetailSaved) {
+                                            viewModel.removeDuaBookmark(duaType, currentDua.id)
+                                        } else {
+                                            folderPickerDua = currentDua
+                                        }
+                                    },
+                                    modifier = Modifier.align(Alignment.CenterEnd)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isDetailSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                        contentDescription = if (isEn) "Bookmark" else "বুকমার্ক",
+                                        tint = if (isDetailSaved) PrimaryGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            }
                             
                             HorizontalDivider(
                                 modifier = Modifier.padding(bottom = 16.dp),
@@ -3210,6 +3428,73 @@ fun DuaDialogContent(
                 }
             }
         }
+    }
+
+    // --- Dua bookmark folder dialogs ---
+    folderPickerDua?.let { pickedDua ->
+        com.example.ui.components.MoveBookmarkToFolderDialog(
+            bookmarkName = pickedDua.title,
+            folders = duaBookmarkFolders.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
+            currentFolderId = null,
+            isNewBookmark = true,
+            isEnglish = isEn,
+            onDismiss = { folderPickerDua = null },
+            onMove = { folderId ->
+                viewModel.addDuaBookmark(duaType, pickedDua.id, pickedDua.title, folderId)
+                folderPickerDua = null
+            },
+            onCreateFolder = {
+                // Stash the dua, close the picker, then open the create dialog;
+                // the new folder receives this dua right after creation.
+                duaPendingNewFolder = pickedDua
+                folderPickerDua = null
+                showDuaFolderCreateDialog = true
+            }
+        )
+    }
+    if (showDuaFolderCreateDialog) {
+        val duaToSave = duaPendingNewFolder
+        com.example.ui.components.CreateBookmarkFolderDialog(
+            isEnglish = isEn,
+            onDismiss = { showDuaFolderCreateDialog = false },
+            onConfirm = { name ->
+                showDuaFolderCreateDialog = false
+                duaPendingNewFolder = null
+                viewModel.createDuaBookmarkFolder(name) { newFolderId ->
+                    if (duaToSave != null) {
+                        viewModel.addDuaBookmark(duaType, duaToSave.id, duaToSave.title, newFolderId)
+                    }
+                }
+            }
+        )
+    }
+    renameDuaFolderTarget?.let { folder ->
+        com.example.ui.components.RenameBookmarkFolderDialog(
+            folderName = folder.name,
+            isEnglish = isEn,
+            onDismiss = { renameDuaFolderTarget = null },
+            onConfirm = { newName ->
+                renameDuaFolderTarget = null
+                viewModel.renameDuaBookmarkFolder(folder.id, newName)
+            },
+            onRequestDelete = {
+                renameDuaFolderTarget = null
+                deleteDuaFolderTarget = folder
+            }
+        )
+    }
+    deleteDuaFolderTarget?.let { folder ->
+        com.example.ui.components.DeleteBookmarkFolderDialog(
+            folderName = folder.name,
+            bookmarkCount = duaBookmarks.count { it.folderId == folder.id },
+            isEnglish = isEn,
+            onDismiss = { deleteDuaFolderTarget = null },
+            onDelete = {
+                deleteDuaFolderTarget = null
+                if (selectedDuaFolderId == folder.id) selectedDuaFolderId = null
+                viewModel.deleteDuaBookmarkFolder(folder.id)
+            }
+        )
     }
 }
 
