@@ -51,7 +51,17 @@ jobs:
         fi
 
     - name: Build Debug APK
-      run: ./gradlew assembleDebug
+      run: |
+        set +e
+        ./gradlew assembleDebug --console=plain > /tmp/build_output.log 2>&1
+        EXIT_CODE=$?
+        echo "Gradle exit code: $EXIT_CODE"
+        # Surface compile errors as annotations so they are visible without downloading logs
+        grep -E "^e: |error: |Unresolved reference" /tmp/build_output.log | head -50 | while IFS= read -r line; do
+          echo "::error title=Compile Error::${line}"
+        done
+        tail -n 120 /tmp/build_output.log
+        exit $EXIT_CODE
 
     - name: Build Release APK
       run: ./gradlew assembleRelease
