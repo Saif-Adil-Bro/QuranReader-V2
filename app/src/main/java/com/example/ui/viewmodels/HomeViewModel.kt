@@ -8,7 +8,9 @@ import com.example.data.repository.RecentReadTrack
 import com.example.data.repository.MushafRepository
 import com.example.data.repository.AudioRepository
 import com.example.data.local.dao.BookmarkDao
+import com.example.data.local.dao.BookmarkFolderDao
 import com.example.data.local.entity.BookmarkEntity
+import com.example.data.local.entity.BookmarkFolderEntity
 import com.example.data.model.Surah
 import com.example.data.model.CombinedAyah
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +30,8 @@ class HomeViewModel(
     private val quranRepository: QuranRepository,
     private val mushafRepository: MushafRepository,
     private val bookmarkDao: BookmarkDao,
-    private val audioRepository: AudioRepository
+    private val audioRepository: AudioRepository,
+    private val bookmarkFolderDao: BookmarkFolderDao
 ) : ViewModel() {
 
     val lastReadSurah: StateFlow<Int> = settingsRepository.lastReadSurahFlow
@@ -277,6 +280,63 @@ class HomeViewModel(
             started = SharingStarted.Lazily,
             initialValue = emptyList()
         )
+
+    // --- Bookmark Folders ---
+    val bookmarkFolders: StateFlow<List<BookmarkFolderEntity>> = bookmarkFolderDao.getAllFolders()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Lazily,
+            initialValue = emptyList()
+        )
+
+    fun createBookmarkFolder(name: String) {
+        val cleanName = name.trim()
+        if (cleanName.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                bookmarkFolderDao.insertFolder(BookmarkFolderEntity(name = cleanName))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun renameBookmarkFolder(folderId: Long, newName: String) {
+        val cleanName = newName.trim()
+        if (cleanName.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                bookmarkFolderDao.renameFolder(folderId, cleanName)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /**
+     * Deletes a folder. Bookmarks inside are NOT deleted —
+     * they are moved back to the unfiled list (folderId = null).
+     */
+    fun deleteBookmarkFolder(folderId: Long) {
+        viewModelScope.launch {
+            try {
+                bookmarkFolderDao.detachBookmarksOfFolder(folderId)
+                bookmarkFolderDao.deleteFolder(folderId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun moveBookmarkToFolder(bookmark: BookmarkEntity, folderId: Long?) {
+        viewModelScope.launch {
+            try {
+                bookmarkDao.moveBookmarkToFolder(bookmark.id, folderId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     fun deleteBookmark(bookmark: BookmarkEntity) {
         viewModelScope.launch {

@@ -136,6 +136,14 @@ class AppContainer(private val context: Context) {
         quranDatabase.bookmarkDao()
     }
 
+    val bookmarkFolderDao by lazy {
+        quranDatabase.bookmarkFolderDao()
+    }
+
+    val duaBookmarkDao by lazy {
+        quranDatabase.duaBookmarkDao()
+    }
+
     val memorizedPageDao by lazy {
         quranDatabase.memorizedPageDao()
     }

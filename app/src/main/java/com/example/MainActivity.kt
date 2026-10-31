@@ -171,6 +171,7 @@ class MainActivity : ComponentActivity() {
             audioRepository = appContainer.audioRepository,
             aiRepository = appContainer.aiRepository,
             bookmarkDao = appContainer.bookmarkDao,
+            bookmarkFolderDao = appContainer.bookmarkFolderDao,
             memorizedPageDao = appContainer.memorizedPageDao,
             mushafRepository = appContainer.mushafRepository,
             postsRepository = appContainer.postsRepository

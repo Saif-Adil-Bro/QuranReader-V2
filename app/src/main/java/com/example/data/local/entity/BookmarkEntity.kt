@@ -11,5 +11,6 @@ data class BookmarkEntity(
     val referenceId: Int, // Surah number, Page number, or Juz number
     val name: String, // e.g. "Surah Al-Fatihah" or "Page 1"
     val mushafId: String? = null,
+    val folderId: Long? = null, // BookmarkFolderEntity.id, null = unfiled
     val timestamp: Long = System.currentTimeMillis()
 )

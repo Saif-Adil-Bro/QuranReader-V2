@@ -3,6 +3,7 @@ package com.example.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.data.local.dao.BookmarkDao
+import com.example.data.local.dao.BookmarkFolderDao
 import com.example.data.local.dao.MemorizedPageDao
 import com.example.data.repository.AudioRepository
 import com.example.data.repository.QuranRepository
@@ -20,6 +21,7 @@ class AppViewModelFactory(
     private val audioRepository: AudioRepository,
     private val aiRepository: AiRepository,
     private val bookmarkDao: BookmarkDao,
+    private val bookmarkFolderDao: BookmarkFolderDao,
     private val memorizedPageDao: MemorizedPageDao,
     private val mushafRepository: com.example.data.repository.MushafRepository,
     private val postsRepository: com.example.data.repository.PostsRepository? = null
@@ -32,10 +34,10 @@ class AppViewModelFactory(
                 QuranListViewModel(quranRepository) as T
             }
             modelClass.isAssignableFrom(SurahDetailViewModel::class.java) -> {
-                SurahDetailViewModel(quranRepository, settingsRepository, aiRepository, audioRepository, bookmarkDao) as T
+                SurahDetailViewModel(quranRepository, settingsRepository, aiRepository, audioRepository, bookmarkDao, bookmarkFolderDao) as T
             }
             modelClass.isAssignableFrom(SettingsViewModel::class.java) -> {
-                SettingsViewModel(settingsRepository, bookmarkDao, quranRepository, audioRepository) as T
+                SettingsViewModel(settingsRepository, bookmarkDao, quranRepository, audioRepository, duaBookmarkDao) as T
             }
             modelClass.isAssignableFrom(SearchViewModel::class.java) -> {
                 SearchViewModel(quranRepository, settingsRepository) as T
@@ -46,7 +48,8 @@ class AppViewModelFactory(
                     quranRepository = quranRepository,
                     mushafRepository = mushafRepository,
                     bookmarkDao = bookmarkDao,
-                    audioRepository = audioRepository
+                    audioRepository = audioRepository,
+                    bookmarkFolderDao = bookmarkFolderDao
                 ) as T
             }
             modelClass.isAssignableFrom(ReadingModeViewModel::class.java) -> {
