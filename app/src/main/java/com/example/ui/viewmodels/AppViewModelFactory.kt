@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.data.local.dao.BookmarkDao
 import com.example.data.local.dao.BookmarkFolderDao
+import com.example.data.local.dao.DuaBookmarkDao
 import com.example.data.local.dao.MemorizedPageDao
 import com.example.data.repository.AudioRepository
 import com.example.data.repository.QuranRepository
@@ -22,6 +23,7 @@ class AppViewModelFactory(
     private val aiRepository: AiRepository,
     private val bookmarkDao: BookmarkDao,
     private val bookmarkFolderDao: BookmarkFolderDao,
+    private val duaBookmarkDao: DuaBookmarkDao,
     private val memorizedPageDao: MemorizedPageDao,
     private val mushafRepository: com.example.data.repository.MushafRepository,
     private val postsRepository: com.example.data.repository.PostsRepository? = null
