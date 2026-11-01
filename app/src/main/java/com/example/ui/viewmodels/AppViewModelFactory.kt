@@ -39,7 +39,7 @@ class AppViewModelFactory(
                 SurahDetailViewModel(quranRepository, settingsRepository, aiRepository, audioRepository, bookmarkDao, bookmarkFolderDao) as T
             }
             modelClass.isAssignableFrom(SettingsViewModel::class.java) -> {
-                SettingsViewModel(settingsRepository, bookmarkDao, quranRepository, audioRepository, duaBookmarkDao) as T
+                SettingsViewModel(settingsRepository, bookmarkDao, quranRepository, audioRepository, duaBookmarkDao, bookmarkFolderDao) as T
             }
             modelClass.isAssignableFrom(SearchViewModel::class.java) -> {
                 SearchViewModel(quranRepository, settingsRepository) as T
@@ -63,7 +63,8 @@ class AppViewModelFactory(
                     audioRepository = audioRepository,
                     settingsRepository = settingsRepository,
                     bookmarkDao = bookmarkDao,
-                    memorizedPageDao = memorizedPageDao
+                    memorizedPageDao = memorizedPageDao,
+                    bookmarkFolderDao = bookmarkFolderDao
                 ) as T
             }
             modelClass.isAssignableFrom(TajweedModeViewModel::class.java) -> {
@@ -72,14 +73,15 @@ class AppViewModelFactory(
                     audioRepository = audioRepository,
                     settingsRepository = settingsRepository,
                     bookmarkDao = bookmarkDao,
-                    memorizedPageDao = memorizedPageDao
+                    memorizedPageDao = memorizedPageDao,
+                    bookmarkFolderDao = bookmarkFolderDao
                 ) as T
             }
             modelClass.isAssignableFrom(MushafSelectionViewModel::class.java) -> {
                 MushafSelectionViewModel(mushafRepository, settingsRepository) as T
             }
             modelClass.isAssignableFrom(MushafViewerViewModel::class.java) -> {
-                MushafViewerViewModel(mushafRepository, settingsRepository, bookmarkDao, quranRepository, audioRepository) as T
+                MushafViewerViewModel(mushafRepository, settingsRepository, bookmarkDao, quranRepository, audioRepository, bookmarkFolderDao) as T
             }
             modelClass.isAssignableFrom(SplashViewModel::class.java) -> {
                 SplashViewModel(quranRepository) as T

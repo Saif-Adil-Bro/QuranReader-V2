@@ -83,6 +83,42 @@ fun TajweedModeScreen(
     val isPageMemorized by viewModel.isPageMemorized.collectAsState()
     val isBookmarked by viewModel.isBookmarked.collectAsState()
 
+    // --- Page bookmark folder picker state (কালার কুরআন) ---
+    val tajweedFolderList by viewModel.bookmarkFolders.collectAsState()
+    var showTajweedFolderPicker by remember { mutableStateOf(false) }
+    var tajweedPendingNewFolder by remember { mutableStateOf(false) }
+
+    // Folder picker shown when saving a NEW page bookmark;
+    // removing an existing one stays a one-tap toggle.
+    if (showTajweedFolderPicker) {
+        com.example.ui.components.MoveBookmarkToFolderDialog(
+            bookmarkName = "কালার কুরআন পৃষ্ঠা ${com.example.utils.DateUtil.toBengaliNumerals(currentPage)}",
+            folders = tajweedFolderList.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
+            currentFolderId = null,
+            isNewBookmark = true,
+            onDismiss = { showTajweedFolderPicker = false },
+            onMove = { folderId ->
+                viewModel.addPageBookmark(folderId)
+                showTajweedFolderPicker = false
+            },
+            onCreateFolder = {
+                showTajweedFolderPicker = false
+                tajweedPendingNewFolder = true
+            }
+        )
+    }
+    if (tajweedPendingNewFolder) {
+        com.example.ui.components.CreateBookmarkFolderDialog(
+            onDismiss = { tajweedPendingNewFolder = false },
+            onConfirm = { name ->
+                tajweedPendingNewFolder = false
+                viewModel.createBookmarkFolder(name) { newFolderId ->
+                    viewModel.addPageBookmark(newFolderId)
+                }
+            }
+        )
+    }
+
     val isPlaying by viewModel.isPlaying.collectAsState()
     val currentPlayingAyahNumber by viewModel.currentPlayingAyahNumber.collectAsState()
 
@@ -243,7 +279,10 @@ fun TajweedModeScreen(
                             tint = topBarContentColor
                         )
                     }
-                    IconButton(onClick = { viewModel.toggleBookmark() }) {
+                    IconButton(onClick = {
+                        // Bookmarked -> one-tap remove; new -> pick a folder first
+                        if (isBookmarked) viewModel.toggleBookmark() else showTajweedFolderPicker = true
+                    }) {
                         Icon(
                             imageVector = if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                             contentDescription = "Bookmark",

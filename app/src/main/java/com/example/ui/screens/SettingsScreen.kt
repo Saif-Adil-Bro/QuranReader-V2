@@ -1614,16 +1614,31 @@ fun ProfileDialogContent(viewModel: SettingsViewModel) {
 }
 
 // --- 2. BOOKMARK DIALOG ---
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun BookmarkDialogContent(
     viewModel: SettingsViewModel,
     onBookmarkClick: (BookmarkEntity) -> Unit = {}
 ) {
     val bookmarks by viewModel.bookmarks.collectAsState(initial = emptyList())
+    val folders by viewModel.bookmarkFolders.collectAsState()
     val currentLang by viewModel.appLanguage.collectAsState()
     val isEn = currentLang == "en"
-    
-    if (bookmarks.isEmpty()) {
+
+    // --- Folder organization state ---
+    var selectedFolderId by remember { mutableStateOf<Long?>(null) }
+    var showCreateFolderDialog by remember { mutableStateOf(false) }
+    var renameFolderTarget by remember { mutableStateOf<com.example.data.local.entity.BookmarkFolderEntity?>(null) }
+    var deleteFolderTarget by remember { mutableStateOf<com.example.data.local.entity.BookmarkFolderEntity?>(null) }
+    var moveBookmarkTarget by remember { mutableStateOf<BookmarkEntity?>(null) }
+
+    val visibleBookmarks = if (selectedFolderId == null) {
+        bookmarks
+    } else {
+        bookmarks.filter { it.folderId == selectedFolderId }
+    }
+
+    if (bookmarks.isEmpty() && folders.isEmpty()) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -1652,15 +1667,135 @@ fun BookmarkDialogContent(
             )
         }
     } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(bookmarks) { bookmark ->
-                Card(
+        Column(modifier = Modifier.fillMaxSize()) {
+            // --- Folder filter chips ---
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp)
+            ) {
+                item(key = "folder_all") {
+                    val allCount = bookmarks.size
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (selectedFolderId == null) PrimaryGreen else MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.clickable { selectedFolderId = null }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Bookmark,
+                                contentDescription = null,
+                                tint = if (selectedFolderId == null) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (isEn) "All ($allCount)"
+                                else "সবগুলো (${com.example.utils.DateUtil.toBengaliNumerals(allCount)})",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (selectedFolderId == null) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                items(folders, key = { it.id }) { folder ->
+                    val folderCount = bookmarks.count { it.folderId == folder.id }
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (selectedFolderId == folder.id) PrimaryGreen else MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.combinedClickable(
+                            onClick = { selectedFolderId = folder.id },
+                            onLongClick = { renameFolderTarget = folder }
+                        )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Folder,
+                                contentDescription = null,
+                                tint = if (selectedFolderId == folder.id) Color.White else PrimaryGreen,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            com.example.ui.components.FolderColorDot(colorHex = folder.colorHex)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (isEn) "${folder.name} ($folderCount)"
+                                else "${folder.name} (${com.example.utils.DateUtil.toBengaliNumerals(folderCount)})",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (selectedFolderId == folder.id) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+                item(key = "folder_add") {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.clickable { showCreateFolderDialog = true }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CreateNewFolder,
+                                contentDescription = if (isEn) "New folder" else "নতুন ফোল্ডার",
+                                tint = PrimaryGreen,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (isEn) "Folder" else "ফোল্ডার",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryGreen
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (visibleBookmarks.isEmpty()) {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onBookmarkClick(bookmark) },
+                        .fillMaxSize()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (isEn)
+                            "No bookmarks in this folder yet. Long-press a bookmark to move it here."
+                        else "এই ফোল্ডারে এখনো কোনো বুকমার্ক নেই। বুকমার্কে লম্বা চাপ দিয়ে এখানে সরান।",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(visibleBookmarks, key = { it.id }) { bookmark ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable(
+                                    onClick = { onBookmarkClick(bookmark) },
+                                    onLongClick = { moveBookmarkTarget = bookmark }
+                                ),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
                 ) {
@@ -1681,17 +1816,45 @@ fun BookmarkDialogContent(
                             Spacer(modifier = Modifier.height(2.dp))
                             val displayType = when (bookmark.type) {
                                 "SURAH" -> if (isEn) "Surah" else "সুরা"
-                                "PAGE" -> if (isEn) "Page (Hafezi)" else "পৃষ্ঠা (হাফেজী)"
+                                "PAGE" -> if (isEn) "Page" else "পৃষ্ঠা"
                                 "MUSHAF_PAGE" -> if (isEn) "Mushaf Page" else "মুসহাফ পৃষ্ঠা"
                                 "JUZ" -> if (isEn) "Juz" else "পারা"
                                 "AYAH" -> if (isEn) "Ayah" else "আয়াত"
                                 else -> bookmark.type
                             }
                             Text(
-                                text = if (isEn) "Type: $displayType • ID: ${bookmark.referenceId}" else "প্রকার: $displayType • আইডি: ${bookmark.referenceId}",
+                                text = if (isEn) "Type: $displayType" else "প্রকার: $displayType",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+                        val folderName = bookmark.folderId?.let { fid -> folders.find { it.id == fid }?.name }
+                        if (folderName != null) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = PrimaryGreen.copy(alpha = 0.12f),
+                                modifier = Modifier.padding(end = 6.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Folder,
+                                        contentDescription = null,
+                                        tint = PrimaryGreen,
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text(
+                                        text = folderName,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = PrimaryGreen,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
                         }
                         IconButton(onClick = { viewModel.removeBookmark(bookmark) }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
@@ -1699,7 +1862,66 @@ fun BookmarkDialogContent(
                     }
                 }
             }
+            }
         }
+    }
+    }
+
+    // --- Folder dialogs ---
+    if (showCreateFolderDialog) {
+        com.example.ui.components.CreateBookmarkFolderDialog(
+            isEnglish = isEn,
+            onDismiss = { showCreateFolderDialog = false },
+            onConfirm = { name ->
+                showCreateFolderDialog = false
+                viewModel.createBookmarkFolder(name)
+            }
+        )
+    }
+    renameFolderTarget?.let { folder ->
+        com.example.ui.components.RenameBookmarkFolderDialog(
+            folderName = folder.name,
+            isEnglish = isEn,
+            onDismiss = { renameFolderTarget = null },
+            onConfirm = { newName ->
+                renameFolderTarget = null
+                viewModel.renameBookmarkFolder(folder.id, newName)
+            },
+            onRequestDelete = {
+                renameFolderTarget = null
+                deleteFolderTarget = folder
+            }
+        )
+    }
+    deleteFolderTarget?.let { folder ->
+        com.example.ui.components.DeleteBookmarkFolderDialog(
+            folderName = folder.name,
+            bookmarkCount = bookmarks.count { it.folderId == folder.id },
+            isEnglish = isEn,
+            onDismiss = { deleteFolderTarget = null },
+            onDelete = {
+                deleteFolderTarget = null
+                if (selectedFolderId == folder.id) selectedFolderId = null
+                viewModel.deleteBookmarkFolder(folder.id)
+            }
+        )
+    }
+    moveBookmarkTarget?.let { bookmark ->
+        com.example.ui.components.MoveBookmarkToFolderDialog(
+            bookmarkName = bookmark.name,
+            folders = folders.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
+            currentFolderId = bookmark.folderId,
+            isEnglish = isEn,
+            onDismiss = { moveBookmarkTarget = null },
+            onMove = { folderId ->
+                moveBookmarkTarget = null
+                viewModel.moveBookmark(bookmark, folderId)
+            },
+            onCreateFolder = {
+                moveBookmarkTarget = null
+                showCreateFolderDialog = true
+            }
+        )
     }
 }
 

@@ -4,8 +4,10 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.dao.BookmarkDao
+import com.example.data.local.dao.BookmarkFolderDao
 import com.example.data.local.dao.DuaBookmarkDao
 import com.example.data.local.entity.BookmarkEntity
+import com.example.data.local.entity.BookmarkFolderEntity
 import com.example.data.local.entity.DuaBookmarkEntity
 import com.example.data.local.entity.DuaBookmarkFolderEntity
 import com.example.data.repository.SettingsRepository
@@ -59,7 +61,8 @@ class SettingsViewModel(
     private val bookmarkDao: BookmarkDao,
     val quranRepository: QuranRepository,
     val audioRepository: AudioRepository,
-    private val duaBookmarkDao: DuaBookmarkDao? = null
+    private val duaBookmarkDao: DuaBookmarkDao? = null,
+    private val bookmarkFolderDao: BookmarkFolderDao? = null
 ) : ViewModel() {
 
     
@@ -590,6 +593,69 @@ class SettingsViewModel(
     fun removeBookmark(bookmark: BookmarkEntity) {
         viewModelScope.launch {
             bookmarkDao.deleteBookmark(bookmark)
+        }
+    }
+
+    // 1a. Bookmark folders (Quran bookmark organization)
+    val bookmarkFolders: kotlinx.coroutines.flow.StateFlow<List<BookmarkFolderEntity>> =
+        (bookmarkFolderDao?.getAllFolders() ?: kotlinx.coroutines.flow.flowOf(emptyList()))
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Lazily,
+                initialValue = emptyList()
+            )
+
+    fun moveBookmark(bookmark: BookmarkEntity, folderId: Long?) {
+        viewModelScope.launch {
+            try {
+                bookmarkDao.moveBookmarkToFolder(bookmark.id, folderId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /** Creates a folder and reports the new folder id via [onCreated]. */
+    fun createBookmarkFolder(name: String, onCreated: (Long) -> Unit = {}) {
+        val dao = bookmarkFolderDao ?: return
+        val cleanName = name.trim()
+        if (cleanName.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                val newId = dao.insertFolder(BookmarkFolderEntity(name = cleanName))
+                onCreated(newId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun renameBookmarkFolder(folderId: Long, newName: String) {
+        val dao = bookmarkFolderDao ?: return
+        val cleanName = newName.trim()
+        if (cleanName.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                dao.renameFolder(folderId, cleanName)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /**
+     * Deletes a folder. Bookmarks inside are NOT deleted —
+     * they move back to the unfiled list.
+     */
+    fun deleteBookmarkFolder(folderId: Long) {
+        val dao = bookmarkFolderDao ?: return
+        viewModelScope.launch {
+            try {
+                dao.detachBookmarksOfFolder(folderId)
+                dao.deleteFolder(folderId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

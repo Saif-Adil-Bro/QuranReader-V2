@@ -98,6 +98,42 @@ fun HafeziModeScreen(
     val repeatCount by viewModel.repeatCount.collectAsState()
     
     val currentPage by viewModel.currentPage.collectAsState()
+
+    // --- Page bookmark folder picker state (হাফেজী মোড) ---
+    val hafeziFolderList by viewModel.bookmarkFolders.collectAsState()
+    var showHafeziFolderPicker by remember { mutableStateOf(false) }
+    var hafeziPendingNewFolder by remember { mutableStateOf(false) }
+
+    // Folder picker shown when saving a NEW page bookmark;
+    // removing an existing one stays a one-tap toggle.
+    if (showHafeziFolderPicker) {
+        com.example.ui.components.MoveBookmarkToFolderDialog(
+            bookmarkName = "হাফেজী পৃষ্ঠা ${com.example.utils.DateUtil.toBengaliNumerals(currentPage)}",
+            folders = hafeziFolderList.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
+            currentFolderId = null,
+            isNewBookmark = true,
+            onDismiss = { showHafeziFolderPicker = false },
+            onMove = { folderId ->
+                viewModel.addPageBookmark(folderId)
+                showHafeziFolderPicker = false
+            },
+            onCreateFolder = {
+                showHafeziFolderPicker = false
+                hafeziPendingNewFolder = true
+            }
+        )
+    }
+    if (hafeziPendingNewFolder) {
+        com.example.ui.components.CreateBookmarkFolderDialog(
+            onDismiss = { hafeziPendingNewFolder = false },
+            onConfirm = { name ->
+                hafeziPendingNewFolder = false
+                viewModel.createBookmarkFolder(name) { newFolderId ->
+                    viewModel.addPageBookmark(newFolderId)
+                }
+            }
+        )
+    }
     val localContext = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(currentPage) {
         com.example.utils.KhatamTrackerManager.onPageReadFromReader(localContext, currentPage)
@@ -244,7 +280,10 @@ fun HafeziModeScreen(
                             tint = topBarContentColor
                         )
                     }
-                    IconButton(onClick = { viewModel.toggleBookmark() }) {
+                    IconButton(onClick = {
+                        // Bookmarked -> one-tap remove; new -> pick a folder first
+                        if (isBookmarked) viewModel.toggleBookmark() else showHafeziFolderPicker = true
+                    }) {
                         Icon(
                             if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                             contentDescription = stringResource(R.string.feature_bookmarks),
