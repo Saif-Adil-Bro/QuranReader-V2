@@ -164,6 +164,44 @@ fun MushafViewerScreen(
     val currentPlayingAyahNum by viewModel.currentPlayingAyahNumber.collectAsState()
 
     var showAyahSheet by remember { mutableStateOf(false) }
+
+    // --- Page bookmark folder picker state (PDF/মুসহাফ কুরআন) ---
+    val mushafFolderList by viewModel.bookmarkFolders.collectAsState()
+    val currentPdfPage by viewModel.currentPageNumber.collectAsState()
+    var showPageFolderPicker by remember { mutableStateOf(false) }
+    var pagePendingNewFolder by remember { mutableStateOf(false) }
+
+    // Folder picker shown when saving a NEW page bookmark;
+    // removing an existing one stays a one-tap toggle.
+    if (showPageFolderPicker) {
+        com.example.ui.components.MoveBookmarkToFolderDialog(
+            bookmarkName = "মুসহাফ পৃষ্ঠা ${com.example.utils.DateUtil.toBengaliNumerals(currentPdfPage)}",
+            folders = mushafFolderList.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
+            currentFolderId = null,
+            isNewBookmark = true,
+            onDismiss = { showPageFolderPicker = false },
+            onMove = { folderId ->
+                viewModel.addMushafPageBookmark(folderId)
+                showPageFolderPicker = false
+            },
+            onCreateFolder = {
+                showPageFolderPicker = false
+                pagePendingNewFolder = true
+            }
+        )
+    }
+    if (pagePendingNewFolder) {
+        com.example.ui.components.CreateBookmarkFolderDialog(
+            onDismiss = { pagePendingNewFolder = false },
+            onConfirm = { name ->
+                pagePendingNewFolder = false
+                viewModel.createBookmarkFolder(name) { newFolderId ->
+                    viewModel.addMushafPageBookmark(newFolderId)
+                }
+            }
+        )
+    }
+
     val infiniteTransition = rememberInfiniteTransition(label = "infoPulse")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -233,7 +271,10 @@ fun MushafViewerScreen(
                             tint = Color(0xFF10B981)
                         )
                     }
-                    IconButton(onClick = { viewModel.toggleBookmark() }) {
+                    IconButton(onClick = {
+                        // Bookmarked -> one-tap remove; new -> pick a folder first
+                        if (isBookmarked) viewModel.toggleBookmark() else showPageFolderPicker = true
+                    }) {
                         Icon(
                             imageVector = if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                             contentDescription = "Bookmark Page",

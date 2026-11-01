@@ -16,7 +16,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 import com.example.data.local.dao.BookmarkDao
+import com.example.data.local.dao.BookmarkFolderDao
 import com.example.data.local.entity.BookmarkEntity
+import com.example.data.local.entity.BookmarkFolderEntity
 
 import com.example.data.repository.QuranRepository
 import com.example.data.repository.AudioRepository
@@ -28,7 +30,8 @@ class MushafViewerViewModel(
     private val settingsRepository: SettingsRepository,
     private val bookmarkDao: BookmarkDao,
     private val quranRepository: QuranRepository? = null,
-    val audioRepository: AudioRepository? = null
+    val audioRepository: AudioRepository? = null,
+    private val bookmarkFolderDao: BookmarkFolderDao? = null
 ) : ViewModel() {
 
     private val _isBookmarked = MutableStateFlow(false)
@@ -208,6 +211,63 @@ class MushafViewerViewModel(
                     )
                 )
                 _isBookmarked.value = true
+            }
+        }
+    }
+
+    // --- Bookmark folder support (mushaf/PDF page bookmarks) ---
+    val bookmarkFolders: StateFlow<List<BookmarkFolderEntity>> =
+        (bookmarkFolderDao?.getAllFolders() ?: kotlinx.coroutines.flow.flowOf(emptyList()))
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Lazily,
+                initialValue = emptyList()
+            )
+
+    /**
+     * Saves the current PDF mushaf page as a bookmark into the given folder
+     * (null = unfiled). If already bookmarked, just re-files it.
+     * Keeps the same naming/mushafId behaviour as the quick toggle.
+     */
+    fun addMushafPageBookmark(folderId: Long?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val page = _currentPageNumber.value
+                val mId = currentMushafId
+                val existing = bookmarkDao.getBookmark("MUSHAF_PAGE", page)
+                if (existing != null) {
+                    bookmarkDao.moveBookmarkToFolder(existing.id, folderId)
+                } else {
+                    val styleName = repository.getAvailableMushafs().find { it.id == mId }?.nameBengali ?: "মুসহাফ"
+                    val pageStr = com.example.utils.DateUtil.toBengaliNumerals(page)
+                    bookmarkDao.insertBookmark(
+                        BookmarkEntity(
+                            type = "MUSHAF_PAGE",
+                            referenceId = page,
+                            name = "$styleName: পৃষ্ঠা $pageStr",
+                            mushafId = mId,
+                            folderId = folderId
+                        )
+                    )
+                }
+                _isBookmarked.value = true
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /** Creates a new folder and reports the new folder id via [onCreated]. */
+    fun createBookmarkFolder(name: String, onCreated: (Long) -> Unit = {}) {
+        val dao = bookmarkFolderDao ?: return
+        val cleanName = name.trim()
+        if (cleanName.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                val newId = dao.insertFolder(BookmarkFolderEntity(name = cleanName))
+                onCreated(newId)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }

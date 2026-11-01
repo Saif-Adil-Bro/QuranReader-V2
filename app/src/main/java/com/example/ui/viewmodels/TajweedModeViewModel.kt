@@ -3,8 +3,10 @@ package com.example.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.dao.BookmarkDao
+import com.example.data.local.dao.BookmarkFolderDao
 import com.example.data.local.dao.MemorizedPageDao
 import com.example.data.local.entity.BookmarkEntity
+import com.example.data.local.entity.BookmarkFolderEntity
 import com.example.data.local.entity.MemorizedPageEntity
 import com.example.data.model.CombinedAyah
 import com.example.data.QuranData
@@ -28,7 +30,8 @@ class TajweedModeViewModel(
     private val audioRepository: AudioRepository,
     private val settingsRepository: SettingsRepository,
     private val bookmarkDao: BookmarkDao,
-    private val memorizedPageDao: MemorizedPageDao
+    private val memorizedPageDao: MemorizedPageDao,
+    private val bookmarkFolderDao: BookmarkFolderDao? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<UiState<List<CombinedAyah>>>(UiState.Loading)
@@ -129,6 +132,58 @@ class TajweedModeViewModel(
             } else {
                 bookmarkDao.insertBookmark(BookmarkEntity(type = "PAGE", referenceId = page, name = "Page $page"))
                 _isBookmarked.value = true
+            }
+        }
+    }
+
+    // --- Bookmark folder support (page bookmarks) ---
+    val bookmarkFolders: StateFlow<List<BookmarkFolderEntity>> =
+        (bookmarkFolderDao?.getAllFolders() ?: kotlinx.coroutines.flow.flowOf(emptyList()))
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Lazily,
+                initialValue = emptyList()
+            )
+
+    /**
+     * Saves the current tajweed (color Quran) page as a bookmark into the
+     * given folder (null = unfiled). If already bookmarked, just re-files it.
+     */
+    fun addPageBookmark(folderId: Long?) {
+        viewModelScope.launch {
+            try {
+                val page = _currentPage.value
+                val existing = bookmarkDao.getBookmark("PAGE", page)
+                if (existing != null) {
+                    bookmarkDao.moveBookmarkToFolder(existing.id, folderId)
+                } else {
+                    bookmarkDao.insertBookmark(
+                        BookmarkEntity(
+                            type = "PAGE",
+                            referenceId = page,
+                            name = "কালার কুরআন পৃষ্ঠা ${DateUtil.toBengaliNumerals(page)}",
+                            folderId = folderId
+                        )
+                    )
+                }
+                _isBookmarked.value = true
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /** Creates a new folder and reports the new folder id via [onCreated]. */
+    fun createBookmarkFolder(name: String, onCreated: (Long) -> Unit = {}) {
+        val dao = bookmarkFolderDao ?: return
+        val cleanName = name.trim()
+        if (cleanName.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                val newId = dao.insertFolder(BookmarkFolderEntity(name = cleanName))
+                onCreated(newId)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
