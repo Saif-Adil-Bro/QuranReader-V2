@@ -47,6 +47,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,8 +64,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.MainActivity
+import com.example.QuranApplication
 import com.example.R
 import com.example.data.model.PrayerName
+import com.example.ui.theme.LocalArabicFont
+import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.PrimaryGreen
 import com.example.utils.DateUtil
 import com.example.utils.PrayerNotificationHelper
@@ -167,26 +171,28 @@ class PrayerAlarmActivity : ComponentActivity() {
         val timeoutSeconds = intent.getIntExtra("alarm_timeout_seconds", PrayerSoundManager.alarmTimeoutSeconds)
 
         setContent {
-            PrayerAlarmScreen(
-                prayerName = prayerName,
-                title = title,
-                message = message,
-                isEnglish = isEnglish,
-                alarmStartTimeMillis = alarmStartTime,
-                totalTimeoutSeconds = timeoutSeconds,
-                onStop = {
-                    handleStopAlarm(notifId, isEnglish)
-                },
-                onSnooze = {
-                    handleSnoozeAlarm(prayerName, notifId, isEnglish)
-                },
-                onOpenApp = {
-                    handleOpenApp(notifId)
-                },
-                onAutoDismiss = {
-                    handleAutoDismiss(prayerName, notifId, isEnglish)
-                }
-            )
+            PrayerAlarmThemeWrapper {
+                PrayerAlarmScreen(
+                    prayerName = prayerName,
+                    title = title,
+                    message = message,
+                    isEnglish = isEnglish,
+                    alarmStartTimeMillis = alarmStartTime,
+                    totalTimeoutSeconds = timeoutSeconds,
+                    onStop = {
+                        handleStopAlarm(notifId, isEnglish)
+                    },
+                    onSnooze = {
+                        handleSnoozeAlarm(prayerName, notifId, isEnglish)
+                    },
+                    onOpenApp = {
+                        handleOpenApp(notifId)
+                    },
+                    onAutoDismiss = {
+                        handleAutoDismiss(prayerName, notifId, isEnglish)
+                    }
+                )
+            }
         }
     }
 
@@ -220,26 +226,28 @@ class PrayerAlarmActivity : ComponentActivity() {
         val timeoutSeconds = intent.getIntExtra("alarm_timeout_seconds", PrayerSoundManager.alarmTimeoutSeconds)
 
         setContent {
-            PrayerAlarmScreen(
-                prayerName = prayerName,
-                title = title,
-                message = message,
-                isEnglish = isEnglish,
-                alarmStartTimeMillis = alarmStartTime,
-                totalTimeoutSeconds = timeoutSeconds,
-                onStop = {
-                    handleStopAlarm(notifId, isEnglish)
-                },
-                onSnooze = {
-                    handleSnoozeAlarm(prayerName, notifId, isEnglish)
-                },
-                onOpenApp = {
-                    handleOpenApp(notifId)
-                },
-                onAutoDismiss = {
-                    handleAutoDismiss(prayerName, notifId, isEnglish)
-                }
-            )
+            PrayerAlarmThemeWrapper {
+                PrayerAlarmScreen(
+                    prayerName = prayerName,
+                    title = title,
+                    message = message,
+                    isEnglish = isEnglish,
+                    alarmStartTimeMillis = alarmStartTime,
+                    totalTimeoutSeconds = timeoutSeconds,
+                    onStop = {
+                        handleStopAlarm(notifId, isEnglish)
+                    },
+                    onSnooze = {
+                        handleSnoozeAlarm(prayerName, notifId, isEnglish)
+                    },
+                    onOpenApp = {
+                        handleOpenApp(notifId)
+                    },
+                    onAutoDismiss = {
+                        handleAutoDismiss(prayerName, notifId, isEnglish)
+                    }
+                )
+            }
         }
     }
 
@@ -356,6 +364,32 @@ class PrayerAlarmActivity : ComponentActivity() {
             }
         }
     }
+}
+
+/**
+ * Wraps the alarm screen in the app theme with the user's selected
+ * Arabic & Bengali fonts (this screen lives in its own Activity, so it
+ * does NOT inherit MyApplicationTheme from MainActivity).
+ */
+@Composable
+private fun PrayerAlarmThemeWrapper(content: @Composable () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val appContainer = remember(context) {
+        (context.applicationContext as? QuranApplication)?.container
+    }
+    if (appContainer == null) {
+        // Extremely unlikely fallback — render with the default theme
+        content()
+        return
+    }
+    val arabicFontName by appContainer.settingsRepository.arabicFontNameFlow.collectAsState(initial = "Me Quran")
+    val bengaliFontName by appContainer.settingsRepository.bengaliFontNameFlow.collectAsState(initial = "SolaimanLipi")
+    MyApplicationTheme(
+        darkTheme = true,
+        arabicFontName = arabicFontName,
+        bengaliFontName = bengaliFontName,
+        content = content
+    )
 }
 
 @Composable
@@ -552,9 +586,10 @@ fun PrayerAlarmScreen(
                 Text(
                     text = arabicCalligraphy,
                     color = Color(0xFFFDE68A),
-                    fontSize = 18.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    fontFamily = LocalArabicFont.current
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))

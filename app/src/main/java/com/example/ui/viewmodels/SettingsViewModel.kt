@@ -718,14 +718,14 @@ class SettingsViewModel(
         }
     }
 
-    /** Creates a dua folder and reports the new folder id via [onCreated]. */
-    fun createDuaBookmarkFolder(name: String, onCreated: (Long) -> Unit = {}) {
+    /** Creates a dua folder for the given collection type and reports the new folder id via [onCreated]. */
+    fun createDuaBookmarkFolder(name: String, type: String, onCreated: (Long) -> Unit = {}) {
         val dao = duaBookmarkDao ?: return
         val cleanName = name.trim()
         if (cleanName.isEmpty()) return
         viewModelScope.launch {
             try {
-                val newId = dao.insertDuaFolder(DuaBookmarkFolderEntity(name = cleanName))
+                val newId = dao.insertDuaFolder(DuaBookmarkFolderEntity(name = cleanName, type = type))
                 onCreated(newId)
             } catch (e: Exception) {
                 e.printStackTrace()

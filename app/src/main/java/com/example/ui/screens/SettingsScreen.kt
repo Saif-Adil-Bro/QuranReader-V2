@@ -1368,7 +1368,7 @@ fun MenuDetailDialog(
                     modifier = Modifier
                         .fillMaxSize()
                         .weight(1f)
-                        .padding(if (type == "qibla") 0.dp else 16.dp)
+                        .padding(if (type == "qibla" || type == "manzil") 0.dp else 16.dp)
                 ) {
                     when (type) {
                         "calendar" -> com.example.ui.components.IslamicCalendarView(
@@ -1442,7 +1442,9 @@ fun MenuDetailDialog(
                             initialCategoryName = "মানযিল",
                             onDismiss = onDismiss,
                             onRegisterBackAction = { subjectwiseBackAction = it },
-                            onRegisterManzilInfoAction = { subjectwiseManzilInfoAction = it }
+                            onRegisterManzilInfoAction = { subjectwiseManzilInfoAction = it },
+                            // Dialog body is unpadded for মানযিল so verse cards span full width
+                            contentHorizontalPadding = 16.dp
                         )
                         "dua" -> DuaDialogContent(
                             viewModel = viewModel,
@@ -2443,7 +2445,11 @@ fun SubjectwiseDialogContent(
     initialCategoryName: String? = null,
     onDismiss: () -> Unit = {},
     onRegisterBackAction: (((() -> Unit)?) -> Unit) = {},
-    onRegisterManzilInfoAction: (((() -> Unit)?) -> Unit) = {}
+    onRegisterManzilInfoAction: (((() -> Unit)?) -> Unit) = {},
+    // 16.dp for মানযিল (the dialog body itself is unpadded there so the verse
+    // cards can span the full screen width); 0.dp keeps the old behavior for
+    // the subjectwise flow whose dialog body already adds 16.dp.
+    contentHorizontalPadding: androidx.compose.ui.unit.Dp = 0.dp
 ) {
     val context = LocalContext.current
     val currentLang = viewModel?.appLanguage?.collectAsState()?.value ?: com.example.utils.LocaleHelper.getLanguage(context)
@@ -2460,13 +2466,6 @@ fun SubjectwiseDialogContent(
     var isLoading by remember { mutableStateOf(true) }
     var showTranslation by remember { mutableStateOf(true) }
     var showManzilInfo by remember { mutableStateOf(false) }
-
-    // --- Manzil bookmark (separate dua bookmark & folder system) ---
-    val duaBookmarks = viewModel?.duaBookmarks?.collectAsState()?.value ?: emptyList()
-    val duaBookmarkFolders = viewModel?.duaBookmarkFolders?.collectAsState()?.value ?: emptyList()
-    var manzilPickerVisible by remember { mutableStateOf(false) }
-    var manzilPendingCreate by remember { mutableStateOf(false) }
-    val isManzilSaved = duaBookmarks.any { it.type == "MANZIL" && it.duaId == 0 }
 
     val handleInternalBack = {
         if (showManzilInfo) {
@@ -2547,7 +2546,11 @@ fun SubjectwiseDialogContent(
 
     if (selectedCategory == null) {
         // --- PAGE 1: CATEGORIES LIST (বিষয়ভিত্তিক বিভাগসমূহ) ---
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = contentHorizontalPadding)
+        ) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -2703,7 +2706,11 @@ fun SubjectwiseDialogContent(
         // --- PAGE 2: TOPICS LIST IN SELECTED CATEGORY (ক্যাটাগরির অন্তর্ভুক্ত বিষয়সমূহ) ---
         val category = selectedCategory!!
 
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = contentHorizontalPadding)
+        ) {
             // Header
             Row(
                 modifier = Modifier
@@ -2801,7 +2808,7 @@ fun SubjectwiseDialogContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp),
+                    .padding(start = contentHorizontalPadding, end = contentHorizontalPadding, bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -2835,27 +2842,6 @@ fun SubjectwiseDialogContent(
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
-
-                // Manzil bookmark toggle (separate dua bookmark system).
-                // Only for the real Manzil — not for deep-linked subjectwise categories
-                // (isManzilMode is also true for those).
-                if (category.categoryNameBn == "মানযিল") {
-                    Icon(
-                        imageVector = if (isManzilSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                        contentDescription = if (isEn) "Bookmark Manzil" else "মানযিল বুকমার্ক",
-                        tint = if (isManzilSaved) PrimaryGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                        modifier = Modifier
-                            .size(22.dp)
-                            .clickable {
-                                if (isManzilSaved) {
-                                    viewModel?.removeDuaBookmark("MANZIL", 0)
-                                } else {
-                                    manzilPickerVisible = true
-                                }
-                            }
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                }
 
                 // Translation ON/OFF Toggle
                 Surface(
@@ -3088,39 +3074,6 @@ fun SubjectwiseDialogContent(
         }
     }
 
-    // --- Manzil bookmark dialogs (separate dua bookmark system) ---
-    if (manzilPickerVisible) {
-        val manzilTitle = if (isEn) "Manzil" else "মানযিল"
-        com.example.ui.components.MoveBookmarkToFolderDialog(
-            bookmarkName = manzilTitle,
-            folders = duaBookmarkFolders.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
-            currentFolderId = duaBookmarks.find { it.type == "MANZIL" && it.duaId == 0 }?.folderId,
-            isNewBookmark = true,
-            isEnglish = isEn,
-            onDismiss = { manzilPickerVisible = false },
-            onMove = { folderId ->
-                viewModel?.addDuaBookmark("MANZIL", 0, manzilTitle, folderId)
-                manzilPickerVisible = false
-            },
-            onCreateFolder = {
-                manzilPickerVisible = false
-                manzilPendingCreate = true
-            }
-        )
-    }
-    if (manzilPendingCreate) {
-        val manzilTitle = if (isEn) "Manzil" else "মানযিল"
-        com.example.ui.components.CreateBookmarkFolderDialog(
-            isEnglish = isEn,
-            onDismiss = { manzilPendingCreate = false },
-            onConfirm = { name ->
-                manzilPendingCreate = false
-                viewModel?.createDuaBookmarkFolder(name) { newFolderId ->
-                    viewModel?.addDuaBookmark("MANZIL", 0, manzilTitle, newFolderId)
-                }
-            }
-        )
-    }
 }
 
 // --- 6. DUA DIALOG ---
@@ -3144,6 +3097,9 @@ fun DuaDialogContent(
     val duaBookmarks by viewModel.duaBookmarks.collectAsState()
     val duaBookmarkFolders by viewModel.duaBookmarkFolders.collectAsState()
     val duaType = if (isMorningEvening) "MORNING_EVENING_DUA" else "GENERAL_DUA"
+    // Folders are scoped per dua collection so কুরআনিক দুআ and সকাল-সন্ধ্যার দুআ
+    // never show each other's folders.
+    val scopedDuaFolders = duaBookmarkFolders.filter { it.type == duaType }
     var selectedDuaFolderId by remember { mutableStateOf<Long?>(null) }
     var folderPickerDua by remember { mutableStateOf<com.example.data.DuaItem?>(null) }
     var duaPendingNewFolder by remember { mutableStateOf<com.example.data.DuaItem?>(null) }
@@ -3225,7 +3181,7 @@ fun DuaDialogContent(
                 )
 
                 // --- Dua folder chips (separate dua folder system) ---
-                if (duaBookmarkFolders.isNotEmpty()) {
+                if (scopedDuaFolders.isNotEmpty()) {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier
@@ -3258,7 +3214,7 @@ fun DuaDialogContent(
                                 }
                             }
                         }
-                        items(duaBookmarkFolders, key = { it.id }) { folder ->
+                        items(scopedDuaFolders, key = { it.id }) { folder ->
                             val folderCount = duaBookmarks.count { it.type == duaType && it.folderId == folder.id }
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
@@ -3656,7 +3612,7 @@ fun DuaDialogContent(
     folderPickerDua?.let { pickedDua ->
         com.example.ui.components.MoveBookmarkToFolderDialog(
             bookmarkName = pickedDua.title,
-            folders = duaBookmarkFolders.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
+            folders = scopedDuaFolders.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
             currentFolderId = null,
             isNewBookmark = true,
             isEnglish = isEn,
@@ -3682,7 +3638,7 @@ fun DuaDialogContent(
             onConfirm = { name ->
                 showDuaFolderCreateDialog = false
                 duaPendingNewFolder = null
-                viewModel.createDuaBookmarkFolder(name) { newFolderId ->
+                viewModel.createDuaBookmarkFolder(name, duaType) { newFolderId ->
                     if (duaToSave != null) {
                         viewModel.addDuaBookmark(duaType, duaToSave.id, duaToSave.title, newFolderId)
                     }
@@ -3708,7 +3664,7 @@ fun DuaDialogContent(
     deleteDuaFolderTarget?.let { folder ->
         com.example.ui.components.DeleteBookmarkFolderDialog(
             folderName = folder.name,
-            bookmarkCount = duaBookmarks.count { it.folderId == folder.id },
+            bookmarkCount = duaBookmarks.count { it.folderId == folder.id && it.type == duaType },
             isEnglish = isEn,
             onDismiss = { deleteDuaFolderTarget = null },
             onDelete = {
