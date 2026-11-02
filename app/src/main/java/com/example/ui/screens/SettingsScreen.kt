@@ -2464,6 +2464,8 @@ fun SubjectwiseDialogContent(
     // --- Manzil bookmark (separate dua bookmark & folder system) ---
     val duaBookmarks = viewModel?.duaBookmarks?.collectAsState()?.value ?: emptyList()
     val duaBookmarkFolders = viewModel?.duaBookmarkFolders?.collectAsState()?.value ?: emptyList()
+    // Only folders that belong to the মানযিল collection — never other dua tabs' folders.
+    val scopedManzilFolders = duaBookmarkFolders.filter { it.type == "MANZIL" }
     var manzilPickerVisible by remember { mutableStateOf(false) }
     var manzilPendingCreate by remember { mutableStateOf(false) }
     val isManzilSaved = duaBookmarks.any { it.type == "MANZIL" && it.duaId == 0 }
@@ -3093,7 +3095,7 @@ fun SubjectwiseDialogContent(
         val manzilTitle = if (isEn) "Manzil" else "মানযিল"
         com.example.ui.components.MoveBookmarkToFolderDialog(
             bookmarkName = manzilTitle,
-            folders = duaBookmarkFolders.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
+            folders = scopedManzilFolders.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
             currentFolderId = duaBookmarks.find { it.type == "MANZIL" && it.duaId == 0 }?.folderId,
             isNewBookmark = true,
             isEnglish = isEn,
@@ -3115,7 +3117,7 @@ fun SubjectwiseDialogContent(
             onDismiss = { manzilPendingCreate = false },
             onConfirm = { name ->
                 manzilPendingCreate = false
-                viewModel?.createDuaBookmarkFolder(name) { newFolderId ->
+                viewModel?.createDuaBookmarkFolder(name, "MANZIL") { newFolderId ->
                     viewModel?.addDuaBookmark("MANZIL", 0, manzilTitle, newFolderId)
                 }
             }
@@ -3144,6 +3146,9 @@ fun DuaDialogContent(
     val duaBookmarks by viewModel.duaBookmarks.collectAsState()
     val duaBookmarkFolders by viewModel.duaBookmarkFolders.collectAsState()
     val duaType = if (isMorningEvening) "MORNING_EVENING_DUA" else "GENERAL_DUA"
+    // Folders are scoped per dua collection so কুরআনিক দুআ and সকাল-সন্ধ্যার দুআ
+    // never show each other's folders.
+    val scopedDuaFolders = duaBookmarkFolders.filter { it.type == duaType }
     var selectedDuaFolderId by remember { mutableStateOf<Long?>(null) }
     var folderPickerDua by remember { mutableStateOf<com.example.data.DuaItem?>(null) }
     var duaPendingNewFolder by remember { mutableStateOf<com.example.data.DuaItem?>(null) }
@@ -3225,7 +3230,7 @@ fun DuaDialogContent(
                 )
 
                 // --- Dua folder chips (separate dua folder system) ---
-                if (duaBookmarkFolders.isNotEmpty()) {
+                if (scopedDuaFolders.isNotEmpty()) {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier
@@ -3258,7 +3263,7 @@ fun DuaDialogContent(
                                 }
                             }
                         }
-                        items(duaBookmarkFolders, key = { it.id }) { folder ->
+                        items(scopedDuaFolders, key = { it.id }) { folder ->
                             val folderCount = duaBookmarks.count { it.type == duaType && it.folderId == folder.id }
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
@@ -3656,7 +3661,7 @@ fun DuaDialogContent(
     folderPickerDua?.let { pickedDua ->
         com.example.ui.components.MoveBookmarkToFolderDialog(
             bookmarkName = pickedDua.title,
-            folders = duaBookmarkFolders.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
+            folders = scopedDuaFolders.map { com.example.ui.components.BookmarkFolderPickerModel(it.id, it.name) },
             currentFolderId = null,
             isNewBookmark = true,
             isEnglish = isEn,
@@ -3682,7 +3687,7 @@ fun DuaDialogContent(
             onConfirm = { name ->
                 showDuaFolderCreateDialog = false
                 duaPendingNewFolder = null
-                viewModel.createDuaBookmarkFolder(name) { newFolderId ->
+                viewModel.createDuaBookmarkFolder(name, duaType) { newFolderId ->
                     if (duaToSave != null) {
                         viewModel.addDuaBookmark(duaType, duaToSave.id, duaToSave.title, newFolderId)
                     }
@@ -3708,7 +3713,7 @@ fun DuaDialogContent(
     deleteDuaFolderTarget?.let { folder ->
         com.example.ui.components.DeleteBookmarkFolderDialog(
             folderName = folder.name,
-            bookmarkCount = duaBookmarks.count { it.folderId == folder.id },
+            bookmarkCount = duaBookmarks.count { it.folderId == folder.id && it.type == duaType },
             isEnglish = isEn,
             onDismiss = { deleteDuaFolderTarget = null },
             onDelete = {
