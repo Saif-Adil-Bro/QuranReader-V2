@@ -372,10 +372,17 @@ fun DhikrReminderScreen(
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         if (option.arabicText.isNotEmpty()) {
+                                            // Apply the app's selected fonts: Arabic text gets the
+                                            // selected Arabic font, Bangla/English gets the Bengali font.
+                                            val isArabicText = option.arabicText.any { it in '\u0600'..'\u06FF' }
                                             Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = option.arabicText,
-                                                fontSize = 13.sp,
+                                                fontSize = if (isArabicText) 15.sp else 13.sp,
+                                                fontFamily = if (isArabicText)
+                                                    com.example.ui.theme.LocalArabicFont.current
+                                                else
+                                                    com.example.ui.theme.LocalBengaliFont.current,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
