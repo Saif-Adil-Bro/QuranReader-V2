@@ -252,7 +252,11 @@ fun AppNavGraph(
                     navController.navigate("nearby_mosque")
                 },
                 onNavigateToVideoCreator = {
-                    navController.navigate("video_creator")
+                    // Route must match the registered composable
+                    // "quran_video_creator?surah={surah}&ayah={ayah}" (defaults: surah=1, ayah=1).
+                    // Navigating to an unknown route ("video_creator") throws
+                    // IllegalArgumentException and crashes the app.
+                    navController.navigate("quran_video_creator")
                 },
                 onNavigateToUmrah = {
                     navController.navigate("umrah_tracker")

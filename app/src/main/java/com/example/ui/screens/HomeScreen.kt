@@ -2514,8 +2514,6 @@ fun ModesGridSection(
                 title = if (isEnglish) "Hafezi Quran" else "হাফেজী কুরআন",
                 subtitle = if (isEnglish) "15 Lines Image View" else "১৫ লাইন ইমেজ ভিউ",
                 iconRes = R.drawable.ic_hafezi_quran_custom,
-                iconSize = 22.dp,
-                containerSize = 48.dp,
                 containerColor = if (isDark) Color(0xFF064E3B).copy(alpha = 0.5f) else Color(0xFFECFDF5),
                 iconColor = Color(0xFF10B981),
                 onClick = onHafeziPdfClick,
@@ -4364,6 +4362,9 @@ fun ModeItemCard(
 ) {
     Card(
         modifier = modifier
+            // Guarantees every mode card has the exact same height —
+            // no card ends up taller/shorter than the others.
+            .heightIn(min = 156.dp)
             .shadow(3.dp, RoundedCornerShape(18.dp), spotColor = iconColor.copy(alpha = 0.20f))
             .clip(RoundedCornerShape(18.dp))
             .clickable { onClick() },
@@ -4373,7 +4374,7 @@ fun ModeItemCard(
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .clip(RoundedCornerShape(18.dp))
         ) {
             // Subtle Decorative Wave at the bottom
@@ -4384,7 +4385,7 @@ fun ModeItemCard(
 
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .padding(horizontal = 14.dp, vertical = 22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center

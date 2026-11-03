@@ -522,7 +522,19 @@ fun SettingsScreen(
                                         if (isBackup) MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
                                         else MaterialTheme.colorScheme.surface
                                     )
-                                    .clickable {
+                                    .alpha(if (isBackup) 0.5f else 1f)
+                                    .padding(12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                // Same circle-button design as the Home screen's
+                                // Top Features section so both look identical.
+                                TopFeatureCircleButton(
+                                    title = item.title,
+                                    icon = item.icon,
+                                    isDark = isDark,
+                                    bgColor = if (isDark) item.color.copy(alpha = 0.16f) else item.color.copy(alpha = 0.1f),
+                                    iconTint = item.color,
+                                    onClick = {
                                         if (isBackup) {
                                             android.widget.Toast.makeText(context, "শীঘ্রই আসছে!", android.widget.Toast.LENGTH_SHORT).show()
                                         } else if (item.id == "player") {
@@ -537,39 +549,7 @@ fun SettingsScreen(
                                             activeDialog = item.id
                                         }
                                     }
-                                    .alpha(if (isBackup) 0.5f else 1f)
-                                    .padding(12.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(48.dp)
-                                            .background(item.color.copy(alpha = 0.1f), CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = item.icon,
-                                            contentDescription = item.title,
-                                            tint = item.color,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Text(
-                                        text = item.title,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        textAlign = TextAlign.Center,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
+                                )
                             }
                         }
                         
