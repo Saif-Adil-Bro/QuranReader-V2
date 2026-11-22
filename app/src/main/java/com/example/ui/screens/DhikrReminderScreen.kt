@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import android.app.TimePickerDialog
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -614,6 +613,91 @@ fun DhikrReminderScreen(
         var tempEndHour by remember { mutableIntStateOf(quietEndHour) }
         var tempEndMin by remember { mutableIntStateOf(quietEndMinute) }
 
+        var pickingStartTime by remember { mutableStateOf(false) }
+        var pickingEndTime by remember { mutableStateOf(false) }
+
+        if (pickingStartTime) {
+            val startTimeState = rememberTimePickerState(
+                initialHour = tempStartHour,
+                initialMinute = tempStartMin,
+                is24Hour = false
+            )
+            AlertDialog(
+                onDismissRequest = { pickingStartTime = false },
+                containerColor = MaterialTheme.colorScheme.surface,
+                title = {
+                    Text(
+                        text = if (isEn) "Select Start Time" else "শুরুর সময় নির্বাচন করুন",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        tempStartHour = startTimeState.hour
+                        tempStartMin = startTimeState.minute
+                        pickingStartTime = false
+                    }) {
+                        Text(if (isEn) "OK" else "ঠিক আছে", color = PrimaryGreen, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { pickingStartTime = false }) {
+                        Text(if (isEn) "Cancel" else "বাতিল")
+                    }
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        TimePicker(state = startTimeState)
+                    }
+                }
+            )
+        }
+
+        if (pickingEndTime) {
+            val endTimeState = rememberTimePickerState(
+                initialHour = tempEndHour,
+                initialMinute = tempEndMin,
+                is24Hour = false
+            )
+            AlertDialog(
+                onDismissRequest = { pickingEndTime = false },
+                containerColor = MaterialTheme.colorScheme.surface,
+                title = {
+                    Text(
+                        text = if (isEn) "Select End Time" else "শেষের সময় নির্বাচন করুন",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        tempEndHour = endTimeState.hour
+                        tempEndMin = endTimeState.minute
+                        pickingEndTime = false
+                    }) {
+                        Text(if (isEn) "OK" else "ঠিক আছে", color = PrimaryGreen, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { pickingEndTime = false }) {
+                        Text(if (isEn) "Cancel" else "বাতিল")
+                    }
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        TimePicker(state = endTimeState)
+                    }
+                }
+            )
+        }
+
         AlertDialog(
             onDismissRequest = { showTimeRangeDialog = false },
             containerColor = MaterialTheme.colorScheme.surface,
@@ -643,18 +727,7 @@ fun DhikrReminderScreen(
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                             .border(1.dp, Border, RoundedCornerShape(12.dp))
-                            .clickable {
-                                TimePickerDialog(
-                                    context,
-                                    { _, h, m ->
-                                        tempStartHour = h
-                                        tempStartMin = m
-                                    },
-                                    tempStartHour,
-                                    tempStartMin,
-                                    false
-                                ).show()
-                            }
+                            .clickable { pickingStartTime = true }
                             .padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -679,18 +752,7 @@ fun DhikrReminderScreen(
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                             .border(1.dp, Border, RoundedCornerShape(12.dp))
-                            .clickable {
-                                TimePickerDialog(
-                                    context,
-                                    { _, h, m ->
-                                        tempEndHour = h
-                                        tempEndMin = m
-                                    },
-                                    tempEndHour,
-                                    tempEndMin,
-                                    false
-                                ).show()
-                            }
+                            .clickable { pickingEndTime = true }
                             .padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween

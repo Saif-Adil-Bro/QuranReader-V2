@@ -1212,14 +1212,30 @@ fun MenuDetailDialog(
     val dialogHijriOffset by viewModel.hijriOffset.collectAsState()
     val dialogCombinedHijriOffset by viewModel.combinedHijriOffset.collectAsState()
     
-    // Hold selected dua state for back click handling
+    // Hold selected morning/evening section & dua state for 3-step back click handling
+    val initialMorningEveningPair = remember(initialDuaId, type) {
+        if (type == "morning_evening_dua" && initialDuaId != null && initialDuaId != -1) {
+            try {
+                com.example.data.DuaData.initialize(context)
+                com.example.data.DuaData.findMorningEveningSectionAndDua(initialDuaId)
+            } catch (e: Exception) {
+                null
+            }
+        } else null
+    }
+
+    var selectedMorningEveningSection by remember(initialDuaId, type) {
+        mutableStateOf<com.example.data.MorningEveningSection?>(initialMorningEveningPair?.first)
+    }
+
     var selectedDuaForDuaTab by remember(initialDuaId, type) { 
         mutableStateOf<com.example.data.DuaItem?>(
             if (initialDuaId != null && initialDuaId != -1) {
                 try {
                     com.example.data.DuaData.initialize(context)
                     if (type == "morning_evening_dua") {
-                        com.example.data.DuaData.morningEveningDuas.find { it.id == initialDuaId }
+                        initialMorningEveningPair?.second
+                            ?: com.example.data.DuaData.morningEveningDuas.find { it.id == initialDuaId }
                     } else {
                         com.example.data.DuaData.richDuas.find { it.id == initialDuaId }
                     }
@@ -1239,6 +1255,8 @@ fun MenuDetailDialog(
             activeDhikrType = null
         } else if ((type == "dua" || type == "morning_evening_dua") && selectedDuaForDuaTab != null) {
             selectedDuaForDuaTab = null
+        } else if (type == "morning_evening_dua" && selectedMorningEveningSection != null) {
+            selectedMorningEveningSection = null
         } else if ((type == "subjectwise" || type == "manzil") && subjectwiseBackAction != null) {
             subjectwiseBackAction?.invoke()
         } else {
@@ -1295,7 +1313,12 @@ fun MenuDetailDialog(
                     "subjectwise" -> com.example.utils.SettingsLocalization.get("item_subjectwise", currentLang)
                     "manzil" -> com.example.utils.SettingsLocalization.get("item_manzil", currentLang)
                     "dua" -> com.example.utils.SettingsLocalization.get("item_dua", currentLang)
-                    "morning_evening_dua" -> com.example.utils.SettingsLocalization.get("item_morning_evening_dua", currentLang)
+                    "morning_evening_dua" -> when (selectedMorningEveningSection) {
+                        com.example.data.MorningEveningSection.FAZILAT -> if (currentLang == "en") "Virtues of Adhkar" else "যিকর ও দোয়ার ফযীলত"
+                        com.example.data.MorningEveningSection.MORNING -> if (currentLang == "en") "Morning Duas" else "সকালের দোয়া"
+                        com.example.data.MorningEveningSection.EVENING -> if (currentLang == "en") "Evening Duas" else "সন্ধ্যার দোয়া"
+                        null -> com.example.utils.SettingsLocalization.get("item_morning_evening_dua", currentLang)
+                    }
                     "qibla" -> com.example.utils.SettingsLocalization.get("item_qibla", currentLang)
                     "game" -> com.example.utils.SettingsLocalization.get("item_game", currentLang)
                     "player" -> com.example.utils.SettingsLocalization.get("item_player", currentLang)
@@ -1433,12 +1456,27 @@ fun MenuDetailDialog(
                             isMorningEvening = false
                         )
                         "qibla" -> QiblaDialogContent(viewModel)
-                        "morning_evening_dua" -> DuaDialogContent(
-                            viewModel = viewModel,
-                            selectedDua = selectedDuaForDuaTab,
-                            onSelectedDuaChange = { selectedDuaForDuaTab = it },
-                            isMorningEvening = true
-                        )
+                        "morning_evening_dua" -> {
+                            val activeSection = selectedMorningEveningSection
+                            if (activeSection == null) {
+                                com.example.ui.components.MorningEveningHub(
+                                    isEn = currentLang == "en",
+                                    onSelectSection = { section ->
+                                        selectedMorningEveningSection = section
+                                        selectedDuaForDuaTab = null
+                                    }
+                                )
+                            } else {
+                                DuaDialogContent(
+                                    viewModel = viewModel,
+                                    selectedDua = selectedDuaForDuaTab,
+                                    onSelectedDuaChange = { selectedDuaForDuaTab = it },
+                                    isMorningEvening = true,
+                                    customDuas = com.example.data.DuaData.getDuasForSection(activeSection),
+                                    morningEveningSection = activeSection
+                                )
+                            }
+                        }
                         "game" -> GameDialogContent(viewModel)
                         "player" -> PlayerDialogContent(viewModel)
                         "hifz" -> HifzTrackerScreen(
@@ -3063,15 +3101,30 @@ fun DuaDialogContent(
     viewModel: SettingsViewModel,
     selectedDua: com.example.data.DuaItem?,
     onSelectedDuaChange: (com.example.data.DuaItem?) -> Unit,
-    isMorningEvening: Boolean = false
+    isMorningEvening: Boolean = false,
+    customDuas: List<com.example.data.DuaItem>? = null,
+    morningEveningSection: com.example.data.MorningEveningSection? = null
 ) {
+    val context = LocalContext.current
     val currentLang by viewModel.appLanguage.collectAsState()
     val isEn = currentLang == "en"
     val arabicFontName by viewModel.arabicFontName.collectAsState()
     val arabicFont = com.example.ui.theme.getArabicFont(arabicFontName)
-    val allDuas = if (isMorningEvening) com.example.data.DuaData.morningEveningDuas else com.example.data.DuaData.richDuas
+    val allDuas = customDuas ?: if (isMorningEvening) com.example.data.DuaData.morningEveningDuas else com.example.data.DuaData.richDuas
     val duaListState = rememberLazyListState()
     var searchQuery by remember { mutableStateOf("") }
+
+    val isTrackableAdhkar = morningEveningSection == com.example.data.MorningEveningSection.MORNING ||
+        morningEveningSection == com.example.data.MorningEveningSection.EVENING
+    var adhkarCounts by remember(morningEveningSection, allDuas) {
+        mutableStateOf(
+            if (isTrackableAdhkar && morningEveningSection != null) {
+                com.example.utils.AdhkarProgressManager.getCountsForSection(context, morningEveningSection, allDuas)
+            } else {
+                emptyMap()
+            }
+        )
+    }
 
     // --- Separate Dua bookmark & folder system (Manzil / morning-evening / general duas) ---
     val duaBookmarks by viewModel.duaBookmarks.collectAsState()
@@ -3288,6 +3341,9 @@ fun DuaDialogContent(
                             val index = allDuas.indexOf(dua) + 1
                             val banglaIndex = formatToBanglaNumber(index)
                             val displayIndex = if (isEn) index.toString() else banglaIndex
+                            val duaCount = adhkarCounts[dua.id] ?: 0
+                            val targetCount = dua.recommendedCount.coerceAtLeast(1)
+                            val isRowCompleted = isTrackableAdhkar && duaCount >= targetCount
                             
                             Column(
                                 modifier = Modifier
@@ -3299,34 +3355,84 @@ fun DuaDialogContent(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Index Circle Icon - warm coral-red color matching the screenshot
+                                    // Index Circle Icon (turns green with checkmark when daily recitation is completed)
                                     Box(
                                         modifier = Modifier
                                             .size(42.dp)
+                                            .clip(CircleShape)
                                             .background(
-                                                color = Color(0xFFE55353),
+                                                color = if (isRowCompleted) PrimaryGreen else Color(0xFFE55353),
                                                 shape = CircleShape
+                                            )
+                                            .then(
+                                                if (isTrackableAdhkar && morningEveningSection != null) {
+                                                    Modifier.clickable {
+                                                        val updated = com.example.utils.AdhkarProgressManager.toggleComplete(
+                                                            context,
+                                                            morningEveningSection,
+                                                            dua.id,
+                                                            targetCount
+                                                        )
+                                                        adhkarCounts = adhkarCounts.toMutableMap().apply { put(dua.id, updated) }
+                                                    }
+                                                } else {
+                                                    Modifier
+                                                }
                                             ),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = displayIndex,
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp
-                                        )
+                                        if (isRowCompleted) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = if (isEn) "Completed" else "সম্পন্ন",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        } else {
+                                            Text(
+                                                text = displayIndex,
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 14.sp
+                                            )
+                                        }
                                     }
                                     
                                     Spacer(modifier = Modifier.width(14.dp))
                                     
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = dua.title,
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 15.sp,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            lineHeight = 20.sp
-                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Text(
+                                                text = dua.title,
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 15.sp,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                lineHeight = 20.sp,
+                                                modifier = Modifier.weight(1f, fill = false)
+                                            )
+                                            if (isTrackableAdhkar && targetCount > 1) {
+                                                val countText = if (duaCount > 0 && !isRowCompleted) {
+                                                    if (isEn) "$duaCount/$targetCount" else "${formatToBanglaNumber(duaCount)}/${formatToBanglaNumber(targetCount)}"
+                                                } else {
+                                                    if (isEn) "${targetCount}x" else "${formatToBanglaNumber(targetCount)} বার"
+                                                }
+                                                Surface(
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = if (isRowCompleted) PrimaryGreen.copy(alpha = 0.14f) else MaterialTheme.colorScheme.surfaceVariant
+                                                ) {
+                                                    Text(
+                                                        text = countText,
+                                                        fontSize = 10.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (isRowCompleted) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
                                         if (dua.segments.isNotEmpty()) {
                                             val firstTranslation = dua.segments.first().translation
                                             if (firstTranslation.isNotEmpty()) {
@@ -3472,6 +3578,21 @@ fun DuaDialogContent(
                                 if (index > 0) {
                                     Spacer(modifier = Modifier.height(20.dp))
                                 }
+
+                                // Top intro / context (only when distinct from translation to avoid duplicate text in Fazilat)
+                                val topTrimmed = segment.top.trim()
+                                if (topTrimmed.isNotEmpty() && topTrimmed != "null" && topTrimmed != segment.translation.trim()) {
+                                    Text(
+                                        text = topTrimmed,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        lineHeight = 22.sp,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 8.dp)
+                                    )
+                                }
                                 
                                 // Arabic Text - large, RTL aligned display
                                 if (segment.arabic.isNotEmpty() && segment.arabic != "null") {
@@ -3579,6 +3700,43 @@ fun DuaDialogContent(
                                 }
                             }
                             
+                            if (isTrackableAdhkar && morningEveningSection != null) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                val detailCount = adhkarCounts[currentDua.id] ?: 0
+                                val detailTarget = currentDua.recommendedCount.coerceAtLeast(1)
+                                com.example.ui.components.AdhkarRecitationCounterBar(
+                                    currentCount = detailCount,
+                                    targetCount = detailTarget,
+                                    isEn = isEn,
+                                    onTap = {
+                                        val updated = if (detailTarget == 1) {
+                                            com.example.utils.AdhkarProgressManager.toggleComplete(
+                                                context,
+                                                morningEveningSection,
+                                                currentDua.id,
+                                                detailTarget
+                                            )
+                                        } else {
+                                            com.example.utils.AdhkarProgressManager.incrementCount(
+                                                context,
+                                                morningEveningSection,
+                                                currentDua.id,
+                                                detailTarget
+                                            )
+                                        }
+                                        adhkarCounts = adhkarCounts.toMutableMap().apply { put(currentDua.id, updated) }
+                                    },
+                                    onReset = {
+                                        com.example.utils.AdhkarProgressManager.resetDua(
+                                            context,
+                                            morningEveningSection,
+                                            currentDua.id
+                                        )
+                                        adhkarCounts = adhkarCounts.toMutableMap().apply { put(currentDua.id, 0) }
+                                    }
+                                )
+                            }
+
                             // Copy & Share Actions Row with App Credit
                             DuaActionButtonsRow(dua = currentDua, isEn = isEn)
                         }

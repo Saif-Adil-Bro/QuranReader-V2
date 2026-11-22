@@ -66,7 +66,17 @@ class PrayerTimesRepository(val context: Context) {
 
     private fun loadSelectedDistrict(): DistrictInfo {
         val districtId = prefs.getString("selected_district_id", "dhaka") ?: "dhaka"
-        return PrayerTimesCalculator.findDistrictById(districtId)
+        val baseDistrict = PrayerTimesCalculator.findDistrictById(districtId)
+        val hasExactCoords = prefs.getBoolean("has_exact_coords", false)
+        return if (hasExactCoords) {
+            val latBits = prefs.getLong("exact_latitude_bits", java.lang.Double.doubleToRawLongBits(baseDistrict.latitude))
+            val lngBits = prefs.getLong("exact_longitude_bits", java.lang.Double.doubleToRawLongBits(baseDistrict.longitude))
+            val exactLat = java.lang.Double.longBitsToDouble(latBits)
+            val exactLng = java.lang.Double.longBitsToDouble(lngBits)
+            baseDistrict.copy(latitude = exactLat, longitude = exactLng)
+        } else {
+            baseDistrict
+        }
     }
 
     private fun loadCalculationMethod(): PrayerCalculationMethod {
@@ -83,7 +93,21 @@ class PrayerTimesRepository(val context: Context) {
     }
 
     fun setDistrict(district: DistrictInfo) {
-        prefs.edit().putString("selected_district_id", district.id).apply()
+        val baseDistrict = PrayerTimesCalculator.findDistrictById(district.id)
+        val isExact = (district.latitude != baseDistrict.latitude || district.longitude != baseDistrict.longitude)
+        val editor = prefs.edit()
+            .putString("selected_district_id", district.id)
+            .putBoolean("has_exact_coords", isExact)
+        if (isExact) {
+            editor
+                .putLong("exact_latitude_bits", java.lang.Double.doubleToRawLongBits(district.latitude))
+                .putLong("exact_longitude_bits", java.lang.Double.doubleToRawLongBits(district.longitude))
+        } else {
+            editor
+                .remove("exact_latitude_bits")
+                .remove("exact_longitude_bits")
+        }
+        editor.apply()
         _selectedDistrict.value = district
         refreshSchedule()
         try {
@@ -91,6 +115,11 @@ class PrayerTimesRepository(val context: Context) {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    fun setExactLocation(latitude: Double, longitude: Double) {
+        val exactDistrict = PrayerTimesCalculator.createExactLocationDistrict(latitude, longitude)
+        setDistrict(exactDistrict)
     }
 
     fun setHanafi(hanafi: Boolean) {

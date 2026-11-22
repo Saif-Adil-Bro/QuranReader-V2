@@ -30,8 +30,8 @@ class MushafDownloader(
     private val storageManager: StorageManager
 ) {
     private val client = OkHttpClient()
-    private val activeDownloads = mutableMapOf<String, Job>()
-    private val pausedDownloads = mutableSetOf<String>()
+    private val activeDownloads = java.util.concurrent.ConcurrentHashMap<String, Job>()
+    private val pausedDownloads = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
     
     suspend fun downloadMushaf(
         mushafId: String,

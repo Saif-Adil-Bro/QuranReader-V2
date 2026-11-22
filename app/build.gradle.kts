@@ -16,7 +16,6 @@ android {
     }
   namespace = "com.example"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
-  compileSdk { version = release(36) { minorApiLevel = 1 } }
   buildFeatures {
     compose = true
     buildConfig = true
@@ -31,9 +30,11 @@ android {
     
     val geminiKey = System.getenv("GEMINI_API_KEY") ?: ""
     val mapsKey = System.getenv("MAPS_API_KEY") ?: System.getenv("GOOGLE_MAPS_API_KEY") ?: System.getenv("PLACES_API_KEY") ?: ""
+    val geoapifyKey = System.getenv("GEOAPIFY_API_KEY") ?: ""
     buildConfigField("String", "GEMINI_API_KEY", "\"$geminiKey\"")
     buildConfigField("String", "MAPS_API_KEY", "\"$mapsKey\"")
     buildConfigField("String", "PLACES_API_KEY", "\"$mapsKey\"")
+    buildConfigField("String", "GEOAPIFY_API_KEY", "\"$geoapifyKey\"")
     manifestPlaceholders["MAPS_API_KEY"] = mapsKey
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -80,6 +81,7 @@ android {
     }
   }
   compileOptions {
+    isCoreLibraryDesugaringEnabled = true
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
   }
@@ -99,6 +101,7 @@ secrets {
 
 // This makes it easy to add them back in the future if needed.
 dependencies {
+  coreLibraryDesugaring(libs.desugar.jdk.libs)
   implementation(platform(libs.androidx.compose.bom))
   implementation(platform(libs.firebase.bom))
   implementation(libs.firebase.messaging)
