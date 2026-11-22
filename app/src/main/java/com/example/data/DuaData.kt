@@ -5,6 +5,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 data class DuaSegment(
+    val top: String = "",
     val arabic: String = "",
     val transliteration: String = "",
     val translation: String = "",
@@ -15,18 +16,50 @@ data class DuaSegment(
 data class DuaItem(
     val id: Int,
     val title: String,
-    val segments: List<DuaSegment>
+    val segments: List<DuaSegment>,
+    val recommendedCount: Int = 1
 )
+
+enum class MorningEveningSection(val key: String) {
+    FAZILAT("fazilat"),
+    MORNING("morning"),
+    EVENING("evening")
+}
 
 object DuaData {
     private var loadedRichDuas: List<DuaItem>? = null
     private var loadedMorningEveningDuas: List<DuaItem>? = null
+    private var loadedMorningDuas: List<DuaItem>? = null
+    private var loadedEveningDuas: List<DuaItem>? = null
+    private var loadedFazilatDuas: List<DuaItem>? = null
 
     val richDuas: List<DuaItem>
         get() = loadedRichDuas ?: fallbackRichDuas
 
+    val morningDuas: List<DuaItem>
+        get() = loadedMorningDuas ?: emptyList()
+
+    val eveningDuas: List<DuaItem>
+        get() = loadedEveningDuas ?: emptyList()
+
+    val fazilatDuas: List<DuaItem>
+        get() = loadedFazilatDuas ?: emptyList()
+
     val morningEveningDuas: List<DuaItem>
         get() = loadedMorningEveningDuas ?: emptyList()
+
+    fun getDuasForSection(section: MorningEveningSection): List<DuaItem> = when (section) {
+        MorningEveningSection.FAZILAT -> fazilatDuas
+        MorningEveningSection.MORNING -> morningDuas
+        MorningEveningSection.EVENING -> eveningDuas
+    }
+
+    fun findMorningEveningSectionAndDua(duaId: Int): Pair<MorningEveningSection, DuaItem>? {
+        morningDuas.find { it.id == duaId }?.let { return MorningEveningSection.MORNING to it }
+        eveningDuas.find { it.id == duaId }?.let { return MorningEveningSection.EVENING to it }
+        fazilatDuas.find { it.id == duaId }?.let { return MorningEveningSection.FAZILAT to it }
+        return null
+    }
 
     val dailyDuas: List<Pair<String, String>>
         get() = richDuas.map { item ->
@@ -137,84 +170,160 @@ object DuaData {
     )
 
     fun initialize(context: Context) {
-        val quranic = loadDuasFromAsset(context, "duas.json")
-        if (quranic.isNotEmpty()) {
-            loadedRichDuas = quranic
+        if (loadedRichDuas == null) {
+            val quranic = loadDuasFromAsset(context, "duas.json")
+            if (quranic.isNotEmpty()) {
+                loadedRichDuas = quranic
+            }
         }
-        val morningEvening = loadDuasFromAsset(context, "morning_evening_duas.json")
-        if (morningEvening.isNotEmpty()) {
-            loadedMorningEveningDuas = morningEvening
+        if (loadedMorningEveningDuas == null) {
+            loadMorningEveningDuasFromAsset(context, "morning_evening_duas.json")
+        }
+    }
+
+    private fun JSONObject.optCleanString(key: String): String {
+        if (isNull(key)) return ""
+        val value = optString(key, "")
+        return if (value == "null") "" else value
+    }
+
+    /**
+     * Infers the Sunnah repetition count (e.g., 3, 4, 7, 10, 100) from Bengali cue text.
+     * Defaults to 1 when no explicit repetition count is mentioned.
+     */
+    fun parseRecommendedCount(title: String, segments: List<DuaSegment>): Int {
+        val combined = buildString {
+            append(title).append(' ')
+            segments.forEach { seg ->
+                if (seg.top.isNotBlank()) append(seg.top).append(' ')
+                if (seg.bottom.isNotBlank()) append(seg.bottom).append(' ')
+            }
+        }
+        return when {
+            Regex("(?:১০০|100|একশত?|একশো)\\s*বার").containsMatchIn(combined) -> 100
+            Regex("(?:১০|10|দশ)\\s*বার").containsMatchIn(combined) -> 10
+            Regex("(?:৭|7|সাত)\\s*বার").containsMatchIn(combined) -> 7
+            Regex("(?:৪|4|চার)\\s*বার").containsMatchIn(combined) -> 4
+            Regex("(?:৩|3|তিন)\\s*বার").containsMatchIn(combined) -> 3
+            else -> 1
+        }
+    }
+
+    private fun parseDuaArray(dataArray: JSONArray): List<DuaItem> {
+        val list = mutableListOf<DuaItem>()
+        for (i in 0 until dataArray.length()) {
+            val obj = dataArray.getJSONObject(i)
+            val title = obj.optCleanString("duaname").ifEmpty { obj.optCleanString("chapname") }
+            val globalId = obj.optInt("dua_global_id", i)
+
+            val segmentList = mutableListOf<DuaSegment>()
+            val segments = obj.optJSONArray("segments")
+            if (segments != null && segments.length() > 0) {
+                for (j in 0 until segments.length()) {
+                    val segment = segments.getJSONObject(j)
+                    segmentList.add(
+                        DuaSegment(
+                            top = segment.optCleanString("top"),
+                            arabic = segment.optCleanString("arabic"),
+                            transliteration = segment.optCleanString("transliteration"),
+                            translation = segment.optCleanString("translations"),
+                            bottom = segment.optCleanString("bottom"),
+                            reference = segment.optCleanString("reference")
+                        )
+                    )
+                }
+            } else {
+                segmentList.add(
+                    DuaSegment(
+                        top = obj.optCleanString("top"),
+                        arabic = obj.optCleanString("arabic"),
+                        transliteration = obj.optCleanString("transliteration"),
+                        translation = obj.optCleanString("translation"),
+                        reference = obj.optCleanString("reference")
+                    )
+                )
+            }
+            if (title.isNotEmpty()) {
+                val count = parseRecommendedCount(title, segmentList)
+                list.add(
+                    DuaItem(
+                        id = globalId,
+                        title = title,
+                        segments = segmentList,
+                        recommendedCount = count
+                    )
+                )
+            }
+        }
+        return list
+    }
+
+    private fun loadMorningEveningDuasFromAsset(context: Context, fileName: String) {
+        try {
+            val jsonString = context.assets.open(fileName).bufferedReader().use { it.readText() }.trim()
+            if (!jsonString.startsWith("{")) return
+            val jsonObject = JSONObject(jsonString)
+
+            val morningArr = jsonObject.optJSONArray("morning_duas")
+            val eveningArr = jsonObject.optJSONArray("evening_duas")
+            val fazilatArr = jsonObject.optJSONArray("fazilat")
+
+            if (morningArr != null || eveningArr != null || fazilatArr != null) {
+                val morning = morningArr?.let { parseDuaArray(it) } ?: emptyList()
+                val evening = eveningArr?.let { parseDuaArray(it) } ?: emptyList()
+                val fazilat = fazilatArr?.let { parseDuaArray(it) } ?: emptyList()
+
+                loadedMorningDuas = morning
+                loadedEveningDuas = evening
+                loadedFazilatDuas = fazilat
+
+                // Combined deduplicated view for backward-compatible bookmark lookups
+                val seenIds = mutableSetOf<Int>()
+                val combined = mutableListOf<DuaItem>()
+                (morning + evening + fazilat).forEach { item ->
+                    if (seenIds.add(item.id)) {
+                        combined.add(item)
+                    }
+                }
+                loadedMorningEveningDuas = combined
+            } else {
+                // Legacy flat "data" array fallback
+                val dataArray = jsonObject.optJSONArray("data") ?: JSONArray()
+                val legacy = parseDuaArray(dataArray)
+                loadedMorningEveningDuas = legacy
+                loadedMorningDuas = legacy
+                loadedEveningDuas = legacy
+                loadedFazilatDuas = emptyList()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     private fun loadDuasFromAsset(context: Context, fileName: String): List<DuaItem> {
         try {
             val jsonString = context.assets.open(fileName).bufferedReader().use { it.readText() }.trim()
-            val richList = mutableListOf<DuaItem>()
-            
             if (jsonString.startsWith("{")) {
                 val jsonObject = JSONObject(jsonString)
                 val dataArray = jsonObject.optJSONArray("data") ?: JSONArray()
-                for (i in 0 until dataArray.length()) {
-                    val obj = dataArray.getJSONObject(i)
-                    val title = obj.optString("duaname", "").ifEmpty { obj.optString("chapname", "") }
-                    val globalId = obj.optInt("dua_global_id", i)
-                    
-                    val segmentList = mutableListOf<DuaSegment>()
-                    val segments = obj.optJSONArray("segments")
-                    if (segments != null && segments.length() > 0) {
-                        for (j in 0 until segments.length()) {
-                            val segment = segments.getJSONObject(j)
-                            val arabic = segment.optString("arabic", "")
-                            val transliteration = segment.optString("transliteration", "")
-                            val translations = segment.optString("translations", "")
-                            val bottom = segment.optString("bottom", "")
-                            val reference = segment.optString("reference", "")
-                            
-                            segmentList.add(DuaSegment(
-                                arabic = arabic,
-                                transliteration = transliteration,
-                                translation = translations,
-                                bottom = bottom,
-                                reference = reference
-                            ))
-                        }
-                    } else {
-                        val arabic = obj.optString("arabic", "")
-                        val transliteration = obj.optString("transliteration", "")
-                        val translation = obj.optString("translation", "")
-                        val reference = obj.optString("reference", "")
-                        segmentList.add(DuaSegment(
-                            arabic = arabic,
-                            transliteration = transliteration,
-                            translation = translation,
-                            reference = reference
-                        ))
-                    }
-                    if (title.isNotEmpty()) {
-                        richList.add(DuaItem(id = globalId, title = title, segments = segmentList))
-                    }
-                }
+                return parseDuaArray(dataArray)
             } else if (jsonString.startsWith("[")) {
+                val richList = mutableListOf<DuaItem>()
                 val jsonArray = JSONArray(jsonString)
                 for (i in 0 until jsonArray.length()) {
                     val obj = jsonArray.getJSONObject(i)
-                    val title = obj.optString("title", "")
-                    val arabic = obj.optString("arabic", "")
-                    val transliteration = obj.optString("transliteration", "")
-                    val translation = obj.optString("translation", "").ifEmpty { obj.optString("desc", "") }
-                    val reference = obj.optString("reference", "")
-                    
+                    val title = obj.optCleanString("title")
                     val segment = DuaSegment(
-                        arabic = arabic,
-                        transliteration = transliteration,
-                        translation = translation,
-                        reference = reference
+                        arabic = obj.optCleanString("arabic"),
+                        transliteration = obj.optCleanString("transliteration"),
+                        translation = obj.optCleanString("translation").ifEmpty { obj.optCleanString("desc") },
+                        reference = obj.optCleanString("reference")
                     )
                     richList.add(DuaItem(id = i, title = title, segments = listOf(segment)))
                 }
+                return richList
             }
-            return richList
+            return emptyList()
         } catch (e: Exception) {
             e.printStackTrace()
             return emptyList()

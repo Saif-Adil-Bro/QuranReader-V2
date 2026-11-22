@@ -7,14 +7,14 @@ import kotlinx.coroutines.withContext
 
 class AiRepository {
     private val generativeModel = GenerativeModel(
-        modelName = "gemini-1.5-flash",
+        modelName = "gemini-2.5-flash",
         apiKey = BuildConfig.GEMINI_API_KEY
     )
 
     suspend fun getTafsir(surahName: String, ayahNumber: Int, ayahText: String): Result<String> {
         return withContext(Dispatchers.IO) {
             try {
-                val prompt = "Provide a brief Tafsir (interpretation) in Bengali for Surah $surahName, Ayah $ayahNumber: \"$ayahText\". Keep it concise, respectful, and authentic based on classical Tafsir sources (e.g., Ibn Kathir)."
+                val prompt = "Provide a brief Tafsir (interpretation) in Bengali for Surah $surahName, Ayah $ayahNumber: \"$ayahText\". Keep it concise, respectful, and authentic based on classical Tafsir sources (e.g., Ibn Kathir). Note that this is an AI-assisted summary."
                 val response = generativeModel.generateContent(prompt)
                 if (response.text.isNullOrBlank()) {
                     Result.failure(Exception("Failed to generate Tafsir"))

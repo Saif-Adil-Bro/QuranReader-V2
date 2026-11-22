@@ -154,8 +154,9 @@ fun QiblaDialogContent(viewModel: com.example.ui.viewmodels.SettingsViewModel? =
                         val pitch = Math.toDegrees(orientation[1].toDouble()).toFloat()
                         val roll = Math.toDegrees(orientation[2].toDouble()).toFloat()
                         
-                        // Low pass filter for smoother compass
-                        currentAzimuth = currentAzimuth + 0.2f * (azimuthInDegrees - currentAzimuth)
+                        // Low pass filter for smoother compass (shortest angular difference prevents 360° flip)
+                        val diff = (azimuthInDegrees - currentAzimuth + 540f) % 360f - 180f
+                        currentAzimuth = (currentAzimuth + 0.2f * diff + 360f) % 360f
                         currentPitch = currentPitch + 0.2f * (pitch - currentPitch)
                         currentRoll = currentRoll + 0.2f * (roll - currentRoll)
                     }
@@ -388,8 +389,14 @@ fun QiblaDialogContent(viewModel: com.example.ui.viewmodels.SettingsViewModel? =
 
 @Composable
 fun QiblaCompassUI(azimuth: Float, qiblaBearing: Float, pitch: Float = 0f, roll: Float = 0f) {
+    var continuousAzimuth by remember { mutableFloatStateOf(azimuth) }
+    LaunchedEffect(azimuth) {
+        val diff = (azimuth - (continuousAzimuth % 360f + 360f) % 360f + 540f) % 360f - 180f
+        continuousAzimuth += diff
+    }
+
     val animatedAzimuth by animateFloatAsState(
-        targetValue = -azimuth,
+        targetValue = -continuousAzimuth,
         animationSpec = tween(durationMillis = 300),
         label = "compassRotation"
     )

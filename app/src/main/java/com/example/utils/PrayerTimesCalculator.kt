@@ -168,11 +168,44 @@ object PrayerTimesCalculator {
     }
 
     /**
+     * Creates a DistrictInfo for exact GPS coordinates using the closest district for name & timezone.
+     */
+    fun createExactLocationDistrict(latitude: Double, longitude: Double): DistrictInfo {
+        val closest = findClosestDistrict(latitude, longitude)
+        return closest.copy(latitude = latitude, longitude = longitude)
+    }
+
+    /**
+     * Converts a decimal hour representation to LocalTime using prayer-safe rounding.
+     * Use roundUp = true (ceil) for Fajr, Dhuhr, Asr, Maghrib, and Isha so prayers never trigger early.
+     * Use roundUp = false (floor) for Sunrise so Fajr ends safely before actual sunrise.
+     */
+    fun decimalToLocalTime(decimal: Double, roundUp: Boolean = true): LocalTime {
+        var normalized = decimal % 24.0
+        if (normalized < 0) normalized += 24.0
+        var hours = normalized.toInt()
+        val minuteDouble = (normalized - hours) * 60.0
+        var minutes = if (roundUp) {
+            kotlin.math.ceil(minuteDouble).toInt()
+        } else {
+            kotlin.math.floor(minuteDouble).toInt()
+        }
+        if (minutes >= 60) {
+            hours += minutes / 60
+            minutes %= 60
+        }
+        if (hours >= 24) hours %= 24
+        return LocalTime.of(hours, minutes)
+    }
+
+    /**
      * Calculates the daily prayer schedule using astronomical solar formulas.
      */
     fun calculatePrayerSchedule(
         date: LocalDate = LocalDate.now(),
         district: DistrictInfo = getDefaultDistrict(),
+        latitude: Double? = null,
+        longitude: Double? = null,
         isHanafi: Boolean = true,
         calculationMethod: com.example.data.model.PrayerCalculationMethod = com.example.data.model.PrayerCalculationMethod.KARACHI,
         fajrAngle: Double? = null,
@@ -180,12 +213,17 @@ object PrayerTimesCalculator {
         sahriOffsetMinutes: Int = -3,
         iftarOffsetMinutes: Int = 0
     ): DailyPrayerSchedule {
-        val lat = district.latitude
-        val lng = district.longitude
+        val lat = latitude ?: district.latitude
+        val lng = longitude ?: district.longitude
+        val effectiveDistrict = if (lat != district.latitude || lng != district.longitude) {
+            district.copy(latitude = lat, longitude = lng)
+        } else {
+            district
+        }
 
         val effectiveFajrAngle = fajrAngle ?: calculationMethod.fajrAngle
         val effectiveIshaAngle = ishaAngle ?: calculationMethod.ishaAngle
-        val effectiveIshaInterval = calculationMethod.ishaFixedIntervalMinutes ?: district.ishaFixedIntervalMinutes
+        val effectiveIshaInterval = calculationMethod.ishaFixedIntervalMinutes
 
         val zoneId = try {
             ZoneId.of(district.timeZoneId)
@@ -253,30 +291,61 @@ object PrayerTimesCalculator {
         // Solar Noon (Dhuhr astronomical base) in local standard time
         val solarNoon = 12.0 + (timeZone * 15.0 - lng) / 15.0 - (eot / 60.0)
 
-        // Helper to calculate Hour Angle
-        fun getHourAngle(angle: Double): Double {
+        // Helper to calculate Hour Angle (null when sun does not dip to angle, e.g. high-latitude summer)
+        fun getHourAngle(angle: Double): Double? {
             val latRad = Math.toRadians(lat)
             val decRad = Math.toRadians(declination)
             val angRad = Math.toRadians(angle)
 
             val cosH = (sin(angRad) - sin(latRad) * sin(decRad)) / (cos(latRad) * cos(decRad))
-            return if (cosH > 1.0) 0.0 else if (cosH < -1.0) Math.PI else acos(cosH)
+            return when {
+                cosH > 1.0 -> 0.0
+                cosH < -1.0 -> null
+                else -> acos(cosH)
+            }
         }
 
         // Sunrise & Sunset angle is typically -0.833° (atmospheric refraction + sun disk radius)
-        val sunriseHourAngle = Math.toDegrees(getHourAngle(-0.833)) / 15.0
-        val fajrHourAngle = Math.toDegrees(getHourAngle(-effectiveFajrAngle)) / 15.0
-        val ishaHourAngle = Math.toDegrees(getHourAngle(-effectiveIshaAngle)) / 15.0
+        val sunriseHourAngle = (getHourAngle(-0.833)?.let { Math.toDegrees(it) / 15.0 }) ?: 6.0
+        val nightDuration = (24.0 - 2.0 * sunriseHourAngle).coerceAtLeast(0.0)
+
+        // Fajr Hour Angle with standard Angle-Based proportion rule for high latitudes
+        val fajrRaw = getHourAngle(-effectiveFajrAngle)
+        val maxFajrNightPortion = (effectiveFajrAngle / 60.0) * nightDuration
+        val fajrHourAngle = if (fajrRaw == null) {
+            sunriseHourAngle + maxFajrNightPortion
+        } else {
+            val rawHours = Math.toDegrees(fajrRaw) / 15.0
+            if (Math.abs(lat) > 48.5 && (rawHours - sunriseHourAngle) > maxFajrNightPortion) {
+                sunriseHourAngle + maxFajrNightPortion
+            } else {
+                rawHours
+            }
+        }
+
+        // Isha Hour Angle with standard Angle-Based proportion rule for high latitudes
+        val ishaRaw = getHourAngle(-effectiveIshaAngle)
+        val maxIshaNightPortion = (effectiveIshaAngle / 60.0) * nightDuration
+        val ishaHourAngle = if (ishaRaw == null) {
+            sunriseHourAngle + maxIshaNightPortion
+        } else {
+            val rawHours = Math.toDegrees(ishaRaw) / 15.0
+            if (Math.abs(lat) > 48.5 && (rawHours - sunriseHourAngle) > maxIshaNightPortion) {
+                sunriseHourAngle + maxIshaNightPortion
+            } else {
+                rawHours
+            }
+        }
 
         // Asr Angle calculation (Hanafi shadow = 2, Shafi'i/Standard shadow = 1)
         val asrFactor = if (isHanafi) 2.0 else 1.0
         val latMinusDec = Math.abs(lat - declination)
         val asrAltitude = Math.toDegrees(atan(1.0 / (asrFactor + tan(Math.toRadians(latMinusDec)))))
-        val asrHourAngle = Math.toDegrees(getHourAngle(asrAltitude)) / 15.0
+        val asrHourAngle = (getHourAngle(asrAltitude)?.let { Math.toDegrees(it) / 15.0 }) ?: 0.0
 
         val fajrDecimal = solarNoon - fajrHourAngle
         val sunriseDecimal = solarNoon - sunriseHourAngle
-        val dhuhrDecimal = solarNoon + (1.0 / 60.0) // 1 minute safety margin after zawal
+        val dhuhrDecimal = solarNoon + (3.0 / 60.0) // 3 minutes precautionary safety margin after zawal (Islamic Foundation Bangladesh standard)
         val asrDecimal = solarNoon + asrHourAngle
         val maghribDecimal = solarNoon + sunriseHourAngle + (1.0 / 60.0) // 1 minute safety margin for sunset
         val ishaDecimal = if (effectiveIshaInterval != null) {
@@ -285,25 +354,13 @@ object PrayerTimesCalculator {
             solarNoon + ishaHourAngle
         }
 
-        // Format to LocalTime
-        fun decimalToLocalTime(decimal: Double): LocalTime {
-            var hours = decimal.toInt()
-            var minutes = ((decimal - hours) * 60.0).roundToInt()
-            if (minutes >= 60) {
-                hours += 1
-                minutes -= 60
-            }
-            if (hours >= 24) hours %= 24
-            if (hours < 0) hours = (hours + 24) % 24
-            return LocalTime.of(hours, minutes)
-        }
 
-        val fajrTime = decimalToLocalTime(fajrDecimal)
-        val sunriseTime = decimalToLocalTime(sunriseDecimal)
-        val dhuhrTime = decimalToLocalTime(dhuhrDecimal)
-        val asrTime = decimalToLocalTime(asrDecimal)
-        val maghribTime = decimalToLocalTime(maghribDecimal)
-        val ishaTime = decimalToLocalTime(ishaDecimal)
+        val fajrTime = decimalToLocalTime(fajrDecimal, roundUp = true)
+        val sunriseTime = decimalToLocalTime(sunriseDecimal, roundUp = false)
+        val dhuhrTime = decimalToLocalTime(dhuhrDecimal, roundUp = true)
+        val asrTime = decimalToLocalTime(asrDecimal, roundUp = true)
+        val maghribTime = decimalToLocalTime(maghribDecimal, roundUp = true)
+        val ishaTime = decimalToLocalTime(ishaDecimal, roundUp = true)
 
         // Extra times
         val sahriEndTime = fajrTime.plusMinutes(sahriOffsetMinutes.toLong()) // Precaution before/around Fajr (default -3 mins)
@@ -522,7 +579,7 @@ object PrayerTimesCalculator {
 
         return DailyPrayerSchedule(
             dateStrBn = DateUtil.formatDateStr(date),
-            district = district,
+            district = effectiveDistrict,
             prayers = markedPrayers,
             currentPrayer = currentPrayer?.copy(isFriday = isFriday),
             nextPrayer = nextPrayer?.copy(isFriday = isFriday),

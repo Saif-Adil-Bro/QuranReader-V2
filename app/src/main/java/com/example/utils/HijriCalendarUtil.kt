@@ -153,34 +153,28 @@ object HijriCalendarUtil {
 
     fun getBanglaDateStr(date: LocalDate, includeSuffix: Boolean = true): String {
         val year = date.year
-        val isLeapYear = date.isLeapYear
-
-        // Check if date is before 14th April
-        val banglaYear = if (date.monthValue < 4 || (date.monthValue == 4 && date.dayOfMonth < 14)) {
-            year - 594
+        val boishakhCurrentYear = LocalDate.of(year, 4, 14)
+        val (refYear, boishakhStart) = if (date.isBefore(boishakhCurrentYear)) {
+            Pair(year - 1, LocalDate.of(year - 1, 4, 14))
         } else {
-            year - 593
+            Pair(year, boishakhCurrentYear)
         }
 
-        val monthDays = if (isLeapYear) {
-            intArrayOf(31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 31, 30)
-        } else {
-            intArrayOf(31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30)
-        }
+        val banglaYear = refYear - 593
+
+        // Revised Bangladeshi Calendar (Bangla Academy 2019):
+        // Boishakh - Bhadro: First 5 months are 31 days each.
+        // Ashwin - Choitro: Remaining 7 months are 30 days each, with Falgun having 31 days in a Gregorian leap year.
+        // Note: Falgun of Bangla year `refYear - 593` falls in February of Gregorian year `refYear + 1`.
+        val isFalgunLeap = java.time.Year.of(refYear + 1).isLeap
+        val monthDays = intArrayOf(31, 31, 31, 31, 31, 30, 30, 30, 30, 30, if (isFalgunLeap) 31 else 30, 30)
 
         val banglaMonths = listOf(
             "বৈশাখ", "জ্যৈষ্ঠ", "আষাঢ়", "শ্রাবণ", "ভাদ্র", "আশ্বিন",
             "কার্তিক", "অগ্রহায়ণ", "পৌষ", "মাঘ", "ফাল্গুন", "চৈত্র"
         )
 
-        // Reference start: April 14 is 1st Boishakh
-        val boishakhStart = LocalDate.of(year, 4, 14)
-        val dayDiff = if (!date.isBefore(boishakhStart)) {
-            java.time.temporal.ChronoUnit.DAYS.between(boishakhStart, date).toInt()
-        } else {
-            val prevBoishakhStart = LocalDate.of(year - 1, 4, 14)
-            java.time.temporal.ChronoUnit.DAYS.between(prevBoishakhStart, date).toInt()
-        }
+        val dayDiff = java.time.temporal.ChronoUnit.DAYS.between(boishakhStart, date).toInt()
 
         var remainingDays = dayDiff
         var mIndex = 0

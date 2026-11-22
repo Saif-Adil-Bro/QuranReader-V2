@@ -14,19 +14,15 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 
+import com.example.BuildConfig
+
 /**
  * Service for Geoapify, Photon (Komoot/OSM) & OpenStreetMap free geocoding and places integration.
  * Operates 100% free with open fallback channels (no proprietary keys required).
  */
 class GeoapifyService(private val context: Context) {
 
-    private val geoapifyApiKey: String = run {
-        try {
-            System.getenv("GEOAPIFY_API_KEY") ?: ""
-        } catch (e: Exception) {
-            ""
-        }
-    }
+    private val geoapifyApiKey: String = BuildConfig.GEOAPIFY_API_KEY
 
     /**
      * Search mosques around coordinates using Geoapify Places API (if API key exists)

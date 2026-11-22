@@ -2028,7 +2028,11 @@ internal fun DistrictSelectionModal(
                     "📍 বর্তমান অবস্থান শনাক্ত হয়েছে: ${closest.nameBn} (${closest.countryBn})"
                 }
                 Toast.makeText(context, locMsg, Toast.LENGTH_SHORT).show()
-                onSelect(closest)
+                val exactLocation = closest.copy(
+                    latitude = result.latitude,
+                    longitude = result.longitude
+                )
+                onSelect(exactLocation)
                 onDismiss()
             } catch (e: Exception) {
                 isDetectingLocation = false
